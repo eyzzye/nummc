@@ -1,0 +1,15 @@
+###########################################################
+#
+# nummc
+#
+###########################################################
+
+[description]
+top view action RPG
+
+[develop environment]
+VisalStudio2019 C++
+SDL2
+
+[LICENSE]
+MIT License
