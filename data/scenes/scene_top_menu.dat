@@ -1,0 +1,24 @@
+[img]
+{scale_mode:linear}images/gui/top_menu/title.png
+{scale_mode:linear}images/gui/top_menu/continue.png
+{scale_mode:linear}images/gui/top_menu/load.png
+{scale_mode:linear}images/gui/top_menu/new_game.png
+{scale_mode:linear}images/gui/top_menu/settings.png
+{scale_mode:linear}images/gui/top_menu/exit.png
+{scale_mode:linear}images/gui/button/cursor.png
+{scale_mode:linear}images/gui/button/cancel.png
+{scale_mode:linear}images/gui/button/ok.png
+[/img]
+[font]
+Exit to DeskTop?
+[/font]
+[music]
+[/music]
+[snd]
+music/title.ogg
+sounds/sfx_select1.ogg
+sounds/sfx_click1.ogg
+sounds/sfx_cancel1.ogg
+sounds/sfx_warning1.ogg
+sounds/sfx_error1.ogg
+[/snd]

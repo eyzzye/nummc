@@ -1,0 +1,13 @@
+#
+# 5-1
+#
+
+[enemy]
+type=units/enemy/5/five.unit
+x=352
+y=96
+vec_x=0
+vec_y=0
+delay=0
+face=W
+[/enemy]

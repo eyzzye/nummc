@@ -1,0 +1,22 @@
+#
+# bom_bottle animation (type=SPAWN)
+#
+
+[frame]
+duration=80
+[/frame]
+
+[img]
+layer=3
+dir_path=images/units/items/stock/charge/bom_bottle/
+path=bom_idle1.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+dir_path=sounds/
+path=sfx_drop.ogg
+volume=*
+[/snd]

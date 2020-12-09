@@ -1,0 +1,16 @@
+#
+# star animation (type=IDLE)
+#
+
+[frame]
+duration=100,100,100,100,100,100
+[/frame]
+
+[img]
+layer=3
+dir_path=images/units/effect/star/
+path=star_idle1.png,star_idle2.png,star_idle3.png,star_idle1.png,star_idle2.png,star_idle3.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

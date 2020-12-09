@@ -1,0 +1,16 @@
+#
+# test_bullet animation (type=IDLE)
+#
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=2
+dir_path=images/units/items/bullet/test_bullet/
+path=test_bullet.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

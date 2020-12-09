@@ -1,0 +1,22 @@
+#
+# strength_up animation (type=SPAWN)
+#
+
+[frame]
+duration=40
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/items/special/strength_up/
+path=strength_up.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+dir_path=sounds/
+path=sfx_drop.ogg
+volume=*
+[/snd]

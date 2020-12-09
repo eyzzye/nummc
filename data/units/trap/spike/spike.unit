@@ -1,0 +1,23 @@
+#
+# spike
+#
+
+[unit]
+group=DAMAGE
+hp=20
+[/unit]
+
+[collision]
+type=BOX_S
+group=TRAP
+x=4
+y=4
+w=24
+h=24
+[/collision]
+
+[anim]
+base_w=32
+base_h=32
+units/trap/spike/spike.IDLE.anim
+[/anim]

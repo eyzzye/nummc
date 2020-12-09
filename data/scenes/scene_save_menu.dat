@@ -1,0 +1,33 @@
+[img]
+{scale_mode:linear}images/gui/button/delete.png
+{scale_mode:linear}images/gui/button/cancel.png
+{scale_mode:linear}images/gui/button/ok.png
+[/img]
+[font]
+Save
+NewGame
+Load
+Please select save Slot.
+Please select new save Slot.
+Please select Slot.
+SLOT1
+SLOT2
+SLOT3
+SLOT4
+SLOT5
+SLOT6
+SLOT7
+SLOT8
+(EMPTY)
+Overwrite?
+[/font]
+[music]
+music/save_menu.ogg
+[/music]
+[snd]
+sounds/sfx_select1.ogg
+sounds/sfx_click1.ogg
+sounds/sfx_cancel1.ogg
+sounds/sfx_warning1.ogg
+sounds/sfx_error1.ogg
+[/snd]

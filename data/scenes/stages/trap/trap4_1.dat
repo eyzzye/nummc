@@ -1,0 +1,5 @@
+[trap]
+type=units/trap/ice_field/ice_field.unit
+x=320,352,96,128
+y=128,128,224,224
+[/trap]

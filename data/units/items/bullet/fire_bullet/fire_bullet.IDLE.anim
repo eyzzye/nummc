@@ -1,0 +1,16 @@
+#
+# fire_bullet animation (type=IDLE)
+#
+
+[frame]
+duration=200,100
+[/frame]
+
+[img]
+layer=2
+dir_path=images/units/items/bullet/fire_bullet/
+path=fire_bullet_idle1.png,fire_bullet_idle2.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

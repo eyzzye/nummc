@@ -1,0 +1,16 @@
+#
+# star animation (type=DIE)
+#
+
+[frame]
+duration=100
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/common/
+path=invisible.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

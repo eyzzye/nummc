@@ -1,0 +1,22 @@
+#
+# heart animation (type=SPAWN)
+#
+
+[frame]
+duration=400,100
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/items/recovery/heart/
+path=heart_idle2.png,heart_idle1.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+dir_path=sounds/
+path=sfx_drop.ogg,*
+volume=*
+[/snd]

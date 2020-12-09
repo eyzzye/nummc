@@ -1,0 +1,23 @@
+#
+# player animation (type=ATTACK)
+#
+
+[frame]
+duration=50,50,50,40
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/player/player1/
+path=player_attack[1-4].png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+channel=0
+dir_path=sounds/
+path=sfx_click1.ogg,*
+volume=*
+[/snd]

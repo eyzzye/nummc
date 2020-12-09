@@ -1,0 +1,186 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{1fa7106d-50f8-4491-ad53-a6f3f35c9e9a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\include">
+      <UniqueIdentifier>{f2f91b66-8f3e-4ec8-b815-053830d0f3ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\source">
+      <UniqueIdentifier>{abf97270-6c7c-4058-8380-abb59ad1b091}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\game_main.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_window.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_loop.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene_top_menu.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_timer.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_key_event.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene_manager.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene_loading.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\resource_manager.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_utils.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dialog_exit.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_mouse_event.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene_settings_menu.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_save.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene_save_menu.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\dialog_message.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene_play_stage.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene_escape_menu.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gui_common.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_log.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sound_manager.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\collision_manager.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\stage_manager.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\map_manager.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\unit_manager.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\animation_manager.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_event.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ai_manager.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\game_common.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_window.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_loop.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scene_top_menu.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_timer.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_key_event.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scene_manager.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scene_loading.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resource_manager.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_utils.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\dialog_exit.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_mouse_event.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scene_settings_menu.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_save.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scene_save_menu.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\dialog_message.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scene_play_stage.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scene_escape_menu.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gui_common.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_log.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\sound_manager.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\collision_manager.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\stage_manager.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\map_manager.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\unit_manager.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\animation_manager.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_event.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ai_manager.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

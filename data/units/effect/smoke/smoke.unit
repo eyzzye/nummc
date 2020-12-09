@@ -1,0 +1,23 @@
+#
+# smoke
+#
+
+[unit]
+group=DIE_AUTO
+life_timer=600
+[/unit]
+
+[collision]
+type=ROUND
+group=NONE
+x=16
+y=16
+r=12
+[/collision]
+
+[anim]
+base_w=32
+base_h=32
+units/effect/smoke/smoke.IDLE.anim
+units/effect/smoke/smoke.DIE.anim
+[/anim]

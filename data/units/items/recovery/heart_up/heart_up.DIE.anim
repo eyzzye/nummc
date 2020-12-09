@@ -1,0 +1,22 @@
+#
+# heart_up animation (type=DIE)
+#
+
+[frame]
+duration=300
+[/frame]
+
+[img]
+layer=3
+dir_path=images/units/items/recovery/heart_up/
+path=heart_up_die1.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+dir_path=sounds/
+path=sfx_select1.ogg
+volume=*
+[/snd]

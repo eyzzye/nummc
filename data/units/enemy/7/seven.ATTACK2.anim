@@ -1,0 +1,22 @@
+#
+# seven animation (type=ATTACK)
+#
+
+[frame]
+duration=600,500,400,400,400,1000
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/enemy/7/
+path=seven_attack1.png,seven_attack2.png,seven_attack3.png,seven_attack4.png,seven_attack5.png,seven_attack6.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+dir_path=sounds/
+path=sfx_click1.ogg,*,*,*,*,*
+volume=*
+[/snd]

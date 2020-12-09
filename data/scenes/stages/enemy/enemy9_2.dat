@@ -1,0 +1,13 @@
+#
+# 9-2
+#
+
+[enemy]
+type=units/enemy/9/nine.unit
+x=64,384,96,352,64,384
+y=96,96,128,128,160,160
+vec_x=0,0,0,0,0,0
+vec_y=0,0,0,0,0,0
+delay=0,0,0,0,0,0
+face=E,W,E,W,E,W
+[/enemy]

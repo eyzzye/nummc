@@ -1,0 +1,23 @@
+#
+# bom animation (type=ATTACK)
+#
+
+[frame]
+duration=840,200,200,200,200,200,200,200
+[/frame]
+
+[img]
+layer=3
+dir_path=images/units/items/bom/simple/
+path=bom_idle1.png,bom_attack1.png,bom_attack2.png,bom_attack3.png,bom_attack4.png,bom_attack5.png,bom_attack6.png,bom_attack5.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+channel=3
+dir_path=sounds/
+path=sfx_bom_warning.ogg,*,*,*,*,*,*,*
+volume=*
+[/snd]

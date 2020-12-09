@@ -7,9 +7,41 @@
 [description]
 top view action RPG
 
+[key controls]
+-- menu --
+UP/DOWN/LEFT/RIGHT : move cursor
+Enter              : menu select
+Esc                : exit
+
+-- game --
+W/A/S/D            : Move
+UP/DOWN/LEFT/RIGHT : Attack
+Q                  : Use charge item
+E                  : Use bom
+Space              : Use item
+Esc                : Resume
+
 [develop environment]
 VisalStudio2019 C++
 SDL2
+Box2d
+
+[dependent libs]
+SDL2 2.0.12
+SDL2_image 2.0.5
+SDL2_mixer 2.0.4
+SDL2_ttf 2.0.15
+Box2d 2.3.1
+DejaVu Sans
+
+[development tools]
+xyzzy 0.2.2.253
+PictBear 2.04
+Gimp 2.10.10
+Tiled Map Editor 0.9.1
+MilkyTracker 1.02.00
+Audacity 2.4.2
+fre:ac 1.1.2b
 
 [LICENSE]
 MIT License

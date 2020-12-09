@@ -1,0 +1,16 @@
+#
+# leaser animation (type=ATTACK)
+#
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/bullet/leaser/
+path=leaser.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

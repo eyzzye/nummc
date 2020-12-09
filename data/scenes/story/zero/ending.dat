@@ -1,0 +1,23 @@
+[basic_info]
+id=_zero_end
+[/basic_info]
+[img]
+{scale_mode:linear}images/story/ending/1/_end.png
+[/img]
+[bgm]
+music/happy.ogg
+[/bgm]
+[auto_text]
+time=2000
+ 
+Zero is the origin.
+All dimensions are crossing at zero.
+If zero don't exist, other numbers never start.
+ 
+2 to the 0th=1
+zero play a role in equations.
+ 
+Do you know imaginaly number?
+i to the second power=-1
+Is this real? not sure...
+[/auto_text]

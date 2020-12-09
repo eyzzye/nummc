@@ -1,0 +1,7 @@
+#pragma once
+
+// PLAYER
+#define UNIT_PLAYER_STAT_INVINCIBLE_TIMER  2000
+
+#define UNIT_PLAYER_HP_MAX_VAL_MIN            0
+#define UNIT_PLAYER_HP_MAX_VAL_MAX          120

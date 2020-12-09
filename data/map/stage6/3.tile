@@ -1,0 +1,26 @@
+#
+# id=3 terrain
+#
+
+[tile]
+breakable=no
+[/tile]
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=2
+dir_path=images/map/common
+path=3.png
+effect=tile_clip(0:0:32:32)
+[/img]
+
+[collision]
+type=ROUND_S
+group=MAP
+x=16
+y=16
+r=16
+[/collision]

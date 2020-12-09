@@ -1,0 +1,13 @@
+[drop_items]
+units/items/recovery/heart/heart.unit
+units/items/stock/simple_bom/simple_bom.unit
+units/items/stock/booster/booster.unit
+units/items/stock/shield/shield.unit
+units/items/special/bullet_range_up/range.unit
+units/items/special/bullet_rate_up/rate.unit
+units/items/special/speed_up/speed_up.unit
+units/items/special/strength_up/strength_up.unit
+[/drop_items]
+[goal_items]
+units/items/special/unknown/unknown.unit
+[/goal_items]

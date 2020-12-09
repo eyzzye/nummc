@@ -1,0 +1,13 @@
+#
+# 1-2
+#
+
+[enemy]
+type=units/enemy/1/one.unit
+x=384,64
+y=64,192
+vec_x=0,0
+vec_y=0,0
+delay=0,0
+face=W,E
+[/enemy]

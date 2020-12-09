@@ -1,0 +1,9 @@
+[drop_items]
+units/items/recovery/heart/heart.unit
+units/items/stock/simple_bom/simple_bom.unit
+units/items/stock/booster/booster.unit
+units/items/special/bullet_rate_up/rate.unit
+[/drop_items]
+[goal_items]
+units/items/recovery/heart_up/heart_up.unit
+[/goal_items]

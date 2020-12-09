@@ -1,0 +1,13 @@
+#
+# 3-3
+#
+
+[enemy]
+type=units/enemy/3/three.unit
+x=64,384,128,320
+y=96,96,160,160
+vec_x=0,0,0,0
+vec_y=0,0,0,0
+delay=0,0,0,0
+face=E,W,W,E
+[/enemy]

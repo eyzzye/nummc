@@ -1,0 +1,23 @@
+#
+# tresure_static animation (type=SPAWN)
+#
+
+[frame]
+duration=40
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/items/tbox/tresure_static/
+path=tresure_s.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+channel=5
+dir_path=sounds/
+path=sfx_drop.ogg
+volume=*
+[/snd]

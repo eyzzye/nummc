@@ -1,0 +1,16 @@
+#
+# ice animation (type=DIE)
+#
+
+[frame]
+duration=300
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/common/
+path=die_splash.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

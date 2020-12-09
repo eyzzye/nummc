@@ -1,0 +1,23 @@
+#
+# player animation (type=DIE)
+#
+
+[frame]
+duration=1000,4000
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/player/player1/
+path=player_idle2.png,player_idle6.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+channel=0
+dir_path=sounds/
+path=sfx_cancel1.ogg,*
+volume=*
+[/snd]

@@ -1,0 +1,16 @@
+#
+# heart animation (type=IDLE)
+#
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=2
+dir_path=images/units/items/bullet/leaser_bullet/
+path=leaser_bullet.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

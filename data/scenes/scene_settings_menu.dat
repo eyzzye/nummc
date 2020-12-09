@@ -1,0 +1,26 @@
+[img]
+{scale_mode:linear}images/gui/top_menu/settings.png
+{scale_mode:linear}images/gui/button/cursor.png
+{scale_mode:linear}images/gui/button/cursor_l.png
+{scale_mode:linear}images/gui/button/bar.png
+{scale_mode:linear}images/gui/button/cancel.png
+{scale_mode:linear}images/gui/button/ok.png
+{scale_mode:linear}images/gui/button/default.png
+[/img]
+[font]
+Settings
+Video
+Music Vol
+SFX Vol
+640x480
+1280x720
+[/font]
+[music]
+[/music]
+[snd]
+sounds/sfx_select1.ogg
+sounds/sfx_click1.ogg
+sounds/sfx_cancel1.ogg
+sounds/sfx_warning1.ogg
+sounds/sfx_error1.ogg
+[/snd]
