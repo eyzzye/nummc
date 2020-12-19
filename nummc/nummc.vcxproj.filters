@@ -132,6 +132,9 @@
     <ClInclude Include="src\dialog_select_profile.h">
       <Filter>src\include</Filter>
     </ClInclude>
+    <ClInclude Include="src\quest_log_manager.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\unit_manager.cpp">
@@ -252,6 +255,9 @@
       <Filter>src\source</Filter>
     </ClCompile>
     <ClCompile Include="src\dialog_select_profile.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\quest_log_manager.cpp">
       <Filter>src\source</Filter>
     </ClCompile>
   </ItemGroup>

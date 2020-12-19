@@ -39,6 +39,7 @@
     <ClInclude Include="src\hud_manager.h" />
     <ClInclude Include="src\inventory_manager.h" />
     <ClInclude Include="src\map_manager.h" />
+    <ClInclude Include="src\quest_log_manager.h" />
     <ClInclude Include="src\resource_manager.h" />
     <ClInclude Include="src\scene_escape_menu.h" />
     <ClInclude Include="src\scene_loading.h" />
@@ -81,6 +82,7 @@
     <ClCompile Include="src\hud_manager.cpp" />
     <ClCompile Include="src\inventory_manager.cpp" />
     <ClCompile Include="src\map_manager.cpp" />
+    <ClCompile Include="src\quest_log_manager.cpp" />
     <ClCompile Include="src\resource_manager.cpp" />
     <ClCompile Include="src\scene_escape_menu.cpp" />
     <ClCompile Include="src\scene_loading.cpp" />

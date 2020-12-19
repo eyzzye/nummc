@@ -15,6 +15,7 @@
 #include "game_event.h"
 #include "dialog_message.h"
 
+#include "quest_log_manager.h"
 #include "inventory_manager.h"
 #include "collision_manager.h"
 #include "unit_manager.h"
@@ -311,6 +312,9 @@ static void draw() {
 	// draw hud
 	hud_manager_display();
 
+	// draw quest_log
+	quest_log_manager_display();
+
 	// draw collision shapes
 	collision_manager_display();
 
@@ -395,6 +399,9 @@ static void pre_load_event(void* null) {
 	// hud init
 	hud_manager_init();
 
+	// quest_log init
+	quest_log_manager_init();
+
 	// load player effect
 	unit_manager_load_effect("units/effect/boost/boost.unit");
 	unit_manager_load_effect("units/effect/fire_up/fire_up.unit");
@@ -446,6 +453,9 @@ static void load_event() {
 	game_utils_random_init((unsigned int)time(NULL));
 
 	// resize
+	quest_log_manager_reset();
+
+	// resize
 	hud_manager_reset();
 
 	// init message event
@@ -472,6 +482,7 @@ static void load_event() {
 	game_mouse_event_init(0, 400, 200, 150, 5);
 }
 static void unload_event() {
+	quest_log_manager_unload();
 	hud_manager_unload();
 	inventory_manager_unload();
 	unit_manager_unload();
@@ -658,6 +669,10 @@ static void section_init()
 			unit_manager_create_effect(p_section->enemy_list[i]->x - g_tile_width / 2, p_section->enemy_list[i]->y - g_tile_height / 2, unit_manager_search_effect(smoke_effect_path));
 		}
 	}
+
+	char buff[32] = { '\0' };
+	sprintf_s(buff, "start section: %d", g_stage_data->current_section_index);
+	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
 
 	// set section_stat active
 	g_stage_data->section_stat = SECTION_STAT_ACTIVE;

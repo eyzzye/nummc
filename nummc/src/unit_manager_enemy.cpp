@@ -13,6 +13,7 @@
 #include "map_manager.h"
 #include "sound_manager.h"
 #include "scene_play_stage.h"
+#include "quest_log_manager.h"
 
 #define ENEMY_BASE_LIST_SIZE (UNIT_ENEMY_LIST_SIZE)
 static unit_enemy_data_t enemy_base[ENEMY_BASE_LIST_SIZE];
@@ -474,6 +475,10 @@ int unit_manager_enemy_get_damage_force(unit_enemy_data_t* enemy_data, int hp)
 	enemy_data->hp += hp;
 	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_SUB1);
 
+	char buff[32] = { '\0' };
+	sprintf_s(buff, "enemy %d damaged(force): %d", enemy_data->id, hp);
+	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+
 	if (enemy_data->hp <= 0) {
 		// give exp
 		unit_manager_player_get_exp(enemy_data->exp);
@@ -490,6 +495,10 @@ int unit_manager_enemy_get_damage(unit_enemy_data_t* enemy_data, int hp)
 {
 	enemy_data->hp += hp;
 	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_SUB1);
+
+	char buff[32] = { '\0' };
+	sprintf_s(buff, "enemy %d damaged: %d", enemy_data->id, hp);
+	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
 
 	if (enemy_data->hp <= 0) {
 		// give exp

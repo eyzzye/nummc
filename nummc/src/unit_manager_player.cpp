@@ -14,6 +14,7 @@
 #include "sound_manager.h"
 #include "scene_play_stage.h"
 #include "inventory_manager.h"
+#include "quest_log_manager.h"
 
 unit_player_data_t g_player;
 unit_player_data_t g_player_backup;
@@ -427,6 +428,10 @@ int unit_manager_player_get_damage_force(int hp)
 	g_player.hp += hp;
 	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_MAIN2);
 
+	char buff[32] = { '\0' };
+	sprintf_s(buff, "player damaged(force): %d", hp);
+	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+
 	// set game over
 	if (g_player.hp <= 0) {
 		stage_manager_set_result(STAGE_RESULT_LOSE);
@@ -444,6 +449,10 @@ int unit_manager_player_get_damage(int hp)
 	//player.stat |= UNIT_PLAYER_STAT_FLAG_DAMAGE;
 	g_player.hp += hp;
 	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_MAIN2);
+
+	char buff[32] = { '\0' };
+	sprintf_s(buff, "player damaged: %d", hp);
+	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
 
 	// set game over
 	if (g_player.hp <= 0) {
@@ -485,6 +494,11 @@ int unit_manager_player_recovery(int hp)
 	if (g_player.hp > g_player.hp_max) {
 		g_player.hp = g_player.hp_max;
 	}
+
+	char buff[32] = { '\0' };
+	sprintf_s(buff, "player recovered: %d", hp);
+	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+
 	return 0;
 }
 
@@ -506,6 +520,11 @@ int unit_manager_player_set_hp_max(int hp_max)
 	}
 
 	g_player.hp_max += delta_hp;
+
+	char buff[32] = { '\0' };
+	sprintf_s(buff, "player health up: %d", delta_hp);
+	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+
 	unit_manager_player_recovery(delta_hp);
 
 	return 0;
@@ -534,23 +553,40 @@ void unit_manager_player_change_bullet_curving(int bullet_curving)
 {
 	g_player.bullet_curving += bullet_curving;
 	g_player.bullet_curving = MAX(UNIT_PLAYER_BULLET_CURVING_RANK_MIN, MIN(UNIT_PLAYER_BULLET_CURVING_RANK_MAX, g_player.bullet_curving));
+
+	char buff[32] = { '\0' };
+	sprintf_s(buff, "player curving Lv:%d", g_player.bullet_curving);
+	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
 }
 
 void unit_manager_player_change_speed(int speed)
 {
 	g_player.speed += speed;
 	g_player.speed = MAX(UNIT_PLAYER_SPEED_RANK_MIN, MIN(UNIT_PLAYER_SPEED_RANK_MAX, g_player.speed));
+
+	char buff[32] = { '\0' };
+	sprintf_s(buff, "player speed Lv:%d", g_player.speed);
+	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
 }
 
 void unit_manager_player_change_strength(int strength)
 {
 	g_player.strength += strength;
 	g_player.strength = MAX(UNIT_PLAYER_STRENGTH_RANK_MIN, MIN(UNIT_PLAYER_STRENGTH_RANK_MAX, g_player.strength));
+
+	char buff[32] = { '\0' };
+	sprintf_s(buff, "player strength Lv:%d", g_player.strength);
+	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
 }
 
 int unit_manager_player_change_bullet(int weapon)
 {
 	g_player.weapon = weapon;
+
+	char buff[32] = { '\0' };
+	sprintf_s(buff, "player weapon: %d", g_player.weapon);
+	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+
 	return 0;
 }
 
@@ -631,6 +667,10 @@ int unit_manager_player_get_special_item(int item_id)
 			//player_boost_on = true;
 			unit_manager_player_set_effect_stat(UNIT_EFFECT_FLAG_P_BOOST, true);
 
+			char buff[32] = { '\0' };
+			sprintf_s(buff, "player boost");
+			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+
 			std::string star_path = "units/effect/star/star.unit";
 			int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y, unit_manager_search_effect(star_path));
 			unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&g_player);
@@ -666,6 +706,10 @@ int unit_manager_player_get_special_item(int item_id)
 		else {
 			//player_shield_on = true;
 			unit_manager_player_set_effect_stat(UNIT_EFFECT_FLAG_P_SHIELD, true);
+
+			char buff[32] = { '\0' };
+			sprintf_s(buff, "player shield");
+			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
 
 			std::string star_path = "units/effect/star/star.unit";
 			int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y, unit_manager_search_effect(star_path));
@@ -767,6 +811,10 @@ static void use_bom_item()
 	unit_manager_get_spawn_items_pos_under_foot((unit_data_t*)&g_player, 1, &x, &y);
 	int id = unit_manager_create_items(x, y, unit_manager_search_items(bom_path));
 	unit_manager_items_set_anim_stat(id, ANIM_STAT_FLAG_ATTACK);
+
+	char buff[32] = { '\0' };
+	sprintf_s(buff, "player drop bom");
+	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
 }
 
 void unit_manager_player_use_weapon_item()
