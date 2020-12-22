@@ -265,6 +265,8 @@ void unit_manager_enemy_bullet_update()
 #ifdef _COLLISION_ENABLE_BOX_2D_
 			enemy_bullet[i].col_shape->x = (int)MET2PIX(enemy_bullet[i].col_shape->b2body->GetPosition().x);
 			enemy_bullet[i].col_shape->y = (int)MET2PIX(enemy_bullet[i].col_shape->b2body->GetPosition().y);
+			enemy_bullet[i].col_shape->vec_x = enemy_bullet[i].col_shape->b2body->GetLinearVelocity().x;  // box2d METER value
+			enemy_bullet[i].col_shape->vec_y = enemy_bullet[i].col_shape->b2body->GetLinearVelocity().y;  // box2d METER value
 #endif
 
 			// bullet life update

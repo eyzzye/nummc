@@ -27,6 +27,8 @@
 #define SECTION_ID_GOAL_ITEMS   6
 #define SECTION_ID_END          7
 
+#define STAGE_FRICTION_DEFAULT  (1.0f / 800.0f)  // 1.0->0.0[m/s] / 800[msec]
+
 stage_data_t* g_stage_data;
 static section_data_t* current_section_data;
 static int tmp_start_index;
@@ -51,6 +53,7 @@ static void load_enemy(std::string& line);
 void stage_manager_init()
 {
 	g_stage_data = new stage_data_t();
+	g_stage_data->friction_coef = STAGE_FRICTION_DEFAULT;
 	g_stage_data->stat = STAGE_STAT_NONE;
 	g_stage_data->result = STAGE_RESULT_NONE;
 	g_stage_data->next_load = STAGE_NEXT_LOAD_OFF;
@@ -194,6 +197,10 @@ static void load_basic_info(std::string& line) {
 	game_utils_split_key_value(line, key, value);
 	if (key == "id") g_stage_data->id = value;
 	if (key == "bonus_exp") g_stage_data->bonus_exp = atoi(value.c_str());
+	if (key == "friction_denominator") {
+		float denominator = (float)atoi(value.c_str());
+		g_stage_data->friction_coef = 1.0f / denominator;
+	}
 }
 
 static void load_player_start(std::string& line) {

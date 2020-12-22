@@ -318,6 +318,9 @@ static void draw() {
 	// draw collision shapes
 	collision_manager_display();
 
+	// draw ai info
+	ai_manager_display();
+
 	// dark sceen
 	if ((g_dialog_message_enable) || (game_start_wait_timer > 0))
 	{

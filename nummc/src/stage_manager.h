@@ -98,6 +98,8 @@ struct _stage_data_t {
 	int goal_h;
 
 	int bonus_exp;
+	float friction_coef;
+
 	std::string next_stage_id;
 	std::vector<std::string> common_items_list;
 

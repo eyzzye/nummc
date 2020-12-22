@@ -1,6 +1,8 @@
 #pragma once
 #include "game_common.h"
 
+//#define AI_DEBUG
+
 #define AI_TYPE_NONE          0
 #define AI_TYPE_SIMPLE        1
 #define AI_TYPE_SIMPLE_FIRE   2
@@ -111,3 +113,4 @@ extern void ai_manager_delete_ai_data(ai_data_t* delete_data);
 extern ai_data_t* ai_manager_new_ai_base_data();
 extern ai_data_t* ai_manager_new_ai_data();
 extern int ai_manager_update(ai_data_t* ai_data);
+extern void ai_manager_display();

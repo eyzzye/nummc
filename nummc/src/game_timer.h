@@ -15,6 +15,8 @@
 // update()     : g_delta_time = g_current_time - g_latest_time
 //
 
+#define DELTA_TIME_MIN 25	// 40fps
+
 extern Uint32 g_start_time;
 extern Uint32 g_current_time;
 extern Uint32 g_latest_time;

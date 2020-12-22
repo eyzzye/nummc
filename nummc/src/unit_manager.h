@@ -7,8 +7,6 @@
 
 #include "windows.h"  // for MAX_PATH
 
-#define UNIT_VEC_FRICTION_RATE  (1.0f / 800.0f)  // 1.0->0.0[m/s] / 800[msec]
-
 #define UNIT_TAG_UNIT       0
 #define UNIT_TAG_COLLISION  1
 #define UNIT_TAG_ANIM       2
@@ -344,7 +342,9 @@ extern void unit_display(unit_data_t* unit_data, int layer);
 extern void unit_manager_update_unit_friction(unit_data_t* unit_data);
 extern void unit_manager_unit_move(unit_data_t* unit_data, float vec_x, float vec_y, float speed=1.0f);
 extern void unit_manager_get_position(unit_data_t* unit_data, int* x, int* y);
+extern float unit_manager_get_distance(unit_data_t* main_unit, unit_data_t* target_unit, int* x = NULL, int* y = NULL);
 extern int unit_manager_get_face(unit_data_t* unit_data);
+extern int unit_manager_get_face_relative(unit_data_t* unit_data, int original_face);
 extern int unit_manager_get_face_other_side(unit_data_t* unit_data);
 extern void unit_manager_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_num= UNIT_BULLET_NUM_SINGLE);
 extern void unit_manager_get_bullet_start_pos(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_num, int face, int* x, int* y);
@@ -391,6 +391,7 @@ extern int unit_manager_load_enemy(std::string path);
 extern int unit_manager_create_enemy(int x, int y, int face, int base_index = -1);
 extern void unit_manager_clear_enemy(unit_enemy_data_t* enemy);
 extern bool unit_manager_enemy_exist();
+extern void unit_manager_enemy_get_face_velocity(unit_enemy_data_t* enemy_data, float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_num);
 extern int unit_manager_enemy_get_bullet_strength(int base_id);
 extern int unit_manager_enemy_get_bullet_life_timer(int base_id);
 extern float unit_manager_enemy_get_bullet_curving(int base_id);

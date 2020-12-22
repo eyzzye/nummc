@@ -1,8 +1,6 @@
 #include "game_common.h"
 #include "game_timer.h"
 
-#define DELTA_TIME_MIN 25	// 40fps
-
 Uint32 g_start_time;
 Uint32 g_current_time;
 Uint32 g_latest_time;

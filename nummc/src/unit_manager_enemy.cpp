@@ -550,6 +550,9 @@ int unit_manager_enemy_attack(unit_enemy_data_t* enemy_data, int stat)
 		return 1;
 	}
 
+	// convert face (face_W -> face_X)
+	bullet_face = unit_manager_get_face_relative((unit_data_t*)enemy_data, bullet_face);
+
 	std::string bullet_path = g_enemy_bullet_path[bullet];
 	int bullet_base_id = unit_manager_search_enemy_bullet(bullet_path);
 	unit_manager_get_bullet_start_pos((unit_data_t*)enemy_data, (unit_data_t*)unit_manager_get_enemy_bullet_base(bullet_base_id), bullet_num, bullet_face, x, y);

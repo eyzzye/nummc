@@ -1,11 +1,13 @@
 #include "game_common.h"
 #include "ai_manager.h"
 
+#include "game_window.h"
 #include "game_timer.h"
 #include "game_log.h"
 #include "game_utils.h"
 #include "map_manager.h"
 #include "unit_manager.h"
+#include "stage_manager.h"
 
 #define AI_BASE_DATA_LIST_SIZE 64
 static ai_data_t ai_base_data_list[AI_BASE_DATA_LIST_SIZE];
@@ -18,6 +20,10 @@ static ai_data_t ai_data_list[AI_DATA_LIST_SIZE];
 static ai_data_t* ai_data_list_start;
 static ai_data_t* ai_data_list_end;
 static int ai_data_index_end;
+
+// ai dummy
+static unit_data_t dummy_unit_data;
+static shape_data dummy_shape_data;
 
 static bool within_trap(unit_data_t* unit_data, int step, float delta_x, float delta_y);
 
@@ -59,6 +65,27 @@ void ai_manager_delete_ai_data(ai_data_t* delete_data)
 	if (delete_data == ai_data_list_end) ai_data_list_end = tmp1;
 
 	memset(delete_data, 0, sizeof(ai_data_t));
+}
+
+static void reset_dummy_unit_data()
+{
+	memset(&dummy_unit_data, 0, sizeof(unit_data_t));
+	memset(&dummy_shape_data, 0, sizeof(shape_data));
+	dummy_unit_data.col_shape = &dummy_shape_data;
+}
+
+static void set_dummy_unit_data(unit_data_t* unit_data, int x, int y, float vec_x, float vec_y)
+{
+	reset_dummy_unit_data();
+
+	dummy_unit_data.type = unit_data->type;
+	dummy_unit_data.id = unit_data->id;
+	memcpy(dummy_unit_data.col_shape, unit_data->col_shape, sizeof(shape_data));
+
+	dummy_unit_data.col_shape->x = x;
+	dummy_unit_data.col_shape->y = y;
+	dummy_unit_data.col_shape->vec_x = vec_x;
+	dummy_unit_data.col_shape->vec_y = vec_y;
 }
 
 ai_data_t* ai_manager_new_ai_base_data()
@@ -191,7 +218,7 @@ static bool within_trap(unit_data_t* unit_data, int step, float delta_x, float d
 			float_y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h / 2 + delta_y;
 		}
 	}
-	else if (unit_data->col_shape->type == COLLISION_TYPE_BOX_D) {
+	else if (unit_data->col_shape->type == COLLISION_TYPE_ROUND_D) {
 		int r = ((shape_round_data*)unit_data->col_shape)->r;
 		if (step == AI_STAT_STEP_N) {
 			float_x = unit_data->col_shape->x     + delta_x;
@@ -215,6 +242,60 @@ static bool within_trap(unit_data_t* unit_data, int step, float delta_x, float d
 	}
 
 	return unit_manager_trap_within((int)float_x, (int)float_y);
+}
+
+static void ai_unit_prediction_point_single_step(unit_data_t* unit_data, int delta_time, float& x, float& y, float& vec_x, float& vec_y)
+{
+	// step
+	x += vec_x * 1.0f / 60.0f;
+	y += vec_y * 1.0f / 60.0f;
+
+	// friction
+	if ((unit_data->type == UNIT_TYPE_PLAYER) || (unit_data->type == UNIT_TYPE_ENEMY) || (unit_data->type == UNIT_TYPE_ITEMS)) {
+		float abs_vec_x = ABS(vec_x);
+		if (abs_vec_x > 0) {
+			float delta_vec_x = vec_x > 0 ? -unit_data->col_shape->vec_x_delta : unit_data->col_shape->vec_x_delta;
+			vec_x += (g_stage_data->friction_coef * delta_vec_x * g_delta_time);
+			if (ABS(vec_x) < FLOAT_NEAR_ZERO) vec_x = 0.0f;
+		}
+
+		float abs_vec_y = ABS(vec_y);
+		if (abs_vec_y > 0) {
+			float delta_vec_y = vec_y > 0 ? -unit_data->col_shape->vec_y_delta : unit_data->col_shape->vec_y_delta;
+			vec_y += (g_stage_data->friction_coef * delta_vec_y * g_delta_time);
+			if (ABS(vec_y) < FLOAT_NEAR_ZERO) vec_y = 0.0f;
+		}
+	}
+}
+
+void ai_unit_prediction_point(unit_data_t* unit_data, int delta_time, int* p_x, int* p_y)
+{
+	float x = (float)PIX2MET(unit_data->col_shape->x);
+	float y = (float)PIX2MET(unit_data->col_shape->y);
+	float vec_x = (float)unit_data->col_shape->vec_x;
+	float vec_y = (float)unit_data->col_shape->vec_y;
+
+	int time_count = delta_time / DELTA_TIME_MIN;
+	int last_time = delta_time % DELTA_TIME_MIN;
+
+	for (int i = 0; i < time_count; i++) {
+		ai_unit_prediction_point_single_step(unit_data, DELTA_TIME_MIN, x, y, vec_x, vec_y);
+	}
+
+	if (last_time > 0) {
+		ai_unit_prediction_point_single_step(unit_data, last_time, x, y, vec_x, vec_y);
+	}
+
+	if (unit_data->col_shape->type & COLLISION_TYPE_BOX) {
+		int w = ((shape_box_data*)(unit_data->col_shape))->w;
+		int h = ((shape_box_data*)(unit_data->col_shape))->h;
+		*p_x = (int)MET2PIX(x) + unit_data->col_shape->offset_x + w / 2;
+		*p_y = (int)MET2PIX(y) + unit_data->col_shape->offset_y + h / 2;
+	}
+	else if (unit_data->col_shape->type & COLLISION_TYPE_ROUND) {
+		*p_x = (int)MET2PIX(x);
+		*p_y = (int)MET2PIX(y);
+	}
 }
 
 static void update_simple(ai_data_t* ai_data)
@@ -460,23 +541,76 @@ static void update_stay(ai_data_t* ai_data)
 	if (ai_stat->step[AI_STAT_STEP_W] <= 1) {
 		// do nothing
 	}
-	else if (ai_stat->step[AI_STAT_STEP_W] <= 2) {
-		// attack left event
-		unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
-	}
-	else if (ai_stat->step[AI_STAT_STEP_W] <= 3) {
-		// do nothing
-	}
-	else if (ai_stat->step[AI_STAT_STEP_W] <= 4) {
-		// attack right event
-		unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK2);
+	else if (ai_stat->step[AI_STAT_STEP_W] == 2) {
+		// set pattern
+		int face_pattern = UNIT_FACE_W;
+		if (unit_data->col_shape->face_type == UNIT_FACE_TYPE_ALL) {
+			face_pattern = unit_data->col_shape->face;
+		}
+		else if (unit_data->col_shape->face_type == UNIT_FACE_TYPE_LR) {
+			if (unit_data->col_shape->face == UNIT_FACE_E) {
+				face_pattern = UNIT_FACE_E;
+			}
+		}
+		else if (unit_data->col_shape->face_type == UNIT_FACE_TYPE_UD) {
+			if (unit_data->col_shape->face == UNIT_FACE_S) {
+				face_pattern = UNIT_FACE_S;
+			}
+		}
+
+		int anim_stat_flag = ANIM_STAT_FLAG_ATTACK1;
+		int bullet_index = ai_stat->bullet1;
+		int enemy_face = UNIT_FACE_W;
+		{
+			// unit distance
+			int dist_x, dist_y;
+			float distance = unit_manager_get_distance(unit_data, (unit_data_t*)&g_player, &dist_x, &dist_y);
+
+			// set attack type
+			if (((face_pattern == UNIT_FACE_W) && (dist_x > 0))
+				|| ((face_pattern == UNIT_FACE_E) && (dist_x <= 0))
+				|| ((face_pattern == UNIT_FACE_N) && (dist_y > 0))
+				|| ((face_pattern == UNIT_FACE_S) && (dist_y <= 0))) {
+				anim_stat_flag = ANIM_STAT_FLAG_ATTACK2;
+				bullet_index = ai_stat->bullet2;
+			}
+
+			// create dummy bullet
+			std::string bullet_path = g_enemy_bullet_path[bullet_index];
+			int bullet_base_id = unit_manager_search_enemy_bullet(bullet_path);
+			unit_enemy_bullet_data_t* bullet_data = unit_manager_get_enemy_bullet_base(bullet_base_id);
+
+			// set bullet direction
+			if ((face_pattern == UNIT_FACE_W) || (face_pattern == UNIT_FACE_E)) {
+				if (dist_x > 0) enemy_face = UNIT_FACE_E;
+			}
+			else if ((face_pattern == UNIT_FACE_N) || (face_pattern == UNIT_FACE_S)) {
+				if (dist_y > 0) enemy_face = UNIT_FACE_S;
+				else enemy_face = UNIT_FACE_N;
+			}
+
+			int x, y, new_x, new_y;
+			float vec_x, vec_y, abs_vec = 1.0f;
+			unit_manager_get_bullet_start_pos(unit_data, (unit_data_t*)bullet_data, UNIT_BULLET_NUM_SINGLE, enemy_face, &x, &y);
+			unit_manager_enemy_get_face_velocity((unit_enemy_data_t*)unit_data, &vec_x, &vec_y, enemy_face, abs_vec, UNIT_BULLET_NUM_SINGLE);
+
+			set_dummy_unit_data((unit_data_t*)bullet_data, x, y, vec_x, vec_y);
+			ai_unit_prediction_point(&dummy_unit_data, 8000, &new_x, &new_y);
+
+			int delta_x = new_x - x;
+			int delta_y = new_y - y;
+			float bullet_distance = sqrtf((float)(delta_x * delta_x + delta_y * delta_y));
+
+			if (distance < bullet_distance) {
+				// set attack action
+				unit_manager_enemy_set_anim_stat(unit_data->id, anim_stat_flag);
+				ai_stat->step[AI_STAT_STEP_W] = 0;
+			}
+		}
 	}
 
 	// set next step
-	if (ai_stat->step[AI_STAT_STEP_W] == 4) {
-		ai_stat->step[AI_STAT_STEP_W] = 0;
-	}
-	else {
+	if (ai_stat->step[AI_STAT_STEP_W] < 2) {
 		ai_stat->step[AI_STAT_STEP_W] += 1;
 	}
 
@@ -584,4 +718,15 @@ static void update_go_to_bom(ai_data_t* ai_data)
 
 	// set wait timer
 	ai_stat->timer1 = AI_STAY_WAIT_TIMER;
+}
+
+void ai_manager_display() {
+#ifdef AI_DEBUG
+	int x, y;
+	ai_unit_prediction_point((unit_data_t*)&g_player, 200, &x, &y);
+	SDL_Rect rect = { VIEW_STAGE_X(x), VIEW_STAGE_Y(y), VIEW_STAGE(2), VIEW_STAGE(2) };
+
+	SDL_SetRenderDrawColor(g_ren, 255, 0, 0, 255);
+	SDL_RenderFillRect(g_ren, &rect);
+#endif
 }

@@ -417,7 +417,7 @@ void unit_manager_update_unit_friction(unit_data_t* unit_data)
 	float abs_vec_x = ABS(unit_data->col_shape->vec_x);
 	if (abs_vec_x > 0) {
 		float delta_vec_x = unit_data->col_shape->vec_x > 0 ? -unit_data->col_shape->vec_x_delta : unit_data->col_shape->vec_x_delta;
-		unit_data->col_shape->vec_x += (UNIT_VEC_FRICTION_RATE * delta_vec_x * g_delta_time);
+		unit_data->col_shape->vec_x += (g_stage_data->friction_coef * delta_vec_x * g_delta_time);
 		if (ABS(unit_data->col_shape->vec_x) < FLOAT_NEAR_ZERO) unit_data->col_shape->vec_x = 0.0f;
 		update_flg = true;
 	}
@@ -425,7 +425,7 @@ void unit_manager_update_unit_friction(unit_data_t* unit_data)
 	float abs_vec_y = ABS(unit_data->col_shape->vec_y);
 	if (abs_vec_y > 0) {
 		float delta_vec_y = unit_data->col_shape->vec_y > 0 ? -unit_data->col_shape->vec_y_delta : unit_data->col_shape->vec_y_delta;
-		unit_data->col_shape->vec_y += (UNIT_VEC_FRICTION_RATE * delta_vec_y * g_delta_time);
+		unit_data->col_shape->vec_y += (g_stage_data->friction_coef * delta_vec_y * g_delta_time);
 		if (ABS(unit_data->col_shape->vec_y) < FLOAT_NEAR_ZERO) unit_data->col_shape->vec_y = 0.0f;
 		update_flg = true;
 	}
@@ -519,10 +519,91 @@ void unit_manager_get_position(unit_data_t* unit_data, int* x, int* y)
 	*y = unit_data->col_shape->y;
 }
 
+float unit_manager_get_distance(unit_data_t* main_unit, unit_data_t* target_unit, int* p_x, int* p_y)
+{
+	int main_x = 0, main_y = 0;
+	if (main_unit->col_shape->type & COLLISION_TYPE_BOX) {
+		int w = ((shape_box_data*)(main_unit->col_shape))->w;
+		int h = ((shape_box_data*)(main_unit->col_shape))->h;
+		main_x = main_unit->col_shape->x + main_unit->col_shape->offset_x + w / 2;
+		main_y = main_unit->col_shape->y + main_unit->col_shape->offset_y + h / 2;
+	}
+	else if (main_unit->col_shape->type & COLLISION_TYPE_ROUND) {
+		main_x = main_unit->col_shape->x;
+		main_y = main_unit->col_shape->y;
+	}
+
+	int target_x = 0, target_y = 0;
+	if (target_unit->col_shape->type & COLLISION_TYPE_BOX) {
+		int w = ((shape_box_data*)(target_unit->col_shape))->w;
+		int h = ((shape_box_data*)(target_unit->col_shape))->h;
+		target_x = target_unit->col_shape->x + target_unit->col_shape->offset_x + w / 2;
+		target_y = target_unit->col_shape->y + target_unit->col_shape->offset_y + h / 2;
+	}
+	else if (target_unit->col_shape->type & COLLISION_TYPE_ROUND) {
+		target_x = target_unit->col_shape->x;
+		target_y = target_unit->col_shape->y;
+	}
+
+	int dist_x = target_x - main_x;
+	int dist_y = target_y - main_y;
+	float length = sqrtf(float(dist_x * dist_x + dist_y * dist_y));
+
+	if (p_x) *p_x = dist_x;
+	if (p_y) *p_y = dist_y;
+	return length;
+}
+
 int unit_manager_get_face(unit_data_t* unit_data)
 {
 	if (unit_data->col_shape) return unit_data->col_shape->face;
 	else return UNIT_FACE_W;
+}
+
+int unit_manager_get_face_relative(unit_data_t* unit_data, int original_face)
+{
+	int relative_face = UNIT_FACE_W;
+	bool revers = false;
+	if (unit_data->col_shape) {
+		if (unit_data->col_shape->face_type == UNIT_FACE_TYPE_ALL) {
+			if (unit_data->col_shape->face == UNIT_FACE_E) {
+				if (original_face == UNIT_FACE_E) relative_face = UNIT_FACE_W;
+				else if (original_face == UNIT_FACE_W) relative_face = UNIT_FACE_E;
+				else relative_face = original_face;
+			}
+			else if (unit_data->col_shape->face == UNIT_FACE_N) {
+				if (original_face == UNIT_FACE_N) relative_face = UNIT_FACE_E;
+				else if (original_face == UNIT_FACE_E) relative_face = UNIT_FACE_S;
+				else if (original_face == UNIT_FACE_W) relative_face = UNIT_FACE_N;
+				else if (original_face == UNIT_FACE_S) relative_face = UNIT_FACE_W;
+			}
+			else if (unit_data->col_shape->face == UNIT_FACE_S) {
+				if (original_face == UNIT_FACE_N) relative_face = UNIT_FACE_W;
+				else if (original_face == UNIT_FACE_E) relative_face = UNIT_FACE_N;
+				else if (original_face == UNIT_FACE_W) relative_face = UNIT_FACE_S;
+				else if (original_face == UNIT_FACE_S) relative_face = UNIT_FACE_E;
+			}
+			else {
+				relative_face = original_face;
+			}
+		}
+		else if (unit_data->col_shape->face_type == UNIT_FACE_TYPE_LR) {
+			if (unit_data->col_shape->face == UNIT_FACE_E) { // flip LR
+				if (original_face == UNIT_FACE_E) relative_face = UNIT_FACE_W;
+				else if (original_face == UNIT_FACE_W) relative_face = UNIT_FACE_E;
+			}
+		}
+		else if (unit_data->col_shape->face_type == UNIT_FACE_TYPE_UD) {
+			if (unit_data->col_shape->face == UNIT_FACE_S) { // flip UD
+				if (original_face == UNIT_FACE_S) relative_face = UNIT_FACE_N;
+				else if (original_face == UNIT_FACE_N) relative_face = UNIT_FACE_S;
+			}
+		}
+		else {
+			relative_face = original_face;
+		}
+	}
+	return relative_face;
 }
 
 int unit_manager_get_face_other_side(unit_data_t* unit_data)

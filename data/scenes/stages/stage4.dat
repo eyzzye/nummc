@@ -1,6 +1,7 @@
 [basic_info]
 id=4
 bonus_exp=20
+friction_denominator=2000
 [/basic_info]
 [player_start]
 x=244

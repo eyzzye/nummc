@@ -990,8 +990,6 @@ void unit_manager_player_update()
 #ifdef _COLLISION_ENABLE_BOX_2D_
 	g_player.col_shape->x = (int)MET2PIX(g_player.col_shape->b2body->GetPosition().x);
 	g_player.col_shape->y = (int)MET2PIX(g_player.col_shape->b2body->GetPosition().y);
-	g_player.col_shape->vec_x = g_player.col_shape->b2body->GetLinearVelocity().x;  // box2d METER value
-	g_player.col_shape->vec_y = g_player.col_shape->b2body->GetLinearVelocity().y;  // box2d METER value
 	unit_manager_update_unit_friction((unit_data_t*)&g_player);
 #endif
 
