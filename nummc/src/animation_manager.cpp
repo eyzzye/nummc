@@ -31,6 +31,7 @@ static void load_anim_img(std::string line, anim_data_t* anim_data, int stat);
 static void load_anim_snd(std::string line, anim_data_t* anim_data, int stat);
 
 static std::string dir_path;
+std::vector<std::string> tmp_str_list;
 
 int animation_manager_init()
 {
@@ -284,14 +285,18 @@ static void load_anim_img(std::string line, anim_data_t* anim_data, int stat)
 	}
 	if (key == "path") {
 		std::string expand_str;
-		std::vector<std::string> str_list;
+		tmp_str_list.clear();
 		game_utils_expand_value(value, expand_str);
-		game_utils_split_conmma(expand_str, str_list);
+		game_utils_split_conmma(expand_str, tmp_str_list);
 
 		std::string image_filename = dir_path + "/";
-		for (int i = 0; i < str_list.size(); i++) {
+		for (int i = 0; i < tmp_str_list.size(); i++) {
 			anim_frame_data_t* anim_frame_data = anim_data->anim_stat_base_list[stat]->frame_list[i];
-			anim_frame_data->tex = resource_manager_getTextureFromPath(image_filename + str_list[i]);
+			anim_frame_data->tex = resource_manager_getTextureFromPath(image_filename + tmp_str_list[i]);
+
+			int w, h;
+			int ret = SDL_QueryTexture(anim_frame_data->tex, NULL, NULL, &w, &h);
+			anim_frame_data->src_rect = { 0, 0, w, h };
 		}
 	}
 	if (key == "effect") {
@@ -299,6 +304,7 @@ static void load_anim_img(std::string line, anim_data_t* anim_data, int stat)
 		game_utils_split_conmma(value, str_list);
 
 		if ((str_list.size() == 1) && (str_list[0] == "*")) {
+#if 0
 			int w, h;
 			for (int fi = 0; fi < anim_data->anim_stat_base_list[stat]->frame_size; fi++) {
 				int ret = SDL_QueryTexture(anim_data->anim_stat_base_list[stat]->frame_list[fi]->tex, NULL, NULL, &w, &h);
@@ -307,6 +313,7 @@ static void load_anim_img(std::string line, anim_data_t* anim_data, int stat)
 					anim_frame_data->src_rect = { 0, 0, w, h };
 				}
 			}
+#endif
 		}
 		else {
 			for (int fi = 0; fi < str_list.size(); fi++) {
@@ -337,6 +344,12 @@ static void load_anim_img(std::string line, anim_data_t* anim_data, int stat)
 
 					anim_frame_data_t* anim_frame_data = anim_data->anim_stat_base_list[stat]->frame_list[fi];
 					anim_frame_data->src_rect = { x, y, w, h };
+				}
+				else if (str_list[fi].substr(0, 6) == "color:") {
+					for (int i = 0; i < tmp_str_list.size(); i++) {
+						anim_frame_data_t* anim_frame_data = anim_data->anim_stat_base_list[stat]->frame_list[i];
+						anim_frame_data->tex = resource_manager_getTextureFromPath("{" + str_list[fi] + "}" + dir_path + tmp_str_list[i]);
+					}
 				}
 			}
 		}

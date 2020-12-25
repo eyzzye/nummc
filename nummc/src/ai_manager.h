@@ -3,6 +3,7 @@
 
 //#define AI_DEBUG
 
+// enemy ai
 #define AI_TYPE_NONE          0
 #define AI_TYPE_SIMPLE        1
 #define AI_TYPE_SIMPLE_FIRE   2
@@ -46,8 +47,9 @@ struct _ai_data_t {
 	Uint32 data_field[24];
 };
 
+// enemy ai
 struct _ai_common_data_t {
-	int type;        // SIMPLE:1, STAY:4
+	int type;        // SIMPLE,SIMPLE_FIRE, ...
 	int id;          // ai_id_end
 	void* obj;       // object address
 	int reserve0;
@@ -62,19 +64,19 @@ struct _ai_common_data_t {
 	int w;
 	int h;
 
-	int bullet1;
-	int bullet2;
-	int bullet1_num;
-	int bullet2_num;
+	int bullet1;			// g_enemy_bullet_path index
+	int bullet2;			// g_enemy_bullet_path index
+	int bullet1_track_type;	// LINE,RADIAL,WAVE,CROSS,XCROSS
+	int bullet2_track_type;	// LINE,RADIAL,WAVE,CROSS,XCROSS
 
+	int bullet1_num;		// SINGLE,DOUBLE,TRIPLE 
+	int bullet2_num;		// SINGLE,DOUBLE,TRIPLE
 	int bullet1_face;
 	int bullet2_face;
-	int reserv3;
-	int reserv4;
 };
 
 struct _ai_stat_data_t {
-	int type;        // SIMPLE:1, STAY:4
+	int type;        // SIMPLE,SIMPLE_FIRE, ...
 	int id;          // ai_id_end
 	void* obj;       // unit address
 	int reserve0;
@@ -89,15 +91,15 @@ struct _ai_stat_data_t {
 	int w;
 	int h;
 
-	int bullet1;
-	int bullet2;
-	int bullet1_num;
-	int bullet2_num;
+	int bullet1;			// g_enemy_bullet_path index
+	int bullet2;			// g_enemy_bullet_path index
+	int bullet1_track_type;	// LINE,RADIAL,WAVE,CROSS,XCROSS
+	int bullet2_track_type;	// LINE,RADIAL,WAVE,CROSS,XCROSS
 
+	int bullet1_num;		// SINGLE,DOUBLE,TRIPLE 
+	int bullet2_num;		// SINGLE,DOUBLE,TRIPLE
 	int bullet1_face;
 	int bullet2_face;
-	int reserv3;
-	int reserv4;
 
 	int start_x;
 	int start_y;

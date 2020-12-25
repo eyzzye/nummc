@@ -12,7 +12,7 @@ exp=10
 hp_max=16
 exp_max=0
 level=1
-next_level=null
+next_level=units/enemy/2/lv2/two.unit
 [/unit]
 
 [collision]
@@ -35,18 +35,13 @@ base_h=32
 units/enemy/2/two.IDLE.anim
 units/enemy/2/two.MOVE.anim
 units/enemy/2/two.ATTACK1.anim
-units/enemy/2/two.ATTACK2.anim
 units/enemy/2/two.DIE.anim
 [/anim]
 
 [ai]
 type=LEFT_RIGHT
-#bullet1=units/bullet/invisible/2/invisible.unit
-#w=160
 bullet1=units/bullet/point/enemy/point.unit
+bullet1_track_type=LINE
 bullet1_num=SINGLE
 bullet1_face=W
-bullet2=units/bullet/point/enemy/point.unit
-bullet2_num=SINGLE
-bullet2_face=E
 [/ai]

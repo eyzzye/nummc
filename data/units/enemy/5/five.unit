@@ -63,9 +63,11 @@ units/enemy/5/five.DIE.anim
 [ai]
 type=ROUND
 bullet1=units/bullet/point/enemy/point.unit
+bullet1_track_type=LINE
 bullet1_num=SINGLE
 bullet1_face=W
 bullet2=units/bullet/point/enemy/point.unit
+bullet2_track_type=LINE
 bullet2_num=SINGLE
 bullet2_face=E
 [/ai]

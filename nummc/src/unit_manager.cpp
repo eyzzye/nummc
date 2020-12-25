@@ -258,6 +258,35 @@ void load_ai(std::string& line, ai_data_t* ai_data)
 		}
 	}
 
+	int bullet_track_type = UNIT_BULLET_TRACK_NONE;
+	if ((key == "bullet1_track_type") || (key == "bullet2_track_type")) {
+		const char* bullet_track_str = value.c_str();
+		if (strcmp(bullet_track_str, "LINE") == 0) {
+			bullet_track_type = UNIT_BULLET_TRACK_LINE;
+		}
+		else if (strcmp(bullet_track_str, "RADIAL") == 0) {
+			bullet_track_type = UNIT_BULLET_TRACK_RADIAL;
+		}
+		else if (strcmp(bullet_track_str, "WAVE") == 0) {
+			bullet_track_type = UNIT_BULLET_TRACK_WAVE;
+		}
+		else if (strcmp(bullet_track_str, "CROSS") == 0) {
+			bullet_track_type = UNIT_BULLET_TRACK_CROSS;
+		}
+		else if (strcmp(bullet_track_str, "XCROSS") == 0) {
+			bullet_track_type = UNIT_BULLET_TRACK_XCROSS;
+		}
+		else if (strcmp(bullet_track_str, "RANDOM") == 0) {
+			bullet_track_type = UNIT_BULLET_TRACK_RANDOM;
+		}
+	}
+	if (key == "bullet1_track_type") {
+		((ai_common_data_t*)ai_data)->bullet1_track_type = bullet_track_type;
+	}
+	if (key == "bullet2_track_type") {
+		((ai_common_data_t*)ai_data)->bullet2_track_type = bullet_track_type;
+	}
+
 	int bullet_num = UNIT_BULLET_NUM_NONE;
 	if ((key == "bullet1_num") || (key == "bullet2_num")) {
 		const char* bullet_path = value.c_str();
@@ -618,17 +647,146 @@ int unit_manager_get_face_other_side(unit_data_t* unit_data)
 	return other_face;
 }
 
-void unit_manager_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_num)
+static void get_face_velocity_single(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num)
+{
+	if (face == UNIT_FACE_N) { *vec_x = 0.0f; *vec_y = -abs_velocity; }
+	else if (face == UNIT_FACE_E) { *vec_x = abs_velocity;  *vec_y = 0.0f; }
+	else if (face == UNIT_FACE_W) { *vec_x = -abs_velocity; *vec_y = 0.0f; }
+	else if (face == UNIT_FACE_S) { *vec_x = 0.0f;          *vec_y = abs_velocity; }
+}
+
+static void get_face_velocity_line(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num)
+{
+	if (bullet_num == UNIT_BULLET_NUM_SINGLE) {
+		get_face_velocity_single(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
+	}
+	else if ((bullet_num == UNIT_BULLET_NUM_DOUBLE) || (bullet_num == UNIT_BULLET_NUM_TRIPLE)) {
+		for (int i = 0; i < bullet_num; i++) {
+			if (face == UNIT_FACE_N) { *(vec_x + i) = 0.0f; *(vec_y + i) = -abs_velocity; }
+			else if (face == UNIT_FACE_E) { *(vec_x + i) = abs_velocity;  *(vec_y + i) = 0.0f; }
+			else if (face == UNIT_FACE_W) { *(vec_x + i) = -abs_velocity; *(vec_y + i) = 0.0f; }
+			else if (face == UNIT_FACE_S) { *(vec_x + i) = 0.0f;          *(vec_y + i) = abs_velocity; }
+		}
+	}
+}
+
+static void get_face_velocity_radial(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num)
+{
+	if (bullet_num == UNIT_BULLET_NUM_SINGLE) {
+		get_face_velocity_single(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
+	}
+	else if (bullet_num == UNIT_BULLET_NUM_DOUBLE) {
+		float val_1_r2 = 0.7071067f;
+
+		if (face == UNIT_FACE_N) {
+			*(vec_x + 0) = -val_1_r2 * abs_velocity;
+			*(vec_y + 0) = -val_1_r2 * abs_velocity;
+			*(vec_x + 1) = val_1_r2 * abs_velocity;
+			*(vec_y + 1) = -val_1_r2 * abs_velocity;
+		}
+		else if (face == UNIT_FACE_E) {
+			*(vec_x + 0) = val_1_r2 * abs_velocity;
+			*(vec_y + 0) = -val_1_r2 * abs_velocity;
+			*(vec_x + 1) = val_1_r2 * abs_velocity;
+			*(vec_y + 1) = val_1_r2 * abs_velocity;
+		}
+		else if (face == UNIT_FACE_W) {
+			*(vec_x + 0) = -val_1_r2 * abs_velocity;
+			*(vec_y + 0) = -val_1_r2 * abs_velocity;
+			*(vec_x + 1) = -val_1_r2 * abs_velocity;
+			*(vec_y + 1) = val_1_r2 * abs_velocity;
+		}
+		else if (face == UNIT_FACE_S) {
+			*(vec_x + 0) = -val_1_r2 * abs_velocity;
+			*(vec_y + 0) = val_1_r2 * abs_velocity;
+			*(vec_x + 1) = val_1_r2 * abs_velocity;
+			*(vec_y + 1) = val_1_r2 * abs_velocity;
+		}
+	}
+	else if (bullet_num == UNIT_BULLET_NUM_TRIPLE) {
+		float val_1_r2 = 0.7071067f;
+
+		if (face == UNIT_FACE_N) {
+			*vec_x = 0.0f;
+			*vec_y = -abs_velocity;
+			*(vec_x + 1) = -val_1_r2 * abs_velocity;
+			*(vec_y + 1) = -val_1_r2 * abs_velocity;
+			*(vec_x + 2) = val_1_r2 * abs_velocity;
+			*(vec_y + 2) = -val_1_r2 * abs_velocity;
+		}
+		else if (face == UNIT_FACE_E) {
+			*vec_x = abs_velocity;
+			*vec_y = 0.0f;
+			*(vec_x + 1) = val_1_r2 * abs_velocity;
+			*(vec_y + 1) = -val_1_r2 * abs_velocity;
+			*(vec_x + 2) = val_1_r2 * abs_velocity;
+			*(vec_y + 2) = val_1_r2 * abs_velocity;
+		}
+		else if (face == UNIT_FACE_W) {
+			*vec_x = -abs_velocity;
+			*vec_y = 0.0f;
+			*(vec_x + 1) = -val_1_r2 * abs_velocity;
+			*(vec_y + 1) = -val_1_r2 * abs_velocity;
+			*(vec_x + 2) = -val_1_r2 * abs_velocity;
+			*(vec_y + 2) = val_1_r2 * abs_velocity;
+		}
+		else if (face == UNIT_FACE_S) {
+			*vec_x = 0.0f;
+			*vec_y = abs_velocity;
+			*(vec_x + 1) = -val_1_r2 * abs_velocity;
+			*(vec_y + 1) = val_1_r2 * abs_velocity;
+			*(vec_x + 2) = val_1_r2 * abs_velocity;
+			*(vec_y + 2) = val_1_r2 * abs_velocity;
+		}
+	}
+}
+
+static void get_face_velocity_wave(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num)
+{
+	if (bullet_num == UNIT_BULLET_NUM_SINGLE) {
+		get_face_velocity_single(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
+	}
+}
+
+
+void unit_manager_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num)
 {
 	if (bullet_num == UNIT_BULLET_NUM_NONE) {
 		// for invisible bullet
 
 	}
+#if 0
 	else if (bullet_num == UNIT_BULLET_NUM_SINGLE) {
 		if (face == UNIT_FACE_N) { *vec_x = 0.0f; *vec_y = -abs_velocity; }
 		else if (face == UNIT_FACE_E) { *vec_x = abs_velocity;  *vec_y = 0.0f; }
 		else if (face == UNIT_FACE_W) { *vec_x = -abs_velocity; *vec_y = 0.0f; }
 		else if (face == UNIT_FACE_S) { *vec_x = 0.0f;          *vec_y = abs_velocity; }
+	}
+	else if (bullet_num == UNIT_BULLET_NUM_DOUBLE) {
+		if (face == UNIT_FACE_N) {
+			*vec_x = 0.0f;
+			*vec_y = -abs_velocity; 
+			*(vec_x + 1) = 0.0f;
+			*(vec_y + 1) = -abs_velocity;
+		}
+		else if (face == UNIT_FACE_E) {
+			*vec_x = abs_velocity;
+			*vec_y = 0.0f; 
+			*(vec_x + 1) = abs_velocity;
+			*(vec_y + 1) = 0.0f;
+		}
+		else if (face == UNIT_FACE_W) {
+			*vec_x = -abs_velocity;
+			*vec_y = 0.0f; 
+			*(vec_x + 1) = -abs_velocity;
+			*(vec_y + 1) = 0.0f;
+		}
+		else if (face == UNIT_FACE_S) {
+			*vec_x = 0.0f;
+			*vec_y = abs_velocity; 
+			*(vec_x + 1) = 0.0f;
+			*(vec_y + 1) = abs_velocity;
+		}
 	}
 	else if (bullet_num == UNIT_BULLET_NUM_TRIPLE) {
 		float val_1_r2 = 0.7071067f;
@@ -666,9 +824,313 @@ void unit_manager_get_face_velocity(float* vec_x, float* vec_y, int face, float 
 			*(vec_y + 2) =  val_1_r2 * abs_velocity;
 		}
 	}
+#else
+	else {
+		if (bullet_track_type == UNIT_BULLET_TRACK_LINE) {
+			get_face_velocity_line(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
+		}
+		else if (bullet_track_type == UNIT_BULLET_TRACK_RADIAL) {
+			get_face_velocity_radial(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
+		}
+		else if (bullet_track_type == UNIT_BULLET_TRACK_WAVE) {
+			get_face_velocity_wave(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
+		}
+		else if (bullet_track_type == UNIT_BULLET_TRACK_CROSS) {
+			//get_face_velocity_cross(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
+		}
+		else if (bullet_track_type == UNIT_BULLET_TRACK_XCROSS) {
+			//get_face_velocity_xcross(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
+		}
+		else if (bullet_track_type == UNIT_BULLET_TRACK_RANDOM) {
+			//get_face_velocity_random(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
+		}
+	}
+#endif
 }
 
-void unit_manager_get_bullet_start_pos(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_num, int face, int* x, int* y)
+static void get_bullet_start_pos_single(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_num, int face, int* x, int* y)
+{
+	int bullet_offset_x = 0, bullet_offset_y = 0;
+	int bullet_w = 0, bullet_h = 0;
+	if (unit_bullet_data->col_shape->type == COLLISION_TYPE_BOX_D) {
+		bullet_offset_x = unit_bullet_data->col_shape->offset_x;
+		bullet_offset_y = unit_bullet_data->col_shape->offset_y;
+		bullet_w = ((shape_box_data*)unit_bullet_data->col_shape)->w;
+		bullet_h = ((shape_box_data*)unit_bullet_data->col_shape)->h;
+	}
+
+	if (unit_data->col_shape->type == COLLISION_TYPE_BOX_D) {
+		int w, h;
+		w = ((shape_box_data*)unit_data->col_shape)->w;
+		h = ((shape_box_data*)unit_data->col_shape)->h;
+
+		if (face == UNIT_FACE_N) {
+			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
+			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
+		}
+		else if (face == UNIT_FACE_S) {
+			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
+			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
+		}
+		else if (face == UNIT_FACE_W) {
+			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
+			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
+		}
+		else if (face == UNIT_FACE_E) {
+			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
+			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
+		}
+	}
+	else if (unit_data->col_shape->type == COLLISION_TYPE_ROUND_D) {
+		int r = ((shape_round_data*)unit_data->col_shape)->r;
+
+		if (face == UNIT_FACE_N) {
+			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x;
+			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
+		}
+		else if (face == UNIT_FACE_S) {
+			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x;
+			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
+		}
+		else if (face == UNIT_FACE_W) {
+			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
+			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y;
+		}
+		else if (face == UNIT_FACE_E) {
+			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
+			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y;
+		}
+	}
+}
+
+static void get_bullet_start_pos_line(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_num, int face, int* x, int* y)
+{
+	if (bullet_num == UNIT_BULLET_NUM_SINGLE) {
+		get_bullet_start_pos_single(unit_data, unit_bullet_data, bullet_num, face, x, y);
+	}
+	else {
+		int bullet_offset_x = 0, bullet_offset_y = 0;
+		int bullet_w = 0, bullet_h = 0;
+		if (unit_bullet_data->col_shape->type == COLLISION_TYPE_BOX_D) {
+			bullet_offset_x = unit_bullet_data->col_shape->offset_x;
+				bullet_offset_y = unit_bullet_data->col_shape->offset_y;
+				bullet_w = ((shape_box_data*)unit_bullet_data->col_shape)->w;
+				bullet_h = ((shape_box_data*)unit_bullet_data->col_shape)->h;
+		}
+
+		if (unit_data->col_shape->type == COLLISION_TYPE_BOX_D) {
+			int w, h;
+			w = ((shape_box_data*)unit_data->col_shape)->w;
+			h = ((shape_box_data*)unit_data->col_shape)->h;
+
+			if (bullet_num == UNIT_BULLET_NUM_DOUBLE) {
+				if (face == UNIT_FACE_N) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 1 / 4 - bullet_h / 2;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 3 / 4 - bullet_h / 2;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
+				}
+				else if (face == UNIT_FACE_S) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 1 / 4 - bullet_h / 2;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 3 / 4 - bullet_h / 2;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
+				}
+				else if (face == UNIT_FACE_W) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 1 / 4 - bullet_h / 2;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 3 / 4 - bullet_h / 2;
+				}
+				else if (face == UNIT_FACE_E) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 1 / 4 - bullet_h / 2;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 3 / 4 - bullet_h / 2;
+				}
+			}
+			else if (bullet_num == UNIT_BULLET_NUM_TRIPLE) {
+				if (face == UNIT_FACE_N) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 1 / 4 - bullet_h / 2;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 2 / 4 - bullet_h / 2;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
+					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 3 / 4 - bullet_h / 2;
+					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
+				}
+				else if (face == UNIT_FACE_S) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 1 / 4 - bullet_h / 2;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 2 / 4 - bullet_h / 2;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
+					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 3 / 4 - bullet_h / 2;
+					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
+				}
+				else if (face == UNIT_FACE_W) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 1 / 4 - bullet_h / 2;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 2 / 4 - bullet_h / 2;
+					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
+					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 3 / 4 - bullet_h / 2;
+				}
+				else if (face == UNIT_FACE_E) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 1 / 4 - bullet_h / 2;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 2 / 4 - bullet_h / 2;
+					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
+					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 3 / 4 - bullet_h / 2;
+				}
+			}
+		}
+		else if (unit_data->col_shape->type == COLLISION_TYPE_ROUND_D) {
+			int r = ((shape_round_data*)unit_data->col_shape)->r;
+
+			if (bullet_num == UNIT_BULLET_NUM_DOUBLE) {
+				if (face == UNIT_FACE_N) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - r / 4;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r / 4;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
+				}
+				else if (face == UNIT_FACE_S) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - r / 4;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r / 4;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
+				}
+				else if (face == UNIT_FACE_W) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - r / 4;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r / 4;
+				}
+				else if (face == UNIT_FACE_E) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - r / 4;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r / 4;
+				}
+			}
+			else if (bullet_num == UNIT_BULLET_NUM_TRIPLE) {
+				if (face == UNIT_FACE_N) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - r / 4;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
+					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r / 4;
+					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
+				}
+				else if (face == UNIT_FACE_S) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - r / 4;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
+					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r / 4;
+					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
+				}
+				else if (face == UNIT_FACE_W) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - r / 4;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y;
+					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
+					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r / 4;
+				}
+				else if (face == UNIT_FACE_E) {
+					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
+					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - r / 4;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y;
+					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
+					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r / 4;
+				}
+			}
+		}
+	}
+}
+
+static void get_bullet_start_pos_radial(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_num, int face, int* x, int* y)
+{
+	if (bullet_num == UNIT_BULLET_NUM_SINGLE) {
+		get_bullet_start_pos_single(unit_data, unit_bullet_data, bullet_num, face, x, y);
+	}
+	else {
+		int bullet_offset_x = 0, bullet_offset_y = 0;
+		int bullet_w = 0, bullet_h = 0;
+		if (unit_bullet_data->col_shape->type == COLLISION_TYPE_BOX_D) {
+			bullet_offset_x = unit_bullet_data->col_shape->offset_x;
+				bullet_offset_y = unit_bullet_data->col_shape->offset_y;
+				bullet_w = ((shape_box_data*)unit_bullet_data->col_shape)->w;
+				bullet_h = ((shape_box_data*)unit_bullet_data->col_shape)->h;
+		}
+
+		if (unit_data->col_shape->type == COLLISION_TYPE_BOX_D) {
+			int w, h;
+			w = ((shape_box_data*)unit_data->col_shape)->w;
+			h = ((shape_box_data*)unit_data->col_shape)->h;
+
+			if ((bullet_num == UNIT_BULLET_NUM_DOUBLE) || (bullet_num == UNIT_BULLET_NUM_TRIPLE)) {
+				for (int i = 0; i < bullet_num; i++) {
+					if (face == UNIT_FACE_N) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
+					}
+					else if (face == UNIT_FACE_S) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
+					}
+					else if (face == UNIT_FACE_W) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
+					}
+					else if (face == UNIT_FACE_E) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
+					}
+					x++;
+					y++;
+				}
+			}
+		}
+		else if (unit_data->col_shape->type == COLLISION_TYPE_ROUND_D) {
+			int r = ((shape_round_data*)unit_data->col_shape)->r;
+
+			if ((bullet_num == UNIT_BULLET_NUM_DOUBLE) || (bullet_num == UNIT_BULLET_NUM_TRIPLE)) {
+				for (int i = 0; i < bullet_num; i++) {
+					if (face == UNIT_FACE_N) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
+					}
+					else if (face == UNIT_FACE_S) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
+					}
+					else if (face == UNIT_FACE_W) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y;
+					}
+					else if (face == UNIT_FACE_E) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y;
+					}
+					x++;
+					y++;
+				}
+			}
+		}
+	}
+}
+
+static void get_bullet_start_pos_wave(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_num, int face, int* x, int* y)
+{
+	if (bullet_num == UNIT_BULLET_NUM_SINGLE) {
+		get_bullet_start_pos_single(unit_data, unit_bullet_data, bullet_num, face, x, y);
+	}
+}
+
+void unit_manager_get_bullet_start_pos(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_track_type, int bullet_num, int face, int* x, int* y)
 {
 	if (bullet_num == UNIT_BULLET_NUM_NONE) {
 		// for invisible bullet
@@ -677,6 +1139,8 @@ void unit_manager_get_bullet_start_pos(unit_data_t* unit_data, unit_data_t* unit
 	else if ((bullet_num == UNIT_BULLET_NUM_SINGLE)
 		|| (bullet_num == UNIT_BULLET_NUM_DOUBLE) || (bullet_num == UNIT_BULLET_NUM_TRIPLE))
 	{
+
+#if 0
 		int bullet_offset_x = 0, bullet_offset_y = 0;
 		int bullet_w = 0, bullet_h = 0;
 		if (unit_bullet_data->col_shape->type == COLLISION_TYPE_BOX_D) {
@@ -691,50 +1155,127 @@ void unit_manager_get_bullet_start_pos(unit_data_t* unit_data, unit_data_t* unit
 			w = ((shape_box_data*)unit_data->col_shape)->w;
 			h = ((shape_box_data*)unit_data->col_shape)->h;
 
-			for (int i = 0; i < bullet_num; i++) {
+			if (bullet_num == UNIT_BULLET_NUM_DOUBLE) {
 				if (face == UNIT_FACE_N) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
+					*x       = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 1 / 4 - bullet_h / 2;
+					*y       = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 3 / 4 - bullet_h / 2;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
 				}
 				else if (face == UNIT_FACE_S) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
+					*x       = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 1 / 4 - bullet_h / 2;
+					*y       = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 3 / 4 - bullet_h / 2;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
 				}
 				else if (face == UNIT_FACE_W) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
+					*x       = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
+					*y       = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 1 / 4 - bullet_h / 2;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 3 / 4 - bullet_h / 2;
 				}
 				else if (face == UNIT_FACE_E) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
+					*x       = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
+					*y       = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 1 / 4 - bullet_h / 2;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 3 / 4 - bullet_h / 2;
 				}
-				x++;
-				y++;
+			}
+			else {
+				for (int i = 0; i < bullet_num; i++) {
+					if (face == UNIT_FACE_N) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
+					}
+					else if (face == UNIT_FACE_S) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
+					}
+					else if (face == UNIT_FACE_W) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
+					}
+					else if (face == UNIT_FACE_E) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
+					}
+					x++;
+					y++;
+				}
 			}
 		}
 		else if (unit_data->col_shape->type == COLLISION_TYPE_ROUND_D) {
 			int r = ((shape_round_data*)unit_data->col_shape)->r;
-			for (int i = 0; i < bullet_num; i++) {
+
+			if (bullet_num == UNIT_BULLET_NUM_DOUBLE) {
 				if (face == UNIT_FACE_N) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
+					*x       = unit_data->col_shape->x + unit_data->col_shape->offset_x - r / 4;
+					*y       = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r / 4;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
 				}
 				else if (face == UNIT_FACE_S) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
+					*x       = unit_data->col_shape->x + unit_data->col_shape->offset_x - r / 4;
+					*y       = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r / 4;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
 				}
 				else if (face == UNIT_FACE_W) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y;
+					*x       = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
+					*y       = unit_data->col_shape->y + unit_data->col_shape->offset_y - r / 4;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r / 4;
 				}
 				else if (face == UNIT_FACE_E) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y;
+					*x       = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
+					*y       = unit_data->col_shape->y + unit_data->col_shape->offset_y - r / 4;
+					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
+					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r / 4;
 				}
-				x++;
-				y++;
+			}
+			else {
+				for (int i = 0; i < bullet_num; i++) {
+					if (face == UNIT_FACE_N) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
+					}
+					else if (face == UNIT_FACE_S) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
+					}
+					else if (face == UNIT_FACE_W) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y;
+					}
+					else if (face == UNIT_FACE_E) {
+						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
+						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y;
+					}
+					x++;
+					y++;
+				}
 			}
 		}
+#else
+		if (bullet_track_type == UNIT_BULLET_TRACK_LINE) {
+			get_bullet_start_pos_line(unit_data, unit_bullet_data, bullet_num, face, x, y);
+		}
+		else if (bullet_track_type == UNIT_BULLET_TRACK_RADIAL) {
+			get_bullet_start_pos_radial(unit_data, unit_bullet_data, bullet_num, face, x, y);
+		}
+		else if (bullet_track_type == UNIT_BULLET_TRACK_WAVE) {
+			get_bullet_start_pos_wave(unit_data, unit_bullet_data, bullet_num, face, x, y);
+		}
+		else if (bullet_track_type == UNIT_BULLET_TRACK_CROSS) {
+			//get_bullet_start_pos_cross(unit_data, unit_bullet_data, bullet_num, face, x, y);
+		}
+		else if (bullet_track_type == UNIT_BULLET_TRACK_XCROSS) {
+			//get_bullet_start_pos_xcross(unit_data, unit_bullet_data, bullet_num, face, x, y);
+		}
+		else if (bullet_track_type == UNIT_BULLET_TRACK_RANDOM) {
+			//get_bullet_start_pos_random(unit_data, unit_bullet_data, bullet_num, face, x, y);
+		}
+#endif
 	}
 }
 

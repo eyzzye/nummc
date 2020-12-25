@@ -9,11 +9,11 @@ bullet_curving=5
 #drop_item=units/items/recovery/heart/heart.unit
 speed=5
 strength=5
-exp=15
+exp=20
 hp_max=20
 exp_max=0
-level=1
-next_level=units/enemy/3/lv2/three.unit
+level=2
+next_level=units/enemy/3/lv3/three.unit
 [/unit]
 
 [collision]
@@ -36,20 +36,20 @@ joint_y=16
 [anim]
 base_w=32
 base_h=32
-units/enemy/3/three.IDLE.anim
-units/enemy/3/three.ATTACK1.anim
-units/enemy/3/three.ATTACK2.anim
-units/enemy/3/three.DIE.anim
+units/enemy/3/lv2/three.IDLE.anim
+units/enemy/3/lv2/three.ATTACK1.anim
+units/enemy/3/lv2/three.ATTACK2.anim
+units/enemy/3/lv2/three.DIE.anim
 [/anim]
 
 [ai]
 type=STAY
 bullet1=units/bullet/point/enemy/point.unit
 bullet1_track_type=RADIAL
-bullet1_num=SINGLE
+bullet1_num=TRIPLE
 bullet1_face=W
 bullet2=units/bullet/point/enemy/point.unit
 bullet2_track_type=RADIAL
-bullet2_num=SINGLE
+bullet2_num=TRIPLE
 bullet2_face=E
 [/ai]

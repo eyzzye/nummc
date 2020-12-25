@@ -398,7 +398,7 @@ static void update_simple_fire(ai_data_t* ai_data)
 		return;
 	}
 	else if (ai_stat->step[AI_STAT_STEP_E] == 1) {
-		unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK2);
+		unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
 		ai_stat->step[AI_STAT_STEP_E] += 1;
 		ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
 		return;
@@ -491,7 +491,7 @@ static void update_left_right(ai_data_t* ai_data)
 		move_dirt = true;
 	}
 	else if (ai_stat->step[AI_STAT_STEP_E] <= 2) {
-		// attack left event
+		// attack event (left)
 		unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
 	}
 	else if (ai_stat->step[AI_STAT_STEP_E] <= 6) {
@@ -499,8 +499,8 @@ static void update_left_right(ai_data_t* ai_data)
 		move_dirt = true;
 	}
 	else if (ai_stat->step[AI_STAT_STEP_E] <= 7) {
-		// attack right event
-		unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK2);
+		// attack event (right)
+		unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
 	}
 	else if (ai_stat->step[AI_STAT_STEP_E] <= 9) {
 		vec_x = -((unit_data_t*)ai_data->obj)->col_shape->vec_x_delta;
@@ -591,8 +591,10 @@ static void update_stay(ai_data_t* ai_data)
 
 			int x, y, new_x, new_y;
 			float vec_x, vec_y, abs_vec = 1.0f;
-			unit_manager_get_bullet_start_pos(unit_data, (unit_data_t*)bullet_data, UNIT_BULLET_NUM_SINGLE, enemy_face, &x, &y);
-			unit_manager_enemy_get_face_velocity((unit_enemy_data_t*)unit_data, &vec_x, &vec_y, enemy_face, abs_vec, UNIT_BULLET_NUM_SINGLE);
+			int bullet_track_type = UNIT_BULLET_TRACK_LINE; // dummy
+			int bullet_num = UNIT_BULLET_NUM_SINGLE;		// dummy
+			unit_manager_get_bullet_start_pos(unit_data, (unit_data_t*)bullet_data, bullet_track_type, bullet_num, enemy_face, &x, &y);
+			unit_manager_enemy_get_face_velocity((unit_enemy_data_t*)unit_data, &vec_x, &vec_y, enemy_face, abs_vec, bullet_track_type, bullet_num);
 
 			set_dummy_unit_data((unit_data_t*)bullet_data, x, y, vec_x, vec_y);
 			ai_unit_prediction_point(&dummy_unit_data, 8000, &new_x, &new_y);

@@ -204,7 +204,7 @@ static void main_event() {
 		if (attack_dirt) {
 			std::string bullet_path = g_player_bullet_path[g_player.weapon];
 			int bullet_base_id = unit_manager_search_player_bullet(bullet_path);
-			unit_manager_get_bullet_start_pos((unit_data_t*)&g_player, (unit_data_t*)unit_manager_get_player_bullet_base(bullet_base_id), UNIT_BULLET_NUM_SINGLE, face, &x, &y);
+			unit_manager_get_bullet_start_pos((unit_data_t*)&g_player, (unit_data_t*)unit_manager_get_player_bullet_base(bullet_base_id), UNIT_BULLET_TRACK_LINE, UNIT_BULLET_NUM_SINGLE, face, &x, &y);
 			unit_manager_player_get_face_velocity(&vec_x, &vec_y, face, abs_vec);
 
 			int unit_id = unit_manager_create_player_bullet(x, y, vec_x, vec_y, face, bullet_base_id);
@@ -890,8 +890,8 @@ static void event_msg_handler()
 				other_face = unit_manager_get_face_other_side(unit_data);
 
 				int bullet_base_id = unit_manager_search_player_bullet(point_bullet);
-				unit_manager_get_bullet_start_pos(unit_data, (unit_data_t*)unit_manager_get_player_bullet_base(bullet_base_id), UNIT_BULLET_NUM_TRIPLE, other_face, x, y);
-				unit_manager_get_face_velocity(vec_x, vec_y, other_face, abs_vec, UNIT_BULLET_NUM_TRIPLE);
+				unit_manager_get_bullet_start_pos(unit_data, (unit_data_t*)unit_manager_get_player_bullet_base(bullet_base_id), UNIT_BULLET_TRACK_RADIAL, UNIT_BULLET_NUM_TRIPLE, other_face, x, y);
+				unit_manager_get_face_velocity(vec_x, vec_y, other_face, abs_vec, UNIT_BULLET_TRACK_RADIAL, UNIT_BULLET_NUM_TRIPLE);
 
 				for (int bi = 0; bi < 3; bi++) {
 					int unit_id = unit_manager_create_player_bullet(x[bi], y[bi], vec_x[bi], vec_y[bi], other_face, bullet_base_id);
@@ -915,8 +915,8 @@ static void event_msg_handler()
 				other_face = unit_manager_get_face_other_side((unit_data_t*)unit_data);
 
 				int bullet_base_id = unit_manager_search_enemy_bullet(point_bullet);
-				unit_manager_get_bullet_start_pos((unit_data_t*)unit_data, (unit_data_t*)unit_manager_get_enemy_bullet_base(bullet_base_id), UNIT_BULLET_NUM_TRIPLE, other_face, x, y);
-				unit_manager_get_face_velocity(vec_x, vec_y, other_face, abs_vec, UNIT_BULLET_NUM_TRIPLE);
+				unit_manager_get_bullet_start_pos((unit_data_t*)unit_data, (unit_data_t*)unit_manager_get_enemy_bullet_base(bullet_base_id), UNIT_BULLET_TRACK_RADIAL, UNIT_BULLET_NUM_TRIPLE, other_face, x, y);
+				unit_manager_get_face_velocity(vec_x, vec_y, other_face, abs_vec, UNIT_BULLET_TRACK_RADIAL, UNIT_BULLET_NUM_TRIPLE);
 
 				for (int bi = 0; bi < 3; bi++) {
 					int unit_id = unit_manager_create_enemy_bullet(x[bi], y[bi], vec_x[bi], vec_y[bi], other_face, unit_data->owner_base_id, bullet_base_id);

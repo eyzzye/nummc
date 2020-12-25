@@ -8,11 +8,11 @@ bullet_life_timer=600
 bullet_curving=5
 speed=7
 strength=5
-exp=20
+exp=30
 hp_max=30
 exp_max=0
 level=1
-next_level=units/enemy/6/lv2/six.unit
+next_level=null
 [/unit]
 
 [collision]
@@ -32,10 +32,10 @@ vec_y_delta=2.0
 [anim]
 base_w=32
 base_h=32
-units/enemy/6/six.IDLE.anim
-units/enemy/6/six.MOVE.anim
-units/enemy/6/six.ATTACK1.anim
-units/enemy/6/six.DIE.anim
+units/enemy/6/lv3/six.IDLE.anim
+units/enemy/6/lv3/six.MOVE.anim
+units/enemy/6/lv3/six.ATTACK1.anim
+units/enemy/6/lv3/six.DIE.anim
 [/anim]
 
 [ai]

@@ -129,6 +129,8 @@ int resource_manager_load_dat(std::string path)
 SDL_Texture* resource_manager_load_img(std::string path, int type)
 {
 	int scale_mode = -1;
+	bool effect_color = false;
+	SDL_Color src_col, dst_col;
 
 	bool header_found = false;
 	int read_index = 1;
@@ -155,6 +157,24 @@ SDL_Texture* resource_manager_load_img(std::string path, int type)
 					scale_mode = (int)SDL_ScaleModeLinear;
 				}
 			}
+			else if (effect_list[0] == "color") {
+				if (effect_list.size() != 9) {
+					LOG_ERROR("Error: resource_manager_load_img color param are wrong.\n");
+					continue;
+				}
+
+				// effect_list[1] == "S"
+				src_col.r = atoi(effect_list[2].c_str());
+				src_col.g = atoi(effect_list[3].c_str());
+				src_col.b = atoi(effect_list[4].c_str());
+
+				// effect_list[1] == "D"
+				dst_col.r = atoi(effect_list[6].c_str());
+				dst_col.g = atoi(effect_list[7].c_str());
+				dst_col.b = atoi(effect_list[8].c_str());
+
+				effect_color = true;
+			}
 		}
 	}
 
@@ -169,7 +189,14 @@ SDL_Texture* resource_manager_load_img(std::string path, int type)
 	}
 
 	g_render_mtx.lock();
-	SDL_Texture* tex = IMG_LoadTexture(g_ren, (g_base_path + "data/" + *raw_path).c_str());
+	SDL_Texture* tex;
+	std::string full_path = g_base_path + "data/" + *raw_path;
+	if (effect_color) {
+		tex = game_utils_render_img_tex(full_path, src_col, dst_col);
+	}
+	else {
+		tex = IMG_LoadTexture(g_ren, full_path.c_str());
+	}
 	g_render_mtx.unlock();
 	if (tex == NULL) {
 		LOG_ERROR("SDL_CreateTextureFromSurface Error: %s\n", SDL_GetError());

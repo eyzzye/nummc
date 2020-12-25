@@ -458,6 +458,66 @@ bool game_utils_decision_internal(SDL_Rect* rect, int x, int y)
 }
 
 //
+// image render utils
+//
+SDL_Texture* game_utils_render_img_tex(const std::string& path, SDL_Color src_color, SDL_Color dst_color)
+{
+	SDL_Surface* surf = IMG_Load(path.c_str());
+
+	if (SDL_LockSurface(surf) == 0) {
+		bool format_check = true;
+		int r_idx, g_idx, b_idx;
+		if (surf->format->format == SDL_PIXELFORMAT_RGBA32) {
+			r_idx = 0;
+			g_idx = 1;
+			b_idx = 2;
+		}
+		else if (surf->format->format == SDL_PIXELFORMAT_ABGR32) {
+			r_idx = 3;
+			g_idx = 2;
+			b_idx = 1;
+		}
+		else if (surf->format->format == SDL_PIXELFORMAT_BGRA32) {
+			r_idx = 2;
+			g_idx = 1;
+			b_idx = 0;
+		}
+		else if (surf->format->format == SDL_PIXELFORMAT_ARGB32) {
+			r_idx = 1;
+			g_idx = 2;
+			b_idx = 3;
+		}
+		else {
+			LOG_ERROR("Error: game_utils_render_img_tex non-support format\n");
+			format_check = false;
+		}
+
+		if (format_check) {
+			char* pixel = (char*)surf->pixels;
+			for (int h = 0; h < surf->h; h++) {
+				for (int w = 0; w < surf->w; w++) {
+					if (*(pixel + r_idx) == src_color.r && *(pixel + g_idx) == src_color.g && *(pixel + b_idx) == src_color.b) {
+						*(pixel + r_idx) = dst_color.r;
+						*(pixel + g_idx) = dst_color.g;
+						*(pixel + b_idx) = dst_color.b;
+					}
+					pixel += 4;
+				}
+			}
+		}
+		SDL_UnlockSurface(surf);
+	}
+
+	SDL_Texture* texture = SDL_CreateTextureFromSurface(g_ren, surf);
+	if (texture == NULL) {
+		LOG_ERROR("SDL_CreateTextureFromSurface Error: %s", SDL_GetError());
+	}
+
+	SDL_FreeSurface(surf);
+	return texture;
+}
+
+//
 // font render utils
 //
 SDL_Texture* game_utils_render_font_tex(const std::string& message, const std::string& fontFile, SDL_Color color, int fontSize)

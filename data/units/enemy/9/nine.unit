@@ -44,9 +44,11 @@ units/enemy/9/nine.DIE.anim
 [ai]
 type=STAY
 bullet1=units/bullet/point/enemy/point.unit
+bullet1_track_type=RADIAL
 bullet1_num=TRIPLE
 bullet1_face=W
 bullet2=units/bullet/point/enemy/point.unit
+bullet2_track_type=RADIAL
 bullet2_num=TRIPLE
 bullet2_face=E
 [/ai]

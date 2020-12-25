@@ -42,6 +42,15 @@
 #define UNIT_BULLET_TYPE_ICE      1
 #define UNIT_BULLET_TYPE_FIRE     2
 
+#define UNIT_BULLET_TRACK_NONE    0
+#define UNIT_BULLET_TRACK_LINE    1
+#define UNIT_BULLET_TRACK_RADIAL  2
+#define UNIT_BULLET_TRACK_WAVE    3
+#define UNIT_BULLET_TRACK_CROSS   4
+#define UNIT_BULLET_TRACK_XCROSS  5
+#define UNIT_BULLET_TRACK_RANDOM  6
+#define UNIT_BULLET_TRACK_END     7
+
 #define UNIT_BULLET_NUM_NONE    0
 #define UNIT_BULLET_NUM_SINGLE  1
 #define UNIT_BULLET_NUM_DOUBLE  2
@@ -346,8 +355,10 @@ extern float unit_manager_get_distance(unit_data_t* main_unit, unit_data_t* targ
 extern int unit_manager_get_face(unit_data_t* unit_data);
 extern int unit_manager_get_face_relative(unit_data_t* unit_data, int original_face);
 extern int unit_manager_get_face_other_side(unit_data_t* unit_data);
-extern void unit_manager_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_num= UNIT_BULLET_NUM_SINGLE);
-extern void unit_manager_get_bullet_start_pos(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_num, int face, int* x, int* y);
+//extern void unit_manager_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_num= UNIT_BULLET_NUM_SINGLE);
+extern void unit_manager_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type = UNIT_BULLET_TRACK_LINE, int bullet_num = UNIT_BULLET_NUM_SINGLE);
+//extern void unit_manager_get_bullet_start_pos(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_num, int face, int* x, int* y);
+extern void unit_manager_get_bullet_start_pos(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_track_type, int bullet_num, int face, int* x, int* y);
 extern void unit_manager_get_spawn_items_pos(unit_data_t* spawner_unit, unit_data_t* avoid_unit, int item_num, int* x, int* y);
 extern void unit_manager_get_spawn_items_pos_under_foot(unit_data_t* spawner_unit, int item_num, int* x, int* y);
 extern void unit_manager_get_spawn_items_pos_for_target(unit_data_t* spawner_unit, unit_data_t* target_unit, int item_num, int* x, int* y);
@@ -362,7 +373,7 @@ extern int unit_manager_load_player(std::string path);
 extern void unit_manager_create_player(int x, int y);
 extern void unit_manager_player_set_stat(int stat);
 extern void unit_manager_player_get_position(int* x, int* y);
-extern void unit_manager_player_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_num = UNIT_BULLET_NUM_SINGLE);
+extern void unit_manager_player_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type = UNIT_BULLET_TRACK_LINE, int bullet_num = UNIT_BULLET_NUM_SINGLE);
 extern int unit_manager_player_get_bullet_strength();
 extern int unit_manager_player_get_bullet_life_timer();
 extern float unit_manager_player_get_bullet_curving();
@@ -391,7 +402,7 @@ extern int unit_manager_load_enemy(std::string path);
 extern int unit_manager_create_enemy(int x, int y, int face, int base_index = -1);
 extern void unit_manager_clear_enemy(unit_enemy_data_t* enemy);
 extern bool unit_manager_enemy_exist();
-extern void unit_manager_enemy_get_face_velocity(unit_enemy_data_t* enemy_data, float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_num);
+extern void unit_manager_enemy_get_face_velocity(unit_enemy_data_t* enemy_data, float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num);
 extern int unit_manager_enemy_get_bullet_strength(int base_id);
 extern int unit_manager_enemy_get_bullet_life_timer(int base_id);
 extern float unit_manager_enemy_get_bullet_curving(int base_id);

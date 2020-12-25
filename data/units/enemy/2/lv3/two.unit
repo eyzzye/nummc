@@ -1,18 +1,18 @@
 #
-# six
+# two
 #
 
 [unit]
-hp=30
-bullet_life_timer=600
+hp=15
+bullet_life_timer=400
 bullet_curving=5
-speed=7
+speed=6
 strength=5
 exp=20
-hp_max=30
+hp_max=16
 exp_max=0
-level=1
-next_level=units/enemy/6/lv2/six.unit
+level=3
+next_level=null
 [/unit]
 
 [collision]
@@ -32,16 +32,16 @@ vec_y_delta=2.0
 [anim]
 base_w=32
 base_h=32
-units/enemy/6/six.IDLE.anim
-units/enemy/6/six.MOVE.anim
-units/enemy/6/six.ATTACK1.anim
-units/enemy/6/six.DIE.anim
+units/enemy/2/lv3/two.IDLE.anim
+units/enemy/2/lv3/two.MOVE.anim
+units/enemy/2/lv3/two.ATTACK1.anim
+units/enemy/2/lv3/two.DIE.anim
 [/anim]
 
 [ai]
 type=LEFT_RIGHT
-bullet1=units/bullet/fire/enemy/fire.unit
+bullet1=units/bullet/point/enemy/point.unit
 bullet1_track_type=LINE
-bullet1_num=SINGLE
+bullet1_num=TRIPLE
 bullet1_face=W
 [/ai]

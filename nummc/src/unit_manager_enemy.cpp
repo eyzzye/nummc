@@ -194,9 +194,9 @@ void unit_manager_enemy_set_effect_stat(int unit_id, int stat, bool off_on)
 	}
 }
 
-void unit_manager_enemy_get_face_velocity(unit_enemy_data_t* enemy_data, float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_num)
+void unit_manager_enemy_get_face_velocity(unit_enemy_data_t* enemy_data, float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num)
 {
-	unit_manager_get_face_velocity(vec_x, vec_y, face, abs_velocity, bullet_num);
+	unit_manager_get_face_velocity(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
 
 	// curving velocity
 	float curving_coef = unit_manager_enemy_get_bullet_curving(enemy_data->base->id);
@@ -416,12 +416,14 @@ int unit_manager_create_enemy(int x, int y, int face, int base_index)
 		ai_stat_data->w = ai_base_data->w;
 		ai_stat_data->h = ai_base_data->h;
 	}
-	ai_stat_data->bullet1      = ai_base_data->bullet1;
-	ai_stat_data->bullet1_num  = ai_base_data->bullet1_num;
-	ai_stat_data->bullet1_face = ai_base_data->bullet1_face;
-	ai_stat_data->bullet2      = ai_base_data->bullet2;
-	ai_stat_data->bullet2_num  = ai_base_data->bullet2_num;
-	ai_stat_data->bullet2_face = ai_base_data->bullet2_face;
+	ai_stat_data->bullet1            = ai_base_data->bullet1;
+	ai_stat_data->bullet1_track_type = ai_base_data->bullet1_track_type;
+	ai_stat_data->bullet1_num        = ai_base_data->bullet1_num;
+	ai_stat_data->bullet1_face       = ai_base_data->bullet1_face;
+	ai_stat_data->bullet2            = ai_base_data->bullet2;
+	ai_stat_data->bullet2_track_type = ai_base_data->bullet2_track_type;
+	ai_stat_data->bullet2_num        = ai_base_data->bullet2_num;
+	ai_stat_data->bullet2_face       = ai_base_data->bullet2_face;
 
 	enemy_count += 1;
 	enemy_index_end++;
@@ -531,19 +533,21 @@ int unit_manager_enemy_get_damage_with_bullet(unit_enemy_data_t* enemy_data, uni
 
 int unit_manager_enemy_attack(unit_enemy_data_t* enemy_data, int stat)
 {
-	int x[3], y[3], bullet, bullet_num, bullet_face;
+	int x[3], y[3], bullet, bullet_track_type, bullet_num, bullet_face;
 	float vec_x[3], vec_y[3], abs_vec = 1.0f;
 
 	ai_common_data_t* ai_data = (ai_common_data_t*)enemy_data->ai;
 	if (stat == ANIM_STAT_FLAG_ATTACK1) {
-		bullet      = ai_data->bullet1;
-		bullet_num  = ai_data->bullet1_num;
-		bullet_face = ai_data->bullet1_face;
+		bullet            = ai_data->bullet1;
+		bullet_track_type = ai_data->bullet1_track_type;
+		bullet_num        = ai_data->bullet1_num;
+		bullet_face       = ai_data->bullet1_face;
 	}
 	else if (stat == ANIM_STAT_FLAG_ATTACK2) {
-		bullet      = ai_data->bullet2;
-		bullet_num  = ai_data->bullet2_num;
-		bullet_face = ai_data->bullet2_face;
+		bullet            = ai_data->bullet2;
+		bullet_track_type = ai_data->bullet2_track_type;
+		bullet_num        = ai_data->bullet2_num;
+		bullet_face       = ai_data->bullet2_face;
 	}
 	else {
 		// do nothing
@@ -555,8 +559,8 @@ int unit_manager_enemy_attack(unit_enemy_data_t* enemy_data, int stat)
 
 	std::string bullet_path = g_enemy_bullet_path[bullet];
 	int bullet_base_id = unit_manager_search_enemy_bullet(bullet_path);
-	unit_manager_get_bullet_start_pos((unit_data_t*)enemy_data, (unit_data_t*)unit_manager_get_enemy_bullet_base(bullet_base_id), bullet_num, bullet_face, x, y);
-	unit_manager_enemy_get_face_velocity(enemy_data, vec_x, vec_y, bullet_face, abs_vec, bullet_num);
+	unit_manager_get_bullet_start_pos((unit_data_t*)enemy_data, (unit_data_t*)unit_manager_get_enemy_bullet_base(bullet_base_id), bullet_track_type, bullet_num, bullet_face, x, y);
+	unit_manager_enemy_get_face_velocity(enemy_data, vec_x, vec_y, bullet_face, abs_vec, bullet_track_type, bullet_num);
 
 	for (int i = 0; i < bullet_num; i++) {
 		int unit_id = unit_manager_create_enemy_bullet(x[i], y[i], vec_x[i], vec_y[i], bullet_face, enemy_data->base->id, bullet_base_id);

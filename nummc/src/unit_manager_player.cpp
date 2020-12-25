@@ -358,9 +358,9 @@ void unit_manager_player_get_position(int* x, int* y)
 	*y = g_player.col_shape->y;
 }
 
-void unit_manager_player_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_num)
+void unit_manager_player_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num)
 {
-	unit_manager_get_face_velocity(vec_x, vec_y, face, abs_velocity, bullet_num);
+	unit_manager_get_face_velocity(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
 
 	// curving velocity
 	float curving_coef = unit_manager_player_get_bullet_curving();
@@ -681,6 +681,10 @@ int unit_manager_player_get_special_item(int item_id)
 			return 1;
 		}
 		unit_manager_player_change_bullet_curving(1);
+
+		char buff[32] = { '\0' };
+		sprintf_s(buff, "player bullet_curving %d", g_player.bullet_curving);
+		quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
 	}
 	else if (item_id == UNIT_SPECIAL_ID_BULLET_RANGE_UP) {
 		if (g_player.bullet_life_timer >= UNIT_PLAYER_BULLET_LIFE_TIMER_MAX) {
@@ -688,6 +692,10 @@ int unit_manager_player_get_special_item(int item_id)
 		}
 		else {
 			g_player.bullet_life_timer += 200;
+
+			char buff[32] = { '\0' };
+			sprintf_s(buff, "player bullet_range %d", g_player.bullet_life_timer);
+			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
 		}
 	}
 	else if (item_id == UNIT_SPECIAL_ID_BULLET_RATE_UP) {
@@ -696,6 +704,10 @@ int unit_manager_player_get_special_item(int item_id)
 		}
 		else {
 			g_player.attack_wait_timer -= 100;
+
+			char buff[32] = { '\0' };
+			sprintf_s(buff, "player bullet_rate %d", (UNIT_PLAYER_ATTACK_WAIT_TIMER_MAX + UNIT_PLAYER_ATTACK_WAIT_TIMER_MIN) / 100 - (g_player.attack_wait_timer / 100));
+			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
 		}
 	}
 	else if (item_id == UNIT_SPECIAL_ID_SHIELD) {

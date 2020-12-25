@@ -35,16 +35,13 @@ base_h=32
 units/enemy/4/four.IDLE.anim
 units/enemy/4/four.MOVE.anim
 units/enemy/4/four.ATTACK1.anim
-units/enemy/4/four.ATTACK2.anim
 units/enemy/4/four.DIE.anim
 [/anim]
 
 [ai]
 type=SIMPLE_FIRE
 bullet1=units/bullet/ice/enemy/ice.unit
+bullet1_track_type=LINE
 bullet1_num=SINGLE
 bullet1_face=W
-bullet2=units/bullet/ice/enemy/ice.unit
-bullet2_num=SINGLE
-bullet2_face=E
 [/ai]
