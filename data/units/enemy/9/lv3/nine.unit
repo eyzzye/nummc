@@ -1,17 +1,17 @@
 #
-# nine
+# nine lv3
 #
 
 [unit]
 hp=30
-bullet_life_timer=800
+bullet_life_timer=1000
 bullet_curving=5
 speed=5
 strength=6
-exp=25
+exp=35
 hp_max=30
 exp_max=0
-level=1
+level=3
 next_level=null
 [/unit]
 
@@ -34,10 +34,10 @@ joint_y=16
 [anim]
 base_w=32
 base_h=32
-units/enemy/9/nine.IDLE.anim
-units/enemy/9/nine.ATTACK1.anim
-units/enemy/9/nine.ATTACK2.anim
-units/enemy/9/nine.DIE.anim
+units/enemy/9/lv3/nine.IDLE.anim
+units/enemy/9/lv3/nine.ATTACK1.anim
+units/enemy/9/lv3/nine.ATTACK2.anim
+units/enemy/9/lv3/nine.DIE.anim
 [/anim]
 
 [ai]
@@ -48,6 +48,6 @@ val1=3
 [/ai]
 
 [bullet]
-bullet1_ai=units/ai/bullet/line/line9_1_1.dat
-bullet2_ai=units/ai/bullet/line/line9_1_2.dat
+bullet1_ai=units/ai/bullet/random/random9_3_1.dat
+bullet2_ai=units/ai/bullet/random/random9_3_2.dat
 [/bullet]

@@ -92,6 +92,11 @@ void unit_manager_enemy_bullet_set_bullet_life_timer(int unit_id, int bullet_lif
 	enemy_bullet[unit_id].bullet_life_timer = bullet_life_timer;
 }
 
+void unit_manager_enemy_bullet_set_force(int unit_id, float strength_x, float strength_y)
+{
+	collision_manager_set_force(enemy_bullet[unit_id].col_shape, strength_x, strength_y);
+}
+
 unit_enemy_bullet_data_t* unit_manager_get_enemy_bullet_base(int index) {
 	return &enemy_bullet_base[index];
 }

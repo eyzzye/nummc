@@ -219,3 +219,4 @@ extern int collision_manager_set_group(shape_data* shape, std::string& group);
 extern void collision_manager_set_face(shape_data* shape, shape_data* base_shape, int img_w, int img_h, int new_face);
 extern int collision_manager_set_mass(shape_data* shape, float weight);
 extern int collision_manager_set_moter_speed(shape_data* shape, float speed);
+extern int collision_manager_set_force(shape_data* shape, float strength_x, float strength_y);

@@ -56,7 +56,7 @@
 #define UNIT_BULLET_NUM_SINGLE  1
 #define UNIT_BULLET_NUM_DOUBLE  2
 #define UNIT_BULLET_NUM_TRIPLE  3
-#define UNIT_BULLET_NUM_END     4
+#define UNIT_BULLET_NUM_MAX     5
 
 #include "unit_manager_player.h"
 #include "unit_manager_enemy.h"
@@ -472,6 +472,7 @@ extern void unit_manager_player_bullet_display(int layer);
 extern int unit_manager_search_enemy_bullet(std::string& path);
 extern void unit_manager_enemy_bullet_set_hp(int unit_id, int hp);
 extern void unit_manager_enemy_bullet_set_bullet_life_timer(int unit_id, int bullet_life_timer);
+extern void unit_manager_enemy_bullet_set_force(int unit_id, float strength_x, float strength_y);
 extern unit_enemy_bullet_data_t* unit_manager_get_enemy_bullet_base(int index);
 extern int unit_manager_load_enemy_bullet(std::string path);
 extern int unit_manager_create_enemy_bullet(int x, int y, float vec_x, float vec_y, int face, int owner_base_id, int base_index = -1, ai_data_t* ai_bullet=NULL);

@@ -37,6 +37,7 @@ static void update_stay(ai_data_t* ai_data);
 static void update_round(ai_data_t* ai_data);
 static void update_go_to_bom(ai_data_t* ai_data);
 static void update_bullet_wave(ai_stat_bullet_t* ai_bullet);
+static void update_bullet_random(ai_stat_bullet_t* ai_bullet);
 
 int ai_manager_init()
 {
@@ -158,6 +159,9 @@ static void load_basic(std::string& line, ai_bullet_t* bullet_data)
 		}
 		else if (strcmp(bullet_path, "TRIPLE") == 0) {
 			bullet_num = UNIT_BULLET_NUM_TRIPLE;
+		}
+		else {
+			bullet_num = atoi(bullet_path);
 		}
 		bullet_data->bullet_num = bullet_num;
 	}
@@ -338,6 +342,9 @@ int ai_manager_bullet_update(ai_data_t* ai_data)
 		ai_stat_bullet_t* ai_bullet = (ai_stat_bullet_t*)ai_data;
 		if (ai_bullet->bullet_track_type == UNIT_BULLET_TRACK_WAVE) {
 			update_bullet_wave(ai_bullet);
+		}
+		if (ai_bullet->bullet_track_type == UNIT_BULLET_TRACK_RANDOM) {
+			update_bullet_random(ai_bullet);
 		}
 	}
 	return 0;
@@ -889,6 +896,17 @@ static void update_bullet_wave(ai_stat_bullet_t* ai_bullet) {
 	else {
 		ai_bullet->timer1 = 0;
 	}
+}
+
+static void update_bullet_random(ai_stat_bullet_t* ai_bullet) {
+	unit_enemy_bullet_data_t* unit_enemy_bullet = (unit_enemy_bullet_data_t*)ai_bullet->obj;
+	b2Vec2 new_vec = unit_enemy_bullet->col_shape->b2body->GetLinearVelocity();
+	float fall_vec = (float)ai_bullet->val1 / 1000.0f;
+	new_vec.y += fall_vec;
+
+	unit_enemy_bullet->col_shape->b2body->SetLinearVelocity(new_vec);
+	unit_enemy_bullet->col_shape->vec_x = unit_enemy_bullet->col_shape->b2body->GetLinearVelocity().x;
+	unit_enemy_bullet->col_shape->vec_y = unit_enemy_bullet->col_shape->b2body->GetLinearVelocity().y;
 }
 
 void ai_manager_display() {

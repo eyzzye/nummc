@@ -1174,3 +1174,13 @@ int collision_manager_set_moter_speed(shape_data* shape, float speed) {
 
 	return ret;
 }
+
+int collision_manager_set_force(shape_data* shape, float strength_x, float strength_y) {
+	int ret = -1;
+	if (shape->b2body) {
+		b2Vec2 force = { strength_x, strength_y };
+		shape->b2body->ApplyForceToCenter(force, true);
+		ret = 0;
+	}
+	return ret;
+}

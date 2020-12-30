@@ -562,8 +562,10 @@ int unit_manager_enemy_get_damage_with_bullet(unit_enemy_data_t* enemy_data, uni
 
 int unit_manager_enemy_attack(unit_enemy_data_t* enemy_data, int stat)
 {
-	int x[3], y[3], bullet, bullet_track_type, bullet_num, bullet_face;
-	float vec_x[3], vec_y[3], abs_vec = 1.0f;
+	int x[UNIT_BULLET_NUM_MAX], y[UNIT_BULLET_NUM_MAX];
+	float vec_x[UNIT_BULLET_NUM_MAX], vec_y[UNIT_BULLET_NUM_MAX];
+	int bullet, bullet_track_type, bullet_num, bullet_face;
+	float abs_vec = 1.0f;
 
 	ai_bullet_t* ai_bullet = NULL;
 	if (stat == ANIM_STAT_FLAG_ATTACK1) {

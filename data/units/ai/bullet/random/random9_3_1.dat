@@ -1,0 +1,13 @@
+#
+# enemy9 lv3
+#
+
+[basic]
+bullet_unit=units/bullet/point/enemy/point.unit
+bullet_track_type=RANDOM
+bullet_num=4
+bullet_face=W
+
+# fall vec_y (val1/1000.0f)
+val1=460
+[/basic]
