@@ -186,7 +186,7 @@ static void load_bullet_unit(std::string& line)
 	if (key == "special_value") enemy_bullet_base[enemy_bullet_base_index_end].special_value = atoi(value.c_str());
 }
 
-int unit_manager_create_enemy_bullet(int x, int y, float vec_x, float vec_y, int face, int owner_base_id, int base_index)
+int unit_manager_create_enemy_bullet(int x, int y, float vec_x, float vec_y, int face, int owner_base_id, int base_index, ai_data_t* ai_bullet)
 {
 	int ret = enemy_bullet_index_end;
 
@@ -238,6 +238,15 @@ int unit_manager_create_enemy_bullet(int x, int y, float vec_x, float vec_y, int
 		enemy_bullet[enemy_bullet_index_end].anim->anim_stat_base_list[i] = enemy_bullet[enemy_bullet_index_end].base->anim->anim_stat_base_list[i];
 	}
 
+	// ai
+	if (ai_bullet) {
+		ai_stat_bullet_t* tmp_ai = (ai_stat_bullet_t*)ai_manager_new_ai_data();
+		ai_manager_bullet_copy((ai_bullet_t*)tmp_ai, (ai_bullet_t*)ai_bullet);
+		tmp_ai->timer1 = 0;
+		tmp_ai->obj    = (void*)&enemy_bullet[enemy_bullet_index_end];
+		enemy_bullet[enemy_bullet_index_end].ai_bullet = (ai_data_t*)tmp_ai;
+	}
+
 	enemy_bullet_index_end++;
 	if (enemy_bullet_index_end >= UNIT_ENEMY_BULLET_LIST_SIZE) {
 		enemy_bullet_index_end = 0;
@@ -254,6 +263,11 @@ void unit_manager_clear_enemy_bullet(unit_enemy_bullet_data_t* bullet)
 	bullet->col_shape = NULL;
 	animation_manager_delete_anim_stat_data(bullet->anim);
 	bullet->anim = NULL;
+
+	if (bullet->ai_bullet) {
+		ai_manager_delete_ai_data(bullet->ai_bullet);
+		bullet->ai_bullet = NULL;
+	}
 }
 
 void unit_manager_enemy_bullet_update()
@@ -272,6 +286,9 @@ void unit_manager_enemy_bullet_update()
 			// bullet life update
 			if (enemy_bullet[i].bullet_life_timer > 0) {
 				enemy_bullet[i].bullet_life_timer -= g_delta_time;
+
+				// ai update
+				ai_manager_bullet_update(enemy_bullet[i].ai_bullet);
 			}
 			else {
 				unit_manager_enemy_bullet_set_anim_stat(i, ANIM_STAT_FLAG_DIE);

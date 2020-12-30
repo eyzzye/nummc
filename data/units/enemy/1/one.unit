@@ -52,4 +52,5 @@ units/enemy/1/one.DIE.anim
 
 [ai]
 type=SIMPLE
+val1=0
 [/ai]

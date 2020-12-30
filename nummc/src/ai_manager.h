@@ -6,18 +6,25 @@
 // enemy ai
 #define AI_TYPE_NONE          0
 #define AI_TYPE_SIMPLE        1
-#define AI_TYPE_SIMPLE_FIRE   2
-#define AI_TYPE_LEFT_RIGHT    3
-#define AI_TYPE_UP_DOWN       4
-#define AI_TYPE_STAY          5
-#define AI_TYPE_FACE_ROUND    6
-#define AI_TYPE_ROUND         7
-#define AI_TYPE_ROUND_LR      8
-#define AI_TYPE_ROUND_MOVE    9
-#define AI_TYPE_RANDOM       10
-#define AI_TYPE_RANDOM_GRID  11
-#define AI_TYPE_GO_TO_BOM    12
-#define AI_TYPE_END          13
+#define AI_TYPE_LEFT_RIGHT    2
+#define AI_TYPE_UP_DOWN       3
+#define AI_TYPE_STAY          4
+#define AI_TYPE_FACE_ROUND    5
+#define AI_TYPE_ROUND         6
+#define AI_TYPE_ROUND_LR      7
+#define AI_TYPE_ROUND_MOVE    8
+#define AI_TYPE_RANDOM        9
+#define AI_TYPE_RANDOM_GRID  10
+#define AI_TYPE_GO_TO_BOM    11
+#define AI_TYPE_END          12
+
+#define AI_PARAM_NONE         (0x00000000)
+#define AI_PARAM_ATTACK       (0x00000001)
+#define AI_PARAM_ALWAYS       (0x00000002)
+#define AI_PARAM_IN_REGION    (0x00000004)
+
+// bullet ai
+#define AI_TYPE_BULLET             (0x00010000)
 
 #define AI_STAT_STEP_N    0
 #define AI_STAT_STEP_E    1
@@ -32,6 +39,8 @@
 typedef struct _ai_data_t ai_data_t;
 typedef struct _ai_common_data_t ai_common_data_t;
 typedef struct _ai_stat_data_t ai_stat_data_t;
+typedef struct _ai_bullet_t ai_bullet_t;
+typedef struct _ai_stat_bullet_t ai_stat_bullet_t;
 
 struct _ai_data_t {
 	int type;        // NONE:0
@@ -44,7 +53,12 @@ struct _ai_data_t {
 	int reserv1;
 	int reserv2;
 
-	Uint32 data_field[24];
+	int val1;
+	int val2;
+	int val3;
+	int val4;
+
+	Uint32 data_field[20];
 };
 
 // enemy ai
@@ -59,20 +73,10 @@ struct _ai_common_data_t {
 	int reserv1;
 	int reserv2;
 
-	int x;
-	int y;
-	int w;
-	int h;
-
-	int bullet1;			// g_enemy_bullet_path index
-	int bullet2;			// g_enemy_bullet_path index
-	int bullet1_track_type;	// LINE,RADIAL,WAVE,CROSS,XCROSS
-	int bullet2_track_type;	// LINE,RADIAL,WAVE,CROSS,XCROSS
-
-	int bullet1_num;		// SINGLE,DOUBLE,TRIPLE 
-	int bullet2_num;		// SINGLE,DOUBLE,TRIPLE
-	int bullet1_face;
-	int bullet2_face;
+	int val1;
+	int val2;
+	int val3;
+	int val4;
 };
 
 struct _ai_stat_data_t {
@@ -86,33 +90,79 @@ struct _ai_stat_data_t {
 	int reserv1;
 	int reserv2;
 
-	int x;
-	int y;
-	int w;
-	int h;
+	int val1;
+	int val2;
+	int val3;
+	int val4;
 
-	int bullet1;			// g_enemy_bullet_path index
-	int bullet2;			// g_enemy_bullet_path index
-	int bullet1_track_type;	// LINE,RADIAL,WAVE,CROSS,XCROSS
-	int bullet2_track_type;	// LINE,RADIAL,WAVE,CROSS,XCROSS
-
-	int bullet1_num;		// SINGLE,DOUBLE,TRIPLE 
-	int bullet2_num;		// SINGLE,DOUBLE,TRIPLE
-	int bullet1_face;
-	int bullet2_face;
-
-	int start_x;
-	int start_y;
 	int timer1;
 	int timer2;
+	int reserv3;
+	int reserv4;
+
+	int step[AI_STAT_STEP_END];
+};
+
+// bullet ai
+struct _ai_bullet_t {
+	int type;        // AI_TYPE_BULLET
+	int id;          // ai_id_end
+	void* obj;       // object address
+	int reserve0;
+
+	ai_data_t* prev;
+	ai_data_t* next;
+	int reserv1;
+	int reserv2;
+
+	int val1;
+	int val2;
+	int val3;
+	int val4;
+
+	int bullet_path_index;	// g_enemy_bullet_path index
+	int bullet_track_type;	// LINE,RADIAL,WAVE,CROSS,XCROSS
+	int bullet_num;			// SINGLE,DOUBLE,TRIPLE 
+	int bullet_face;
+};
+
+struct _ai_stat_bullet_t {
+	int type;        // AI_TYPE_BULLET
+	int id;          // ai_id_end
+	void* obj;       // object address
+	int reserve0;
+
+	ai_data_t* prev;
+	ai_data_t* next;
+	int reserv1;
+	int reserv2;
+
+	int val1;
+	int val2;
+	int val3;
+	int val4;
+
+	int bullet_path_index;	// g_enemy_bullet_path index
+	int bullet_track_type;	// LINE,RADIAL,WAVE,CROSS,XCROSS
+	int bullet_num;			// SINGLE,DOUBLE,TRIPLE 
+	int bullet_face;
+
+	int timer1;
+	int timer2;
+	int timer3;
+	int timer4;
 
 	int step[AI_STAT_STEP_END];
 };
 
 extern int ai_manager_init();
 extern void ai_manager_unload();
+extern void ai_manager_copy(ai_data_t* dst, ai_data_t* src);
+extern void ai_manager_bullet_copy(ai_bullet_t* dst, ai_bullet_t* src);
+extern int ai_manager_load_bullet_file(std::string path, ai_bullet_t* bullet_base);
 extern void ai_manager_delete_ai_data(ai_data_t* delete_data);
 extern ai_data_t* ai_manager_new_ai_base_data();
 extern ai_data_t* ai_manager_new_ai_data();
 extern int ai_manager_update(ai_data_t* ai_data);
+extern int ai_manager_bullet_update(ai_data_t* ai_data);
 extern void ai_manager_display();

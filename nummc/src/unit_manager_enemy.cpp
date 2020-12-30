@@ -110,6 +110,15 @@ void unit_manager_unload_enemy()
 			delete[] enemy_base[i].next_level;
 			enemy_base[i].next_level = NULL;
 		}
+
+		for (int bi = 0; bi < UNIT_ENEMY_BULLET_NUM; bi++) {
+			if (enemy_base[i].bullet[bi]) {
+				if (enemy_base[i].bullet[bi]->obj) {
+					delete[] enemy_base[i].bullet[bi]->obj; // g_enemy_bullet_path
+					enemy_base[i].bullet[bi]->obj = NULL;
+				}
+			}
+		}
 	}
 }
 
@@ -281,6 +290,9 @@ int unit_manager_load_enemy(std::string path)
 				continue;
 			}
 			if (line == "[/ai]") { read_flg[UNIT_TAG_AI] = false; continue; }
+			if (line == "[bullet]") { read_flg[UNIT_TAG_BULLET] = true;  continue; }
+			if (line == "[/bullet]") { read_flg[UNIT_TAG_BULLET] = false; continue; }
+
 
 			if (read_flg[UNIT_TAG_UNIT]) {
 				load_unit_enemy(line, &enemy_base[enemy_base_index_end]);
@@ -293,6 +305,9 @@ int unit_manager_load_enemy(std::string path)
 			}
 			if (read_flg[UNIT_TAG_AI]) {
 				load_ai(line, enemy_base[enemy_base_index_end].ai);
+			}
+			if (read_flg[UNIT_TAG_BULLET]) {
+				load_bullet(line, enemy_base[enemy_base_index_end].bullet);
 			}
 		}
 		inFile.close();
@@ -309,6 +324,17 @@ int unit_manager_load_enemy(std::string path)
 			if (cstr_anim_path) {
 				std::string anim_path = cstr_anim_path;
 				animation_manager_load_file(anim_path, enemy_base[enemy_base_index_end].anim, i);
+			}
+		}
+	}
+
+	// load ai_bullet files
+	for (int i = 0; i < UNIT_ENEMY_BULLET_NUM; i++) {
+		if (enemy_base[enemy_base_index_end].bullet[i]) {
+			char* cstr_bullet_path = (char*)enemy_base[enemy_base_index_end].bullet[i]->obj;
+			if (cstr_bullet_path) {
+				std::string bullet_path = cstr_bullet_path;
+				ai_manager_load_bullet_file(bullet_path, (ai_bullet_t*)enemy_base[enemy_base_index_end].bullet[i]);
 			}
 		}
 	}
@@ -404,26 +430,22 @@ int unit_manager_create_enemy(int x, int y, int face, int base_index)
 	// ai
 	enemy[enemy_index_end].ai = ai_manager_new_ai_data();
 	enemy[enemy_index_end].ai->obj = (void*)&enemy[enemy_index_end];
-	enemy[enemy_index_end].ai->type = enemy[enemy_index_end].base->ai->type;
-	ai_stat_data_t* ai_stat_data = (ai_stat_data_t*)enemy[enemy_index_end].ai;
-	ai_stat_data->start_x = x;
-	ai_stat_data->start_x = y;
+	ai_manager_copy(enemy[enemy_index_end].ai, enemy[enemy_index_end].base->ai);
 
-	ai_common_data_t* ai_base_data = (ai_common_data_t*)enemy[enemy_index_end].base->ai;
-	if (enemy[enemy_index_end].ai->type == AI_TYPE_LEFT_RIGHT) {
-		ai_stat_data->x = ai_base_data->x;
-		ai_stat_data->y = ai_base_data->y;
-		ai_stat_data->w = ai_base_data->w;
-		ai_stat_data->h = ai_base_data->h;
+	for (int i = 0; i < UNIT_ENEMY_BULLET_NUM; i++) {
+		ai_bullet_t* ai_bullet_base_data = (ai_bullet_t*)enemy[enemy_index_end].base->bullet[i];
+		if (ai_bullet_base_data != NULL) {
+			ai_stat_bullet_t* ai_stat_bullet_data = (ai_stat_bullet_t*)ai_manager_new_ai_data();
+			enemy[enemy_index_end].bullet[i] = (ai_data_t*)ai_stat_bullet_data;
+
+			if (ai_stat_bullet_data != NULL) {
+				ai_manager_bullet_copy((ai_bullet_t*)ai_stat_bullet_data, ai_bullet_base_data);
+			}
+			else {
+				LOG_ERROR("Error: unit_manager_create_enemy %s\n", (char*)ai_bullet_base_data->obj);
+			}
+		}
 	}
-	ai_stat_data->bullet1            = ai_base_data->bullet1;
-	ai_stat_data->bullet1_track_type = ai_base_data->bullet1_track_type;
-	ai_stat_data->bullet1_num        = ai_base_data->bullet1_num;
-	ai_stat_data->bullet1_face       = ai_base_data->bullet1_face;
-	ai_stat_data->bullet2            = ai_base_data->bullet2;
-	ai_stat_data->bullet2_track_type = ai_base_data->bullet2_track_type;
-	ai_stat_data->bullet2_num        = ai_base_data->bullet2_num;
-	ai_stat_data->bullet2_face       = ai_base_data->bullet2_face;
 
 	enemy_count += 1;
 	enemy_index_end++;
@@ -448,6 +470,13 @@ void unit_manager_clear_enemy(unit_enemy_data_t* enemy)
 	enemy->anim = NULL;
 	ai_manager_delete_ai_data(enemy->ai);
 	enemy->ai = NULL;
+
+	for (int i = 0; i < UNIT_ENEMY_BULLET_NUM; i++) {
+		if (enemy->bullet[i]) {
+			ai_manager_delete_ai_data(enemy->bullet[i]);
+			enemy->bullet[i] = NULL;
+		}
+	}
 }
 
 int unit_manager_load_enemy_effects(int unit_id)
@@ -536,23 +565,23 @@ int unit_manager_enemy_attack(unit_enemy_data_t* enemy_data, int stat)
 	int x[3], y[3], bullet, bullet_track_type, bullet_num, bullet_face;
 	float vec_x[3], vec_y[3], abs_vec = 1.0f;
 
-	ai_common_data_t* ai_data = (ai_common_data_t*)enemy_data->ai;
+	ai_bullet_t* ai_bullet = NULL;
 	if (stat == ANIM_STAT_FLAG_ATTACK1) {
-		bullet            = ai_data->bullet1;
-		bullet_track_type = ai_data->bullet1_track_type;
-		bullet_num        = ai_data->bullet1_num;
-		bullet_face       = ai_data->bullet1_face;
+		ai_bullet = (ai_bullet_t*)enemy_data->bullet[0];
 	}
 	else if (stat == ANIM_STAT_FLAG_ATTACK2) {
-		bullet            = ai_data->bullet2;
-		bullet_track_type = ai_data->bullet2_track_type;
-		bullet_num        = ai_data->bullet2_num;
-		bullet_face       = ai_data->bullet2_face;
+		ai_bullet = (ai_bullet_t*)enemy_data->bullet[1];
 	}
 	else {
 		// do nothing
 		return 1;
 	}
+
+	// get bullet setting
+	bullet = ai_bullet->bullet_path_index;
+	bullet_track_type = ai_bullet->bullet_track_type;
+	bullet_num = ai_bullet->bullet_num;
+	bullet_face = ai_bullet->bullet_face;
 
 	// convert face (face_W -> face_X)
 	bullet_face = unit_manager_get_face_relative((unit_data_t*)enemy_data, bullet_face);
@@ -563,7 +592,7 @@ int unit_manager_enemy_attack(unit_enemy_data_t* enemy_data, int stat)
 	unit_manager_enemy_get_face_velocity(enemy_data, vec_x, vec_y, bullet_face, abs_vec, bullet_track_type, bullet_num);
 
 	for (int i = 0; i < bullet_num; i++) {
-		int unit_id = unit_manager_create_enemy_bullet(x[i], y[i], vec_x[i], vec_y[i], bullet_face, enemy_data->base->id, bullet_base_id);
+		int unit_id = unit_manager_create_enemy_bullet(x[i], y[i], vec_x[i], vec_y[i], bullet_face, enemy_data->base->id, bullet_base_id, (ai_data_t*)ai_bullet);
 		unit_manager_enemy_bullet_set_anim_stat(unit_id, ANIM_STAT_FLAG_ATTACK);
 		unit_manager_enemy_bullet_set_hp(unit_id, unit_manager_enemy_get_bullet_strength(enemy_data->base->id));
 		unit_manager_enemy_bullet_set_bullet_life_timer(unit_id, unit_manager_enemy_get_bullet_life_timer(enemy_data->base->id));

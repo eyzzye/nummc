@@ -1,3 +1,4 @@
+#include <fstream>
 #include "game_common.h"
 #include "ai_manager.h"
 
@@ -9,13 +10,16 @@
 #include "unit_manager.h"
 #include "stage_manager.h"
 
-#define AI_BASE_DATA_LIST_SIZE 64
+#define AI_BULLET_TAG_BASIC      0
+#define AI_BULLET_TAG_END        1
+
+#define AI_BASE_DATA_LIST_SIZE 32 * 4
 static ai_data_t ai_base_data_list[AI_BASE_DATA_LIST_SIZE];
 static ai_data_t* ai_base_data_list_start;
 static ai_data_t* ai_base_data_list_end;
 static int ai_base_data_index_end;
 
-#define AI_DATA_LIST_SIZE 64
+#define AI_DATA_LIST_SIZE 32 * 4
 static ai_data_t ai_data_list[AI_DATA_LIST_SIZE];
 static ai_data_t* ai_data_list_start;
 static ai_data_t* ai_data_list_end;
@@ -25,14 +29,14 @@ static int ai_data_index_end;
 static unit_data_t dummy_unit_data;
 static shape_data dummy_shape_data;
 
+static void load_basic(std::string& line, ai_bullet_t* bullet_data);
 static bool within_trap(unit_data_t* unit_data, int step, float delta_x, float delta_y);
-
 static void update_simple(ai_data_t* ai_data);
-static void update_simple_fire(ai_data_t* ai_data);
 static void update_left_right(ai_data_t* ai_data);
 static void update_stay(ai_data_t* ai_data);
 static void update_round(ai_data_t* ai_data);
 static void update_go_to_bom(ai_data_t* ai_data);
+static void update_bullet_wave(ai_stat_bullet_t* ai_bullet);
 
 int ai_manager_init()
 {
@@ -52,6 +56,142 @@ int ai_manager_init()
 void ai_manager_unload()
 {
 
+}
+
+void ai_manager_copy(ai_data_t* dst, ai_data_t* src)
+{
+	dst->type = src->type;
+	dst->val1 = src->val1;
+	dst->val2 = src->val2;
+	dst->val3 = src->val3;
+	dst->val4 = src->val4;
+}
+
+void ai_manager_bullet_copy(ai_bullet_t* dst, ai_bullet_t* src)
+{
+	dst->type              = src->type;
+	dst->bullet_path_index = src->bullet_path_index;
+	dst->bullet_track_type = src->bullet_track_type;
+	dst->bullet_num        = src->bullet_num;
+	dst->bullet_face       = src->bullet_face;
+	dst->val1              = src->val1;
+	dst->val2              = src->val2;
+	dst->val3              = src->val3;
+	dst->val4              = src->val4;
+}
+
+int ai_manager_load_bullet_file(std::string path, ai_bullet_t* bullet_base)
+{
+	bool read_flg[AI_BULLET_TAG_END] = { false };
+
+	std::ifstream inFile(g_base_path + "data/" + path);
+	if (inFile.is_open()) {
+		std::string line;
+		while (std::getline(inFile, line)) {
+			if (line == "") continue;
+			if (line[0] == '#') continue;
+
+			if (line == "[basic]") { read_flg[AI_BULLET_TAG_BASIC] = true; continue; }
+			if (line == "[/basic]") { read_flg[AI_BULLET_TAG_BASIC] = false; continue; }
+
+			if (read_flg[AI_BULLET_TAG_BASIC]) {
+				load_basic(line, bullet_base);
+			}
+		}
+		inFile.close();
+	}
+	else {
+		LOG_ERROR("ai_manager_load_bullet_file %s error\n", path.c_str());
+		return 1;
+	}
+	return 0;
+}
+
+static void load_basic(std::string& line, ai_bullet_t* bullet_data)
+{
+	std::string key, value;
+	game_utils_split_key_value(line, key, value);
+	if (value == "") value = "0";
+
+	if (key == "bullet_unit") {
+		const char* bullet_path = value.c_str();
+		for (int i = 0; i < UNIT_BULLET_ID_END; i++) {
+			if (strcmp(bullet_path, g_enemy_bullet_path[i]) == 0) {
+				((ai_bullet_t*)bullet_data)->bullet_path_index = i;
+				break;
+			}
+		}
+	}
+
+	int bullet_track_type = UNIT_BULLET_TRACK_NONE;
+	if (key == "bullet_track_type") {
+		const char* bullet_track_str = value.c_str();
+		if (strcmp(bullet_track_str, "LINE") == 0) {
+			bullet_track_type = UNIT_BULLET_TRACK_LINE;
+		}
+		else if (strcmp(bullet_track_str, "RADIAL") == 0) {
+			bullet_track_type = UNIT_BULLET_TRACK_RADIAL;
+		}
+		else if (strcmp(bullet_track_str, "WAVE") == 0) {
+			bullet_track_type = UNIT_BULLET_TRACK_WAVE;
+		}
+		else if (strcmp(bullet_track_str, "CROSS") == 0) {
+			bullet_track_type = UNIT_BULLET_TRACK_CROSS;
+		}
+		else if (strcmp(bullet_track_str, "XCROSS") == 0) {
+			bullet_track_type = UNIT_BULLET_TRACK_XCROSS;
+		}
+		else if (strcmp(bullet_track_str, "RANDOM") == 0) {
+			bullet_track_type = UNIT_BULLET_TRACK_RANDOM;
+		}
+		bullet_data->bullet_track_type = bullet_track_type;
+	}
+
+	int bullet_num = UNIT_BULLET_NUM_NONE;
+	if (key == "bullet_num") {
+		const char* bullet_path = value.c_str();
+		if (strcmp(bullet_path, "SINGLE") == 0) {
+			bullet_num = UNIT_BULLET_NUM_SINGLE;
+		}
+		else if (strcmp(bullet_path, "DOUBLE") == 0) {
+			bullet_num = UNIT_BULLET_NUM_DOUBLE;
+		}
+		else if (strcmp(bullet_path, "TRIPLE") == 0) {
+			bullet_num = UNIT_BULLET_NUM_TRIPLE;
+		}
+		bullet_data->bullet_num = bullet_num;
+	}
+
+	int bullet_face = UNIT_FACE_NONE;
+	if (key == "bullet_face") {
+		const char* bullet_face_str = value.c_str();
+		if (*bullet_face_str == 'N') {
+			bullet_face = UNIT_FACE_N;
+		}
+		else if (*bullet_face_str == 'E') {
+			bullet_face = UNIT_FACE_E;
+		}
+		else if (*bullet_face_str == 'W') {
+			bullet_face = UNIT_FACE_W;
+		}
+		else if (*bullet_face_str == 'S') {
+			bullet_face = UNIT_FACE_S;
+		}
+		bullet_data->bullet_face = bullet_face;
+	}
+
+	if (key == "val1") {
+		bullet_data->val1 = atoi(value.c_str());
+	}
+	else if (key == "val2") {
+		bullet_data->val2 = atoi(value.c_str());
+	}
+	else if (key == "val3") {
+		bullet_data->val3 = atoi(value.c_str());
+	}
+	else if (key == "val4") {
+		bullet_data->val4 = atoi(value.c_str());
+	}
 }
 
 void ai_manager_delete_ai_data(ai_data_t* delete_data)
@@ -171,9 +311,6 @@ int ai_manager_update(ai_data_t* ai_data)
 	if (ai_data->type == AI_TYPE_SIMPLE) {
 		update_simple(ai_data);
 	}
-	else if (ai_data->type == AI_TYPE_SIMPLE_FIRE) {
-		update_simple_fire(ai_data);
-	}
 	else if (ai_data->type == AI_TYPE_LEFT_RIGHT) {
 		update_left_right(ai_data);
 	}
@@ -190,6 +327,19 @@ int ai_manager_update(ai_data_t* ai_data)
 		update_go_to_bom(ai_data);
 	}
 
+	return 0;
+}
+
+int ai_manager_bullet_update(ai_data_t* ai_data)
+{
+	if (ai_data == NULL) return 0;
+
+	if (ai_data->type == AI_TYPE_BULLET) {
+		ai_stat_bullet_t* ai_bullet = (ai_stat_bullet_t*)ai_data;
+		if (ai_bullet->bullet_track_type == UNIT_BULLET_TRACK_WAVE) {
+			update_bullet_wave(ai_bullet);
+		}
+	}
 	return 0;
 }
 
@@ -308,100 +458,33 @@ static void update_simple(ai_data_t* ai_data)
 
 	unit_data_t* unit_data = (unit_data_t*)ai_data->obj;
 	if (unit_data->type != UNIT_TYPE_ENEMY) {
-		LOG_ERROR("Error: update_simple param error.");
-	}
-
-	int used_count = 0;
-	for (int i = AI_STAT_STEP_N; i < AI_STAT_STEP_END; i++) {
-		if (ai_stat->step[i]) used_count += 1;
-	}
-
-	if (used_count == AI_STAT_STEP_END) {
-		ai_stat->step[AI_STAT_STEP_N] = 0;
-		ai_stat->step[AI_STAT_STEP_E] = 0;
-		ai_stat->step[AI_STAT_STEP_W] = 0;
-		ai_stat->step[AI_STAT_STEP_S] = 0;
-		used_count = 0;
-	}
-
-	// move
-	int new_step = -1;
-	for (int rand_count = 0; rand_count < (AI_STAT_STEP_END - used_count); rand_count++) {
-		new_step = game_utils_random_gen(AI_STAT_STEP_S, AI_STAT_STEP_N);
-		if (ai_stat->step[new_step] == 0) {
-			ai_stat->step[new_step] += 1;
-			break;
-		}
-		else if (rand_count == (AI_STAT_STEP_END - used_count - 1)) {
-			// last step
-			for (int i = AI_STAT_STEP_N; i < AI_STAT_STEP_END; i++) {
-				if (ai_stat->step[i] == 0) {
-					new_step = i;
-					ai_stat->step[i] += 1;
-					break;
-				}
-			}
-		}
-	}
-
-	bool move_dirt = false;
-	float vec_x = 0.0f, vec_y = 0.0f;
-	if (new_step == AI_STAT_STEP_N) {
-		if (within_trap((unit_data_t*)ai_data->obj, new_step, 0.0f, (float)(-g_tile_height / 2)) == false) {
-			vec_y = -((unit_data_t*)ai_data->obj)->col_shape->vec_y_delta;
-			move_dirt = true;
-		}
-	}
-	else if (new_step == AI_STAT_STEP_E) {
-		if (within_trap((unit_data_t*)ai_data->obj, new_step, (float)(g_tile_width / 2), 0.0f) == false) {
-			vec_x = ((unit_data_t*)ai_data->obj)->col_shape->vec_x_delta;
-			move_dirt = true;
-		}
-	}
-	else if (new_step == AI_STAT_STEP_W) {
-		if (within_trap((unit_data_t*)ai_data->obj, new_step, (float)(-g_tile_width / 2), 0.0f) == false) {
-			vec_x = -((unit_data_t*)ai_data->obj)->col_shape->vec_x_delta;
-			move_dirt = true;
-		}
-	}
-	else if (new_step == AI_STAT_STEP_S) {
-		if (within_trap((unit_data_t*)ai_data->obj, new_step, 0.0f, (float)(g_tile_height / 2)) == false) {
-			vec_y = ((unit_data_t*)ai_data->obj)->col_shape->vec_y_delta;
-			move_dirt = true;
-		}
-	}
-
-	if (move_dirt) unit_manager_enemy_move((unit_enemy_data_t*)ai_data->obj, vec_x, vec_y);
-
-	// set wait timer
-	ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
-}
-
-static void update_simple_fire(ai_data_t* ai_data)
-{
-	ai_stat_data_t* ai_stat = (ai_stat_data_t*)ai_data;
-	if (ai_stat->timer1 > 0) {
-		ai_stat->timer1 -= g_delta_time;
-		return;  // waitting
-	}
-
-	unit_data_t* unit_data = (unit_data_t*)ai_data->obj;
-	if (unit_data->type != UNIT_TYPE_ENEMY) {
 		LOG_ERROR("Error: update_simple_fire param error.");
 	}
 
 	// attack
 	if (ai_stat->step[AI_STAT_STEP_W] == 1) {
-		unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
-		ai_stat->step[AI_STAT_STEP_W] += 1;
-		ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
-		return;
+		if (ai_stat->val1 & AI_PARAM_ATTACK) {
+			unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
+			ai_stat->step[AI_STAT_STEP_W] += 1;
+			ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
+			return;
+		}
+		else {
+			// do next step
+			ai_stat->step[AI_STAT_STEP_W] += 1;
+		}
 	}
 	else if (ai_stat->step[AI_STAT_STEP_E] == 1) {
-		unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
-		ai_stat->step[AI_STAT_STEP_E] += 1;
-		ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
-		return;
+		if (ai_stat->val1 & AI_PARAM_ATTACK) {
+			unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
+			ai_stat->step[AI_STAT_STEP_E] += 1;
+			ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
+			return;
+		}
+		else {
+			// do next step
+			ai_stat->step[AI_STAT_STEP_E] += 1;
+		}
 	}
 
 	int used_count = 0;
@@ -483,6 +566,20 @@ static void update_left_right(ai_data_t* ai_data)
 		LOG_ERROR("Error: update_left_right param error.");
 	}
 
+	// attack
+	if ((ai_stat->step[AI_STAT_STEP_E] == 2) || (ai_stat->step[AI_STAT_STEP_E] == 7)) {
+		if (ai_stat->val1 & AI_PARAM_ATTACK) {
+			unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
+			ai_stat->step[AI_STAT_STEP_E] += 1;
+			ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
+			return;
+		}
+		else {
+			// do next step
+			ai_stat->step[AI_STAT_STEP_E] += 1;
+		}
+	}
+
 	// step
 	float vec_x = 0.0f, vec_y = 0.0f;
 	bool move_dirt = false;
@@ -490,17 +587,9 @@ static void update_left_right(ai_data_t* ai_data)
 		vec_x = -((unit_data_t*)ai_data->obj)->col_shape->vec_x_delta;
 		move_dirt = true;
 	}
-	else if (ai_stat->step[AI_STAT_STEP_E] <= 2) {
-		// attack event (left)
-		unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
-	}
 	else if (ai_stat->step[AI_STAT_STEP_E] <= 6) {
 		vec_x = ((unit_data_t*)ai_data->obj)->col_shape->vec_x_delta;
 		move_dirt = true;
-	}
-	else if (ai_stat->step[AI_STAT_STEP_E] <= 7) {
-		// attack event (right)
-		unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
 	}
 	else if (ai_stat->step[AI_STAT_STEP_E] <= 9) {
 		vec_x = -((unit_data_t*)ai_data->obj)->col_shape->vec_x_delta;
@@ -536,83 +625,112 @@ static void update_stay(ai_data_t* ai_data)
 		LOG_ERROR("Error: update_stay param error.");
 	}
 
-	// step
-	float vec_x = 0.0f, vec_y = 0.0f;
-	if (ai_stat->step[AI_STAT_STEP_W] <= 1) {
-		// do nothing
-	}
-	else if (ai_stat->step[AI_STAT_STEP_W] == 2) {
-		// set pattern
-		int face_pattern = UNIT_FACE_W;
-		if (unit_data->col_shape->face_type == UNIT_FACE_TYPE_ALL) {
-			face_pattern = unit_data->col_shape->face;
-		}
-		else if (unit_data->col_shape->face_type == UNIT_FACE_TYPE_LR) {
-			if (unit_data->col_shape->face == UNIT_FACE_E) {
-				face_pattern = UNIT_FACE_E;
+	// attack
+	if ((ai_stat->step[AI_STAT_STEP_W] == 1) || (ai_stat->step[AI_STAT_STEP_W] == 3)) {
+		if (ai_stat->val1 & AI_PARAM_ATTACK) {
+
+			bool attack_dirt = false;
+			ai_stat_bullet_t* ai_stat_bullet = (ai_stat_bullet_t*)((unit_enemy_data_t*)unit_data)->bullet[0];
+			int anim_stat_flag = ANIM_STAT_FLAG_ATTACK1;
+
+			if (ai_stat->val1 & AI_PARAM_ALWAYS) {
+				if (ai_stat->step[AI_STAT_STEP_W] == 1) {
+					//ai_stat_bullet = (ai_stat_bullet_t*)((unit_enemy_data_t*)unit_data)->bullet[0];
+					//anim_stat_flag = ANIM_STAT_FLAG_ATTACK1;
+					attack_dirt = true;
+				}
+				else if (ai_stat->step[AI_STAT_STEP_W] == 3) {
+					ai_stat_bullet = (ai_stat_bullet_t*)((unit_enemy_data_t*)unit_data)->bullet[1];
+					anim_stat_flag = ANIM_STAT_FLAG_ATTACK2;
+					attack_dirt = true;
+				}
+
+			} else if (ai_stat->val1 & AI_PARAM_IN_REGION) {
+				float distance, bullet_distance;
+
+				// set pattern
+				int face_pattern = UNIT_FACE_W;
+				if (unit_data->col_shape->face_type == UNIT_FACE_TYPE_ALL) {
+					face_pattern = unit_data->col_shape->face;
+				}
+				else if (unit_data->col_shape->face_type == UNIT_FACE_TYPE_LR) {
+					if (unit_data->col_shape->face == UNIT_FACE_E) {
+						face_pattern = UNIT_FACE_E;
+					}
+				}
+				else if (unit_data->col_shape->face_type == UNIT_FACE_TYPE_UD) {
+					if (unit_data->col_shape->face == UNIT_FACE_S) {
+						face_pattern = UNIT_FACE_S;
+					}
+				}
+
+				int bullet_index = ai_stat_bullet->bullet_path_index;
+				int enemy_face = UNIT_FACE_W;
+
+				// unit distance
+				int dist_x, dist_y;
+				distance = unit_manager_get_distance(unit_data, (unit_data_t*)&g_player, &dist_x, &dist_y);
+
+				// set attack type
+				if (((face_pattern == UNIT_FACE_W) && (dist_x > 0))
+					|| ((face_pattern == UNIT_FACE_E) && (dist_x <= 0))
+					|| ((face_pattern == UNIT_FACE_N) && (dist_y > 0))
+					|| ((face_pattern == UNIT_FACE_S) && (dist_y <= 0))) {
+					anim_stat_flag = ANIM_STAT_FLAG_ATTACK2;
+					ai_stat_bullet = (ai_stat_bullet_t*)((unit_enemy_data_t*)unit_data)->bullet[1];
+					bullet_index = ai_stat_bullet->bullet_path_index;
+				}
+
+				// create dummy bullet
+				std::string bullet_path = g_enemy_bullet_path[bullet_index];
+				int bullet_base_id = unit_manager_search_enemy_bullet(bullet_path);
+				unit_enemy_bullet_data_t* bullet_data = unit_manager_get_enemy_bullet_base(bullet_base_id);
+
+				// set bullet direction
+				if ((face_pattern == UNIT_FACE_W) || (face_pattern == UNIT_FACE_E)) {
+					if (dist_x > 0) enemy_face = UNIT_FACE_E;
+				}
+				else if ((face_pattern == UNIT_FACE_N) || (face_pattern == UNIT_FACE_S)) {
+					if (dist_y > 0) enemy_face = UNIT_FACE_S;
+					else enemy_face = UNIT_FACE_N;
+				}
+
+				int x, y, new_x, new_y;
+				float vec_x, vec_y, abs_vec = 1.0f;
+				int bullet_track_type = UNIT_BULLET_TRACK_LINE; // dummy
+				int bullet_num = UNIT_BULLET_NUM_SINGLE;		// dummy
+				unit_manager_get_bullet_start_pos(unit_data, (unit_data_t*)bullet_data, bullet_track_type, bullet_num, enemy_face, &x, &y);
+				unit_manager_enemy_get_face_velocity((unit_enemy_data_t*)unit_data, &vec_x, &vec_y, enemy_face, abs_vec, bullet_track_type, bullet_num);
+
+				set_dummy_unit_data((unit_data_t*)bullet_data, x, y, vec_x, vec_y);
+				ai_unit_prediction_point(&dummy_unit_data, 8000, &new_x, &new_y);
+
+				int delta_x = new_x - x;
+				int delta_y = new_y - y;
+				bullet_distance = sqrtf((float)(delta_x * delta_x + delta_y * delta_y));
+
+				if (distance < bullet_distance) {
+					attack_dirt = true;
+				}
 			}
-		}
-		else if (unit_data->col_shape->face_type == UNIT_FACE_TYPE_UD) {
-			if (unit_data->col_shape->face == UNIT_FACE_S) {
-				face_pattern = UNIT_FACE_S;
-			}
-		}
 
-		int anim_stat_flag = ANIM_STAT_FLAG_ATTACK1;
-		int bullet_index = ai_stat->bullet1;
-		int enemy_face = UNIT_FACE_W;
-		{
-			// unit distance
-			int dist_x, dist_y;
-			float distance = unit_manager_get_distance(unit_data, (unit_data_t*)&g_player, &dist_x, &dist_y);
-
-			// set attack type
-			if (((face_pattern == UNIT_FACE_W) && (dist_x > 0))
-				|| ((face_pattern == UNIT_FACE_E) && (dist_x <= 0))
-				|| ((face_pattern == UNIT_FACE_N) && (dist_y > 0))
-				|| ((face_pattern == UNIT_FACE_S) && (dist_y <= 0))) {
-				anim_stat_flag = ANIM_STAT_FLAG_ATTACK2;
-				bullet_index = ai_stat->bullet2;
-			}
-
-			// create dummy bullet
-			std::string bullet_path = g_enemy_bullet_path[bullet_index];
-			int bullet_base_id = unit_manager_search_enemy_bullet(bullet_path);
-			unit_enemy_bullet_data_t* bullet_data = unit_manager_get_enemy_bullet_base(bullet_base_id);
-
-			// set bullet direction
-			if ((face_pattern == UNIT_FACE_W) || (face_pattern == UNIT_FACE_E)) {
-				if (dist_x > 0) enemy_face = UNIT_FACE_E;
-			}
-			else if ((face_pattern == UNIT_FACE_N) || (face_pattern == UNIT_FACE_S)) {
-				if (dist_y > 0) enemy_face = UNIT_FACE_S;
-				else enemy_face = UNIT_FACE_N;
-			}
-
-			int x, y, new_x, new_y;
-			float vec_x, vec_y, abs_vec = 1.0f;
-			int bullet_track_type = UNIT_BULLET_TRACK_LINE; // dummy
-			int bullet_num = UNIT_BULLET_NUM_SINGLE;		// dummy
-			unit_manager_get_bullet_start_pos(unit_data, (unit_data_t*)bullet_data, bullet_track_type, bullet_num, enemy_face, &x, &y);
-			unit_manager_enemy_get_face_velocity((unit_enemy_data_t*)unit_data, &vec_x, &vec_y, enemy_face, abs_vec, bullet_track_type, bullet_num);
-
-			set_dummy_unit_data((unit_data_t*)bullet_data, x, y, vec_x, vec_y);
-			ai_unit_prediction_point(&dummy_unit_data, 8000, &new_x, &new_y);
-
-			int delta_x = new_x - x;
-			int delta_y = new_y - y;
-			float bullet_distance = sqrtf((float)(delta_x * delta_x + delta_y * delta_y));
-
-			if (distance < bullet_distance) {
+			if (attack_dirt) {
 				// set attack action
 				unit_manager_enemy_set_anim_stat(unit_data->id, anim_stat_flag);
-				ai_stat->step[AI_STAT_STEP_W] = 0;
+				ai_stat->step[AI_STAT_STEP_W] += 1;
+				if (ai_stat->step[AI_STAT_STEP_W] > 3) ai_stat->step[AI_STAT_STEP_W] = 0;
+				ai_stat->timer1 = AI_STAY_WAIT_TIMER;
+				return;
 			}
 		}
 	}
 
-	// set next step
-	if (ai_stat->step[AI_STAT_STEP_W] < 2) {
+	// step
+	float vec_x = 0.0f, vec_y = 0.0f;
+	if (ai_stat->step[AI_STAT_STEP_W] == 0) {
+		ai_stat->step[AI_STAT_STEP_W] += 1;
+	}
+	else if (ai_stat->step[AI_STAT_STEP_W] == 2) {
 		ai_stat->step[AI_STAT_STEP_W] += 1;
 	}
 
@@ -720,6 +838,57 @@ static void update_go_to_bom(ai_data_t* ai_data)
 
 	// set wait timer
 	ai_stat->timer1 = AI_STAY_WAIT_TIMER;
+}
+
+static void update_bullet_wave(ai_stat_bullet_t* ai_bullet) {
+	unit_enemy_bullet_data_t* unit_enemy_bullet = (unit_enemy_bullet_data_t*)ai_bullet->obj;
+	int face = unit_enemy_bullet->col_shape->face;
+
+	int BULLET_WAVE_TIMER_TERM1 = ai_bullet->val2;
+	int BULLET_WAVE_TIMER_TERM2 = ai_bullet->val3;
+	int BULLET_WAVE_TIMER_MAX = BULLET_WAVE_TIMER_TERM1 + BULLET_WAVE_TIMER_TERM2;
+
+	int delta_val = ai_bullet->val1; // wave width
+	if (ai_bullet->timer1 < BULLET_WAVE_TIMER_TERM1) {
+		delta_val = delta_val / (BULLET_WAVE_TIMER_TERM1 / DELTA_TIME_MIN);
+	}
+	else {
+		delta_val = -delta_val / (BULLET_WAVE_TIMER_TERM2 / DELTA_TIME_MIN);
+	}
+
+	bool move_dirt = false;
+	b2Vec2 new_point = unit_enemy_bullet->col_shape->b2body->GetPosition();
+	if (face == UNIT_FACE_N) {
+		unit_enemy_bullet->col_shape->x += delta_val;
+		new_point.x += PIX2MET(delta_val);
+		move_dirt = true;
+	}
+	else if (face == UNIT_FACE_S) {
+		unit_enemy_bullet->col_shape->x += delta_val;
+		new_point.x += PIX2MET(delta_val);
+		move_dirt = true;
+	}
+	else if (face == UNIT_FACE_W) {
+		unit_enemy_bullet->col_shape->y += delta_val;
+		new_point.y += PIX2MET(delta_val);
+		move_dirt = true;
+	}
+	else if (face == UNIT_FACE_E) {
+		unit_enemy_bullet->col_shape->y += delta_val;
+		new_point.y += PIX2MET(delta_val);
+		move_dirt = true;
+	}
+
+	if (move_dirt) {
+		unit_enemy_bullet->col_shape->b2body->SetTransform(new_point, 0);
+	}
+
+	if (ai_bullet->timer1 < BULLET_WAVE_TIMER_MAX) {
+		ai_bullet->timer1 += DELTA_TIME_MIN;
+	}
+	else {
+		ai_bullet->timer1 = 0;
+	}
 }
 
 void ai_manager_display() {

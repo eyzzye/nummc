@@ -39,4 +39,5 @@ units/enemy/1/lv3/one.DIE.anim
 
 [ai]
 type=SIMPLE
+val1=0
 [/ai]

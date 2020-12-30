@@ -1,0 +1,10 @@
+#
+# enemy9 lv1
+#
+
+[basic]
+bullet_unit=units/bullet/point/enemy/point.unit
+bullet_track_type=RADIAL
+bullet_num=TRIPLE
+bullet_face=E
+[/basic]

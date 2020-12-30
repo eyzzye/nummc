@@ -11,7 +11,8 @@
 #define UNIT_TAG_COLLISION  1
 #define UNIT_TAG_ANIM       2
 #define UNIT_TAG_AI         3
-#define UNIT_TAG_END        4
+#define UNIT_TAG_BULLET     4
+#define UNIT_TAG_END        5
 
 #define UNIT_TYPE_NONE           0
 #define UNIT_TYPE_PLAYER         1
@@ -146,17 +147,12 @@ struct _unit_enemy_data_t {
 	unit_enemy_data_t* base;
 	int* stat_timer;
 	int stat;
-	ai_data_t* ai;
+	int reserve1;
 
 	int hp;
 	int exp;
-	int effect_stat;	                    // FLAG_P_FIRE_UP,FREEZE_UP,BOOST,SHIELD
-	unit_effect_stat_data_t* effect_param;  // player_base_effect[UNIT_EFFECT_ID_P_END]
-
 	int bullet_life_timer;
 	int bullet_curving;
-	int drop_item;
-	int reserve1;
 
 	int speed;
 	int strength;
@@ -167,6 +163,15 @@ struct _unit_enemy_data_t {
 	int exp_max;
 	int level;
 	char* next_level;
+
+	int drop_item;
+	int effect_stat;	                    // FLAG_P_FIRE_UP,FREEZE_UP,BOOST,SHIELD
+	unit_effect_stat_data_t* effect_param;  // player_base_effect[UNIT_EFFECT_ID_P_END]
+	int reserve2;
+
+	ai_data_t* ai;
+	ai_data_t* bullet[UNIT_ENEMY_BULLET_NUM];
+	int reserve3;
 };
 
 struct _unit_items_data_t {
@@ -304,7 +309,7 @@ struct _unit_enemy_bullet_data_t {
 	int speed;
 	int special;
 	int special_value;
-	int reserve5;
+	ai_data_t* ai_bullet; // copy from unit->bullet[]
 };
 
 // global variable
@@ -346,6 +351,7 @@ extern void unit_manager_enemy_bullet_set_anim_stat(int unit_id, int stat);
 extern void load_collision(std::string& line, shape_data** col_shape);
 extern void load_anim(std::string& line, anim_data_t* anim);
 extern void load_ai(std::string& line, ai_data_t* ai_data);
+extern void load_bullet(std::string& line, ai_data_t** bullet_data);
 
 extern void unit_display(unit_data_t* unit_data, int layer);
 extern void unit_manager_update_unit_friction(unit_data_t* unit_data);
@@ -355,9 +361,7 @@ extern float unit_manager_get_distance(unit_data_t* main_unit, unit_data_t* targ
 extern int unit_manager_get_face(unit_data_t* unit_data);
 extern int unit_manager_get_face_relative(unit_data_t* unit_data, int original_face);
 extern int unit_manager_get_face_other_side(unit_data_t* unit_data);
-//extern void unit_manager_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_num= UNIT_BULLET_NUM_SINGLE);
 extern void unit_manager_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type = UNIT_BULLET_TRACK_LINE, int bullet_num = UNIT_BULLET_NUM_SINGLE);
-//extern void unit_manager_get_bullet_start_pos(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_num, int face, int* x, int* y);
 extern void unit_manager_get_bullet_start_pos(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_track_type, int bullet_num, int face, int* x, int* y);
 extern void unit_manager_get_spawn_items_pos(unit_data_t* spawner_unit, unit_data_t* avoid_unit, int item_num, int* x, int* y);
 extern void unit_manager_get_spawn_items_pos_under_foot(unit_data_t* spawner_unit, int item_num, int* x, int* y);
@@ -470,7 +474,7 @@ extern void unit_manager_enemy_bullet_set_hp(int unit_id, int hp);
 extern void unit_manager_enemy_bullet_set_bullet_life_timer(int unit_id, int bullet_life_timer);
 extern unit_enemy_bullet_data_t* unit_manager_get_enemy_bullet_base(int index);
 extern int unit_manager_load_enemy_bullet(std::string path);
-extern int unit_manager_create_enemy_bullet(int x, int y, float vec_x, float vec_y, int face, int owner_base_id, int base_index = -1);
+extern int unit_manager_create_enemy_bullet(int x, int y, float vec_x, float vec_y, int face, int owner_base_id, int base_index = -1, ai_data_t* ai_bullet=NULL);
 extern void unit_manager_clear_enemy_bullet(unit_enemy_bullet_data_t* bullet);
 extern void unit_manager_enemy_bullet_update();
 extern void unit_manager_enemy_bullet_display(int layer);

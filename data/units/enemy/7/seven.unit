@@ -42,12 +42,4 @@ units/enemy/7/seven.DIE.anim
 
 [ai]
 type=GO_TO_BOM
-bullet1=units/bullet/point/enemy/point.unit
-bullet1_track_type=LINE
-bullet1_num=SINGLE
-bullet1_face=W
-bullet2=units/bullet/point/enemy/point.unit
-bullet2_track_type=LINE
-bullet2_num=SINGLE
-bullet2_face=E
 [/ai]

@@ -40,8 +40,11 @@ units/enemy/6/lv2/six.DIE.anim
 
 [ai]
 type=LEFT_RIGHT
-bullet1=units/bullet/fire/enemy/fire.unit
-bullet1_track_type=LINE
-bullet1_num=DOUBLE
-bullet1_face=W
+
+# AI_PARAM_ATTACK | AI_PARAM_ALWAYS
+val1=3
 [/ai]
+
+[bullet]
+bullet1_ai=units/ai/bullet/line/line6_2_1.dat
+[/bullet]

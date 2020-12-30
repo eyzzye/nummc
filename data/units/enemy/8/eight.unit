@@ -39,4 +39,5 @@ units/enemy/8/eight.DIE.anim
 
 [ai]
 type=SIMPLE
+val1=0
 [/ai]
