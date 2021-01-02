@@ -117,10 +117,10 @@ struct _unit_player_data_t {
 	int effect_stat;	                    // FLAG_P_FIRE_UP,FREEZE_UP,BOOST,SHIELD
 	unit_effect_stat_data_t* effect_param;  // player_base_effect[UNIT_EFFECT_ID_P_END]
 
+	int resistance_stat;					// FLAG_P_FIRE_UP,FREEZE_UP
 	int attack_wait_timer;
 	int bullet_life_timer;
 	int bullet_curving;
-	int reserve4;
 
 	int speed;
 	int strength;
@@ -165,9 +165,9 @@ struct _unit_enemy_data_t {
 	char* next_level;
 
 	int drop_item;
-	int effect_stat;	                    // FLAG_P_FIRE_UP,FREEZE_UP,BOOST,SHIELD
+	int effect_stat;	                    // FLAG_E_FIRE_UP,FREEZE_UP
 	unit_effect_stat_data_t* effect_param;  // player_base_effect[UNIT_EFFECT_ID_P_END]
-	int reserve2;
+	int resistance_stat;					// FLAG_E_FIRE_UP,FREEZE_UP
 
 	ai_data_t* ai;
 	ai_data_t* bullet[UNIT_ENEMY_BULLET_NUM];

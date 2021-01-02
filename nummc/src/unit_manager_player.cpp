@@ -275,6 +275,21 @@ static void load_unit(std::string& line)
 		next_level_c_str[value.size()] = '\0';
 		player_base[player_base_index_end].next_level = next_level_c_str;
 	}
+
+	if (key == "resistance") {
+		std::vector<std::string> stat_list;
+		game_utils_split_conmma(value, stat_list);
+		int resistance_val = UNIT_EFFECT_FLAG_P_NONE;
+		for (int i = 0; i < stat_list.size(); i++) {
+			if (stat_list[i] == "FIRE_UP") {
+				resistance_val |= UNIT_EFFECT_FLAG_P_FIRE_UP;
+			}
+			else if (stat_list[i] == "FREEZE_UP") {
+				resistance_val |= UNIT_EFFECT_FLAG_P_FREEZE_UP;
+			}
+		}
+		player_base[player_base_index_end].resistance_stat = resistance_val;
+	}
 }
 
 void unit_manager_create_player(int x, int y)
@@ -325,6 +340,9 @@ void unit_manager_player_set_anim_stat(int stat)
 
 void unit_manager_player_set_effect_stat(int stat, bool off_on)
 {
+	if (g_player.resistance_stat != UNIT_EFFECT_FLAG_P_NONE) {
+		stat &= (~g_player.resistance_stat);
+	}
 	if (stat == 0) return;
 
 	if (g_player.effect_stat & stat) { // on
@@ -918,12 +936,12 @@ void unit_manager_player_trap(unit_trap_data_t* trap_data)
 			unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&g_player);
 		}
 	}
-	else if (trap_data->group == UNIT_TRAP_GROUP_FIRE) {
+	else if ((trap_data->group == UNIT_TRAP_GROUP_FIRE) && !(g_player.resistance_stat & UNIT_EFFECT_FLAG_P_FIRE_UP)) {
 		if (unit_manager_player_get_damage(-trap_data->base->hp) == 0) {
 			unit_manager_player_set_effect_stat(UNIT_EFFECT_FLAG_P_FIRE_UP, true);
 		}
 	}
-	else if (trap_data->group == UNIT_TRAP_GROUP_ICE) {
+	else if ((trap_data->group == UNIT_TRAP_GROUP_ICE) && !(g_player.resistance_stat & UNIT_EFFECT_FLAG_P_FREEZE_UP)) {
 		if (unit_manager_player_get_damage(-trap_data->base->hp) == 0) {
 			unit_manager_player_set_effect_stat(UNIT_EFFECT_FLAG_P_FREEZE_UP, true);
 		}

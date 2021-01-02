@@ -151,6 +151,9 @@ void unit_manager_enemy_set_anim_stat(int unit_id, int stat)
 
 void unit_manager_enemy_set_effect_stat(int unit_id, int stat, bool off_on)
 {
+	if (enemy[unit_id].resistance_stat != UNIT_EFFECT_FLAG_E_NONE) {
+		stat &= (~enemy[unit_id].resistance_stat);
+	}
 	if (stat == 0) return;
 
 	if (enemy[unit_id].effect_stat & stat) { // on
@@ -367,6 +370,20 @@ static void load_unit_enemy(std::string& line, unit_enemy_data_t* enemy_data)
 
 	if (key == "drop_item") {
 		enemy_data->drop_item = unit_manager_search_items(value);
+	}
+	if (key == "resistance") {
+		std::vector<std::string> stat_list;
+		game_utils_split_conmma(value, stat_list);
+		int resistance_val = UNIT_EFFECT_FLAG_E_NONE;
+		for (int i = 0; i < stat_list.size(); i++) {
+			if (stat_list[i] == "FIRE_UP") {
+				resistance_val |= UNIT_EFFECT_FLAG_E_FIRE_UP;
+			}
+			else if (stat_list[i] == "FREEZE_UP") {
+				resistance_val |= UNIT_EFFECT_FLAG_E_FREEZE_UP;
+			}
+		}
+		enemy_data->resistance_stat = resistance_val;
 	}
 }
 
@@ -616,12 +633,12 @@ void unit_manager_enemy_trap(unit_enemy_data_t* enemy_data, unit_trap_data_t* tr
 	else if (trap_data->group == UNIT_TRAP_GROUP_DAMAGE) {
 		unit_manager_enemy_get_damage(enemy_data, -trap_data->base->hp);
 	}
-	else if (trap_data->group == UNIT_TRAP_GROUP_FIRE) {
+	else if ((trap_data->group == UNIT_TRAP_GROUP_FIRE) && !(enemy_data->resistance_stat & UNIT_EFFECT_FLAG_E_FIRE_UP)) {
 		if (unit_manager_enemy_get_damage(enemy_data, -trap_data->base->hp) == 0) {
 			unit_manager_enemy_set_effect_stat(enemy_data->id, UNIT_EFFECT_FLAG_E_FIRE_UP, true);
 		}
 	}
-	else if (trap_data->group == UNIT_TRAP_GROUP_ICE) {
+	else if ((trap_data->group == UNIT_TRAP_GROUP_ICE) && !(enemy_data->resistance_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP)) {
 		if (unit_manager_enemy_get_damage(enemy_data, -trap_data->base->hp) == 0) {
 			unit_manager_enemy_set_effect_stat(enemy_data->id, UNIT_EFFECT_FLAG_E_FREEZE_UP, true);
 		}

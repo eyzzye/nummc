@@ -3,16 +3,16 @@
 #
 
 [unit]
-hp=20
-bullet_life_timer=400
+hp=30
+bullet_life_timer=500
 bullet_curving=5
-speed=5
-strength=5
-exp=10
-hp_max=20
+speed=6
+strength=6
+exp=20
+hp_max=30
 exp_max=0
-level=1
-next_level=units/enemy/4/lv2/four.unit
+level=3
+next_level=null
 
 resistance=FREEZE_UP
 [/unit]
@@ -34,10 +34,10 @@ vec_y_delta=1.0
 [anim]
 base_w=32
 base_h=32
-units/enemy/4/four.IDLE.anim
-units/enemy/4/four.MOVE.anim
-units/enemy/4/four.ATTACK1.anim
-units/enemy/4/four.DIE.anim
+units/enemy/4/lv3/four.IDLE.anim
+units/enemy/4/lv3/four.MOVE.anim
+units/enemy/4/lv3/four.ATTACK1.anim
+units/enemy/4/lv3/four.DIE.anim
 [/anim]
 
 [ai]
@@ -48,5 +48,5 @@ val1=3
 [/ai]
 
 [bullet]
-bullet1_ai=units/ai/bullet/line/line4_1_1.dat
+bullet1_ai=units/ai/bullet/line/line4_3_1.dat
 [/bullet]
