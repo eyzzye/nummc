@@ -750,48 +750,63 @@ static void get_bullet_start_pos_single(unit_data_t* unit_data, unit_data_t* uni
 		bullet_h = ((shape_box_data*)unit_bullet_data->col_shape)->h;
 	}
 
+	int offset_vec_x = 0;
+	int offset_vec_y = 0;
 	if (unit_data->col_shape->type == COLLISION_TYPE_BOX_D) {
 		int w, h;
 		w = ((shape_box_data*)unit_data->col_shape)->w;
 		h = ((shape_box_data*)unit_data->col_shape)->h;
 
 		if (face == UNIT_FACE_N) {
-			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
-			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
+			offset_vec_x = unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
+			offset_vec_y = unit_data->col_shape->offset_y - 1 - bullet_h;
 		}
 		else if (face == UNIT_FACE_S) {
-			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
-			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
+			offset_vec_x = unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
+			offset_vec_y = unit_data->col_shape->offset_y + h + 1;
 		}
 		else if (face == UNIT_FACE_W) {
-			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
-			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
+			offset_vec_x = unit_data->col_shape->offset_x - 1 - bullet_w;
+			offset_vec_y = unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
 		}
 		else if (face == UNIT_FACE_E) {
-			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
-			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
+			offset_vec_x = unit_data->col_shape->offset_x + w;
+			offset_vec_y = unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
 		}
 	}
 	else if (unit_data->col_shape->type == COLLISION_TYPE_ROUND_D) {
 		int r = ((shape_round_data*)unit_data->col_shape)->r;
 
 		if (face == UNIT_FACE_N) {
-			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x;
-			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
+			offset_vec_x = unit_data->col_shape->offset_x;
+			offset_vec_y = unit_data->col_shape->offset_y - 1;
 		}
 		else if (face == UNIT_FACE_S) {
-			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x;
-			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
+			offset_vec_x = unit_data->col_shape->offset_x;
+			offset_vec_y = unit_data->col_shape->offset_y + r + 1;
 		}
 		else if (face == UNIT_FACE_W) {
-			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
-			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y;
+			offset_vec_x = unit_data->col_shape->offset_x - 1;
+			offset_vec_y = unit_data->col_shape->offset_y;
 		}
 		else if (face == UNIT_FACE_E) {
-			*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
-			*y = unit_data->col_shape->y + unit_data->col_shape->offset_y;
+			offset_vec_x = unit_data->col_shape->offset_x + r + 1;
+			offset_vec_y = unit_data->col_shape->offset_y;
 		}
 	}
+
+	if ((unit_data->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) && (unit_data->col_shape->b2body)) {
+		float disp_angle = unit_data->col_shape->b2body->GetAngle(); // radian
+		float sin_val = game_utils_sin(disp_angle);
+		float cos_val = game_utils_cos(disp_angle);
+		float rotate_x = cos_val * (float)offset_vec_x - sin_val * (float)offset_vec_y;
+		float rotate_y = sin_val * (float)offset_vec_x + cos_val * (float)offset_vec_y;
+		offset_vec_x = (int)rotate_x;
+		offset_vec_y = (int)rotate_y;
+	}
+
+	*x = unit_data->col_shape->x + offset_vec_x;
+	*y = unit_data->col_shape->y + offset_vec_y;
 }
 
 static void get_bullet_start_pos_line(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_num, int face, int* x, int* y)

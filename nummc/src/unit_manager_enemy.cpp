@@ -210,6 +210,20 @@ void unit_manager_enemy_get_face_velocity(unit_enemy_data_t* enemy_data, float* 
 {
 	unit_manager_get_face_velocity(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
 
+	// rotate unit
+	if ((enemy_data->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) && (enemy_data->col_shape->b2body)) {
+		float disp_angle = enemy_data->col_shape->b2body->GetAngle(); // radian
+		float sin_val = game_utils_sin(disp_angle);
+		float cos_val = game_utils_cos(disp_angle);
+
+		for (int i = 0; i < bullet_num; i++) {
+			float rotate_x = cos_val * (*(vec_x + i)) - sin_val * (*(vec_y + i));
+			float rotate_y = sin_val * (*(vec_x + i)) + cos_val * (*(vec_y + i));
+			*(vec_x + i) = rotate_x;
+			*(vec_y + i) = rotate_y;
+		}
+	}
+
 	// curving velocity
 	float curving_coef = unit_manager_enemy_get_bullet_curving(enemy_data->base->id);
 	if ((face == UNIT_FACE_N) || (face == UNIT_FACE_S)) {

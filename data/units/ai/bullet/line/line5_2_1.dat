@@ -1,0 +1,10 @@
+#
+# enemy5 lv2
+#
+
+[basic]
+bullet_unit=units/bullet/point/enemy/point.unit
+bullet_track_type=LINE
+bullet_num=SINGLE
+bullet_face=E
+[/basic]

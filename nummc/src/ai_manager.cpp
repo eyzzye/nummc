@@ -758,8 +758,52 @@ static void update_round(ai_data_t* ai_data)
 		LOG_ERROR("Error: update_round param error.");
 	}
 
+	// step
+	if (ai_stat->step[AI_STAT_STEP_E] == 0) {
+		if ((ai_stat->val1 & AI_PARAM_ATTACK) && (ai_stat->val1 & AI_PARAM_ALWAYS)) {
+			if (unit_data->col_shape->b2body) {
+				ai_bullet_t* bullet = (ai_bullet_t*)((unit_enemy_data_t*)unit_data)->bullet[0];
+				float angle = unit_data->col_shape->b2body->GetAngle();
+				int round_count = (int)(angle / (2.0f * b2_pi));
+				angle -= round_count * (2.0f * b2_pi);
+
+				bool attack_dirt = false;
+				int attack_count = ai_stat->val2;
+				if (((attack_count == 1) || (attack_count == 2) || (attack_count == 4))
+					&& (angle >= 0) && (angle < b2_pi * 5.0f / 180.0f)) {
+					attack_dirt = true;
+				}
+				else if ((attack_count == 4)
+					&& (angle >= b2_pi * 90.0f / 180.0f) && (angle < b2_pi * 95.0f / 180.0f)) {
+					attack_dirt = true;
+				}
+				else if (((attack_count == 2) || (attack_count == 4))
+					&& (angle >= b2_pi * 180.0f / 180.0f) && (angle < b2_pi * 185.0f / 180.0f)) {
+					attack_dirt = true;
+				}
+				else if ((attack_count == 4)
+					&& (angle >= b2_pi * 270.0f / 180.0f) && (angle < b2_pi * 275.0f / 180.0f)) {
+					attack_dirt = true;
+				}
+
+				if (attack_dirt) {
+					unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
+					ai_stat->step[AI_STAT_STEP_E] += 1;
+				}
+				else {
+					// don't reset timer
+					return;
+				}
+			}
+		}
+	}
+	else if (ai_stat->step[AI_STAT_STEP_E] == 1) {
+		ai_stat->step[AI_STAT_STEP_E] = 0;
+	}
+
 	// set wait timer
-	ai_stat->timer1 = AI_STAY_WAIT_TIMER;
+	//ai_stat->timer1 = AI_STAY_WAIT_TIMER;
+	ai_stat->timer1 = DELTA_TIME_MIN * 10;
 }
 
 static void update_go_to_bom(ai_data_t* ai_data)
