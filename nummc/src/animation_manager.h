@@ -4,10 +4,15 @@
 #define ANIM_DATA_DISABLE  0
 #define ANIM_DATA_ENABLE   1
 
-#define ANIM_TYPE_NONE     0
-#define ANIM_TYPE_STATIC   1
-#define ANIM_TYPE_DYNAMIC  2
-#define ANIM_TYPE_END      3
+#define ANIM_TYPE_NONE              0
+#define ANIM_TYPE_STATIC            1
+#define ANIM_TYPE_DYNAMIC           2
+//#define ANIM_TYPE_END               3
+#define ANIM_TYPE_DRAW              (0x00010000)
+#define ANIM_TYPE_FILL              (0x00020000)
+#define ANIM_TYPE_DRAW_RECT         (ANIM_TYPE_DRAW | 1)
+#define ANIM_TYPE_DRAW_CIRCLE       (ANIM_TYPE_DRAW | 2)
+#define ANIM_TYPE_DRAW_RECT_FILL    (ANIM_TYPE_FILL | ANIM_TYPE_DRAW_RECT)
 
 #define ANIM_STAT_IDLE     0
 #define ANIM_STAT_MOVE     1
@@ -82,6 +87,14 @@ struct _anim_stat_base_data_t {
 
 	int tex_layer;
 	int snd_channel;
+	int reserve1;
+	int reserve2;
+
+	// draw color
+	int color_r;
+	int color_g;
+	int color_b;
+	int color_a;
 };
 
 struct _anim_stat_data_t {

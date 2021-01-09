@@ -13,6 +13,8 @@
 #define AI_BULLET_TAG_BASIC      0
 #define AI_BULLET_TAG_END        1
 
+static std::string high_light_line_path = "units/effect/high_light_line/high_light_line.unit";
+
 #define AI_BASE_DATA_LIST_SIZE 32 * 4
 static ai_data_t ai_base_data_list[AI_BASE_DATA_LIST_SIZE];
 static ai_data_t* ai_base_data_list_start;
@@ -169,16 +171,16 @@ static void load_basic(std::string& line, ai_bullet_t* bullet_data)
 	int bullet_face = UNIT_FACE_NONE;
 	if (key == "bullet_face") {
 		const char* bullet_face_str = value.c_str();
-		if (*bullet_face_str == 'N') {
+		if (strcmp(bullet_face_str, "N") == 0) {
 			bullet_face = UNIT_FACE_N;
 		}
-		else if (*bullet_face_str == 'E') {
+		else if (strcmp(bullet_face_str, "E") == 0) {
 			bullet_face = UNIT_FACE_E;
 		}
-		else if (*bullet_face_str == 'W') {
+		else if (strcmp(bullet_face_str, "W") == 0) {
 			bullet_face = UNIT_FACE_W;
 		}
-		else if (*bullet_face_str == 'S') {
+		else if (strcmp(bullet_face_str, "S") == 0) {
 			bullet_face = UNIT_FACE_S;
 		}
 		bullet_data->bullet_face = bullet_face;
@@ -458,14 +460,159 @@ void ai_unit_prediction_point(unit_data_t* unit_data, int delta_time, int* p_x, 
 static void update_simple(ai_data_t* ai_data)
 {
 	ai_stat_data_t* ai_stat = (ai_stat_data_t*)ai_data;
-	if (ai_stat->timer1 > 0) {
-		ai_stat->timer1 -= g_delta_time;
-		return;  // waitting
-	}
-
 	unit_data_t* unit_data = (unit_data_t*)ai_data->obj;
 	if (unit_data->type != UNIT_TYPE_ENEMY) {
 		LOG_ERROR("Error: update_simple_fire param error.");
+	}
+
+	// slope_attack
+	if (ai_stat->val1 & AI_PARAM_SLOPE_ATTACK) {
+		int decision_count = ai_stat->val3;
+		float vec_x = 0.0f, vec_y = 0.0f;
+		int player_cx, player_cy;
+		SDL_Rect attack_region = { 0 };
+
+		if (unit_data->anim->stat == ANIM_STAT_FLAG_ATTACK1) {
+			// keep moving
+			return;
+		}
+		else {
+			unit_manager_get_center_position((unit_data_t*)&g_player, &player_cx, &player_cy);
+			int attack_region_width = ai_stat->val2;
+			int attack_speed = 3;
+
+			int player_w, player_h;
+			if (g_player.col_shape->type == COLLISION_TYPE_BOX_D) {
+				player_w = ((shape_box_data*)g_player.col_shape)->w / 2;
+				player_h = ((shape_box_data*)g_player.col_shape)->h / 2;
+			}
+			else if (g_player.col_shape->type == COLLISION_TYPE_ROUND_D) {
+				player_w = ((shape_round_data*)g_player.col_shape)->r;
+				player_h = ((shape_round_data*)g_player.col_shape)->r;
+			}
+
+			int pos_x, pos_y;
+			unit_manager_get_position(unit_data, &pos_x, &pos_y);
+
+			if (unit_data->col_shape->type == COLLISION_TYPE_BOX_D) {
+				int w, h;
+				w = ((shape_box_data*)unit_data->col_shape)->w;
+				h = ((shape_box_data*)unit_data->col_shape)->h;
+				pos_x += unit_data->col_shape->offset_x;
+				pos_y += unit_data->col_shape->offset_y;
+
+				if (unit_data->col_shape->face == UNIT_FACE_N) {
+					attack_region.x = pos_x - attack_region_width / 2 - player_w;
+					attack_region.y = 0;
+					attack_region.w = attack_region_width + w + 2 * player_w;
+					attack_region.h = pos_y;
+					vec_y = -((unit_data_t*)ai_data->obj)->col_shape->vec_y_delta * attack_speed;
+				}
+				else if (unit_data->col_shape->face == UNIT_FACE_S) {
+					attack_region.x = pos_x - attack_region_width / 2 - player_w;
+					attack_region.y = pos_y + w;
+					attack_region.w = attack_region_width + w + 2 * player_w;
+					attack_region.h = g_map_y_max * g_tile_height - attack_region.y;
+					vec_y = ((unit_data_t*)ai_data->obj)->col_shape->vec_y_delta * attack_speed;
+				}
+				else if (unit_data->col_shape->face == UNIT_FACE_E) {
+					attack_region.x = pos_x + w;
+					attack_region.y = pos_y - attack_region_width / 2 - player_h;
+					attack_region.w = g_map_x_max * g_tile_width - attack_region.x;
+					attack_region.h = attack_region_width + h + 2 * player_h;
+					vec_x = ((unit_data_t*)ai_data->obj)->col_shape->vec_x_delta * attack_speed;
+				}
+				else { // (unit_data->col_shape->face == UNIT_FACE_W)
+					attack_region.x = 0;
+					attack_region.y = pos_y - attack_region_width / 2 - player_h;
+					attack_region.w = pos_x;
+					attack_region.h = attack_region_width + h + 2 * player_h;
+					vec_x = -((unit_data_t*)ai_data->obj)->col_shape->vec_x_delta * attack_speed;
+				}
+			}
+			else if (unit_data->col_shape->type == COLLISION_TYPE_ROUND_D) {
+				int r = ((shape_round_data*)unit_data->col_shape)->r;
+				pos_x += unit_data->col_shape->offset_x;
+				pos_y += unit_data->col_shape->offset_y;
+
+				if (unit_data->col_shape->face == UNIT_FACE_N) {
+					attack_region.x = pos_x - attack_region_width / 2 - r - player_w;
+					attack_region.y = 0;
+					attack_region.w = attack_region_width + 2 * r + 2 * player_w;
+					attack_region.h = pos_y - r;
+					vec_y = -((unit_data_t*)ai_data->obj)->col_shape->vec_y_delta * attack_speed;
+				}
+				else if (unit_data->col_shape->face == UNIT_FACE_S) {
+					attack_region.x = pos_x - attack_region_width / 2 - r - player_w;
+					attack_region.y = pos_y + r;
+					attack_region.w = attack_region_width + 2 * r + 2 * player_w;
+					attack_region.h = g_map_y_max * g_tile_height - attack_region.y;
+					vec_y = ((unit_data_t*)ai_data->obj)->col_shape->vec_y_delta * attack_speed;
+				}
+				else if (unit_data->col_shape->face == UNIT_FACE_E) {
+					attack_region.x = pos_x + r;
+					attack_region.y = pos_y - attack_region_width / 2 - r - player_h;
+					attack_region.w = g_map_x_max * g_tile_width - attack_region.x;
+					attack_region.h = attack_region_width + 2 * r + 2 * player_h;
+					vec_x = ((unit_data_t*)ai_data->obj)->col_shape->vec_x_delta * attack_speed;
+				}
+				else { // (unit_data->col_shape->face == UNIT_FACE_W)
+					attack_region.x = 0;
+					attack_region.y = pos_y - attack_region_width / 2 - r - player_h;
+					attack_region.w = pos_x - r;
+					attack_region.h = attack_region_width + 2 * r + 2 * player_h;
+					vec_x = -((unit_data_t*)ai_data->obj)->col_shape->vec_x_delta * attack_speed;
+				}
+			}
+
+			// AABB decision
+			if (((attack_region.x < player_cx) && (player_cx < attack_region.x + attack_region.w)) &&
+				((attack_region.y < player_cy) && (player_cy < attack_region.y + attack_region.h)))
+			{
+				ai_stat->timer2 += 1;
+			}
+			else {
+				ai_stat->timer2 = 0;
+			}
+		}
+
+		// slope_attack
+		if (ai_stat->timer2 > decision_count) {
+			((unit_enemy_data_t*)unit_data)->resistance_stat |= UNIT_EFFECT_FLAG_E_NO_FRICTION;
+			unit_data->col_shape->vec_x_max = ABS(vec_x);
+			unit_data->col_shape->vec_y_max = ABS(vec_y);
+			unit_manager_enemy_move((unit_enemy_data_t*)ai_data->obj, vec_x, vec_y);
+			unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
+
+			// create high_light_line
+			if ((unit_data->col_shape->face == UNIT_FACE_N) || (unit_data->col_shape->face == UNIT_FACE_S)) {
+				int unit_id = unit_manager_create_effect(attack_region.x, 0, unit_manager_search_effect(high_light_line_path));
+				unit_effect_data_t* effect_data = unit_manager_get_effect(unit_id);
+				((shape_box_data*)effect_data->col_shape)->w = attack_region.w;
+				((shape_box_data*)effect_data->col_shape)->h = g_map_y_max * g_tile_height;
+			}
+			else { // (unit_data->col_shape->face == UNIT_FACE_E) || (unit_data->col_shape->face == UNIT_FACE_W)
+				int unit_id = unit_manager_create_effect(0, attack_region.y, unit_manager_search_effect(high_light_line_path));
+				unit_effect_data_t* effect_data = unit_manager_get_effect(unit_id);
+				((shape_box_data*)effect_data->col_shape)->w = g_map_x_max * g_tile_width;
+				((shape_box_data*)effect_data->col_shape)->h = attack_region.h;
+			}
+
+			// reset timer
+			ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
+			ai_stat->timer2 = 0;
+			return;
+		}
+		else if (((unit_enemy_data_t*)unit_data)->resistance_stat & UNIT_EFFECT_FLAG_E_NO_FRICTION) {
+			((unit_enemy_data_t*)unit_data)->resistance_stat &= ~UNIT_EFFECT_FLAG_E_NO_FRICTION;
+			unit_data->col_shape->vec_x_max = unit_data->base->col_shape->vec_x_max;
+			unit_data->col_shape->vec_y_max = unit_data->base->col_shape->vec_y_max;
+		}
+	}
+
+	if (ai_stat->timer1 > 0) {
+		ai_stat->timer1 -= g_delta_time;
+		return;  // waitting
 	}
 
 	// attack
@@ -802,7 +949,6 @@ static void update_round(ai_data_t* ai_data)
 	}
 
 	// set wait timer
-	//ai_stat->timer1 = AI_STAY_WAIT_TIMER;
 	ai_stat->timer1 = DELTA_TIME_MIN * 10;
 }
 
@@ -841,8 +987,11 @@ static void update_go_to_bom(ai_data_t* ai_data)
 	}
 	else if (ai_stat->step[AI_STAT_STEP_E] == 4) {
 		// go to player pos
-		int tmp_x = g_player.col_shape->x - unit_data->col_shape->x;
-		int tmp_y = g_player.col_shape->y - unit_data->col_shape->y;
+		int player_cx, player_cy, enemy_cx, enemy_cy;
+		unit_manager_get_center_position((unit_data_t*)&g_player, &player_cx, &player_cy);
+		unit_manager_get_center_position(unit_data, &enemy_cx, &enemy_cy);
+		int tmp_x = player_cx - enemy_cx;
+		int tmp_y = player_cy - enemy_cy;
 		float vec_length = sqrtf((float)(tmp_x * tmp_x + tmp_y * tmp_y));
 
 		float value = (unit_data->col_shape->vec_x_delta + unit_data->col_shape->vec_y_delta) * 0.5f;
@@ -861,8 +1010,11 @@ static void update_go_to_bom(ai_data_t* ai_data)
 		unit_manager_items_set_anim_stat(id, ANIM_STAT_FLAG_ATTACK);
 
 		// run away from player pos
-		int tmp_x = g_player.col_shape->x - unit_data->col_shape->x;
-		int tmp_y = g_player.col_shape->y - unit_data->col_shape->y;
+		int player_cx, player_cy, enemy_cx, enemy_cy;
+		unit_manager_get_center_position((unit_data_t*)&g_player, &player_cx, &player_cy);
+		unit_manager_get_center_position(unit_data, &enemy_cx, &enemy_cy);
+		int tmp_x = player_cx - enemy_cx;
+		int tmp_y = player_cy - enemy_cy;
 		float vec_length = sqrtf((float)(tmp_x * tmp_x + tmp_y * tmp_y));
 
 		float value = (unit_data->col_shape->vec_x_delta + unit_data->col_shape->vec_y_delta) * 0.5f;
@@ -932,6 +1084,8 @@ static void update_bullet_wave(ai_stat_bullet_t* ai_bullet) {
 
 	if (move_dirt) {
 		unit_enemy_bullet->col_shape->b2body->SetTransform(new_point, 0);
+		//unit_enemy_bullet->col_shape->x = (int)MET2PIX(unit_enemy_bullet->col_shape->b2body->GetPosition().x);
+		//unit_enemy_bullet->col_shape->y = (int)MET2PIX(unit_enemy_bullet->col_shape->b2body->GetPosition().y);
 	}
 
 	if (ai_bullet->timer1 < BULLET_WAVE_TIMER_MAX) {

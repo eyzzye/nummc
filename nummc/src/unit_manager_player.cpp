@@ -362,18 +362,12 @@ void unit_manager_player_set_effect_stat(int stat, bool off_on)
 			int i = 0; int flg = 0x00000001;
 			while (stat != flg) { i++; flg <<= 1; }
 
-			unit_manager_effect_set_b2position(g_player.base->effect_param[i].id, g_player.col_shape->b2body->GetPosition().x, g_player.col_shape->b2body->GetPosition().y);
+			unit_manager_effect_set_b2position(g_player.base->effect_param[i].id, PIX2MET(g_player.col_shape->x), PIX2MET(g_player.col_shape->y));
 			unit_manager_effect_set_anim_stat(g_player.base->effect_param[i].id, ANIM_STAT_FLAG_IDLE);
 			g_player.effect_param[i].timer   = player_effect_default[i].timer;
 			g_player.effect_param[i].counter = player_effect_default[i].counter;
 		}
 	}
-}
-
-void unit_manager_player_get_position(int* x, int* y)
-{
-	*x = g_player.col_shape->x;
-	*y = g_player.col_shape->y;
 }
 
 void unit_manager_player_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num)
@@ -1024,14 +1018,12 @@ void unit_manager_player_update()
 #endif
 
 	// update *base* effect position
-	float b2_effect_x = g_player.col_shape->b2body->GetPosition().x;
-	float b2_effect_y = g_player.col_shape->b2body->GetPosition().y;
 	for (int ei = UNIT_EFFECT_ID_P_FIRE_UP; ei < UNIT_EFFECT_ID_P_END; ei++) {
 		int effect_flg = 0x00000001 << ei;
 		if (g_player.effect_stat & effect_flg) {
-			unit_manager_effect_set_b2position(g_player.base->effect_param[ei].id, b2_effect_x, b2_effect_y);
-			g_player.effect_param[ei].timer -= player_delta_time;
+			unit_manager_effect_set_b2position(g_player.base->effect_param[ei].id, PIX2MET(g_player.col_shape->x), PIX2MET(g_player.col_shape->y));
 
+			g_player.effect_param[ei].timer -= player_delta_time;
 			if (g_player.effect_param[ei].timer < 0) {
 				unit_manager_player_set_effect_stat(effect_flg, false);
 			}

@@ -34,7 +34,7 @@
 #define UNIT_TRAP_LIST_SIZE            64
 #define UNIT_EFFECT_LIST_SIZE         256  // (PLAYER * UNIT_EFFECT_ID_P_END) + (ENEMY_LIST_SIZE * UNIT_EFFECT_ID_E_END) + others(item effect, trap effect ...)
 #define UNIT_PLAYER_BULLET_LIST_SIZE   32
-#define UNIT_ENEMY_BULLET_LIST_SIZE   128  // ENEMY_LIST_SIZE * TRIPLE
+#define UNIT_ENEMY_BULLET_LIST_SIZE   128  // ENEMY_LIST_SIZE * bullet_num
 typedef void void_func();
 typedef void void_p_func(void*);
 typedef void event_func(SDL_Event*);

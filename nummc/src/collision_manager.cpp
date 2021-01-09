@@ -378,6 +378,28 @@ static void debug_draw_circle(SDL_Point* round_points, int center_x, int center_
 }
 #endif
 
+#define CIRCLE_POINT_NUM  33
+void collision_manager_display_circle(shape_data* col_shape) {
+	SDL_Point round_points[CIRCLE_POINT_NUM];
+	int center_x = col_shape->x + col_shape->offset_x;
+	int center_y = col_shape->y + col_shape->offset_y;
+	int circle_r = ((shape_round_data*)col_shape)->r;
+	float delta_angle = 2.0f * b2_pi / (CIRCLE_POINT_NUM - 1);
+	float angle = 0.0f;
+
+	for (int i = 0; i < CIRCLE_POINT_NUM - 1; i++) {
+		float sin_val = game_utils_sin(angle);
+		float cos_val = game_utils_cos(angle);
+		round_points[i].x = (int)VIEW_STAGE_X(center_x + circle_r * sin_val);
+		round_points[i].y = (int)VIEW_STAGE_Y(center_y + circle_r * cos_val);
+		angle += delta_angle;
+	}
+	round_points[CIRCLE_POINT_NUM - 1].x = round_points[0].x;
+	round_points[CIRCLE_POINT_NUM - 1].y = round_points[0].y;
+
+	SDL_RenderDrawLines(g_ren, round_points, CIRCLE_POINT_NUM);
+}
+
 void collision_manager_display() {
 #ifdef _COLLISION_ENABLE_BOX_2D_
 #ifdef COLLISION_DEBUG
@@ -1155,6 +1177,27 @@ int collision_manager_set_mass(shape_data* shape, float weight) {
 		ret = 0;
 	}
 	return ret;
+}
+
+void collision_manager_set_angle(shape_data* shape, float angle /* rad */) {
+	b2Transform old_xf = shape->b2body->GetTransform();
+	b2Vec2 old_center = shape->b2body->GetWorldCenter();
+
+	float delta_angle = angle - old_xf.q.GetAngle();
+	if (delta_angle == 0.0f) return;
+
+	float sin_val = game_utils_sin(delta_angle);
+	float cos_val = game_utils_cos(delta_angle);
+	float vec_x = old_xf.p.x - old_center.x;
+	float vec_y = old_xf.p.y - old_center.y;
+
+	b2Vec2 new_pos;
+	new_pos.x = old_center.x + cos_val * vec_x - sin_val * vec_y;
+	new_pos.y = old_center.y + sin_val * vec_x + cos_val * vec_y;
+
+	shape->b2body->SetTransform(new_pos, angle);
+	shape->x = (int)MET2PIX(shape->b2body->GetPosition().x);
+	shape->y = (int)MET2PIX(shape->b2body->GetPosition().y);
 }
 
 int collision_manager_set_moter_speed(shape_data* shape, float speed) {

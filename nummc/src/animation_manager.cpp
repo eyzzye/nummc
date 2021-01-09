@@ -12,7 +12,14 @@
 #define ANIM_TAG_SND        2
 #define ANIM_TAG_END        3
 
+// ANIM_DATA_LIST_SIZE =
+//  all unit base num
+//   + TILE_TEX_NUM
+//   + PLAYER * (UNIT_EFFECT_ID_P_END) + ENEMY_LIST_SIZE * (UNIT_EFFECT_ID_E_END)
+//   + UNIT_ITEMS_LIST_SIZE + UNIT_TRAP_LIST_SIZE + UNIT_PLAYER_BULLET_LIST_SIZE + UNIT_ENEMY_BULLET_LIST_SIZE
+//   + effect inst num
 #define ANIM_DATA_LIST_SIZE 256
+
 static anim_data_t anim_data_list[ANIM_DATA_LIST_SIZE];
 static anim_data_t* anim_data_list_start;
 static anim_data_t* anim_data_list_end;
@@ -262,12 +269,51 @@ static void load_anim_frame(std::string line, anim_data_t* anim_data, int stat)
 		}
 	}
 
+	if (key == "type") {
+		if (value == "STATIC") {
+			anim_data->anim_stat_base_list[stat]->type = ANIM_TYPE_STATIC;
+		}
+		else if (value == "DYNAMIC") {
+			anim_data->anim_stat_base_list[stat]->type = ANIM_TYPE_DYNAMIC;
+		}
+		else if (value == "DRAW_RECT") {
+			anim_data->anim_stat_base_list[stat]->type = ANIM_TYPE_DRAW_RECT;
+		}
+		else if (value == "DRAW_CIRCLE") {
+			anim_data->anim_stat_base_list[stat]->type = ANIM_TYPE_DRAW_CIRCLE;
+		}
+		else if (value == "DRAW_RECT_FILL") {
+			anim_data->anim_stat_base_list[stat]->type = ANIM_TYPE_DRAW_RECT_FILL;
+		}
+		else {
+			anim_data->anim_stat_base_list[stat]->type = ANIM_TYPE_NONE;
+		}
+	}
+
+	if (key == "layer") {
+		anim_data->anim_stat_base_list[stat]->tex_layer = atoi(value.c_str());
+	}
+
 	if (key == "command") {
 		std::vector<int> int_list;
 		game_utils_split_conmma(value, int_list);
 		for (int i = 0; i < int_list.size(); i++) {
 			anim_data->anim_stat_base_list[stat]->frame_list[int_list[i]]->command = ANIM_FRAME_COMMAND_ON;
 		}
+	}
+
+	// draw color
+	if (key == "color_r") {
+		anim_data->anim_stat_base_list[stat]->color_r = atoi(value.c_str());
+	}
+	if (key == "color_g") {
+		anim_data->anim_stat_base_list[stat]->color_g = atoi(value.c_str());
+	}
+	if (key == "color_b") {
+		anim_data->anim_stat_base_list[stat]->color_b = atoi(value.c_str());
+	}
+	if (key == "color_a") {
+		anim_data->anim_stat_base_list[stat]->color_a = atoi(value.c_str());
 	}
 }
 
@@ -304,16 +350,7 @@ static void load_anim_img(std::string line, anim_data_t* anim_data, int stat)
 		game_utils_split_conmma(value, str_list);
 
 		if ((str_list.size() == 1) && (str_list[0] == "*")) {
-#if 0
-			int w, h;
-			for (int fi = 0; fi < anim_data->anim_stat_base_list[stat]->frame_size; fi++) {
-				int ret = SDL_QueryTexture(anim_data->anim_stat_base_list[stat]->frame_list[fi]->tex, NULL, NULL, &w, &h);
-				if (ret == 0) {
-					anim_frame_data_t* anim_frame_data = anim_data->anim_stat_base_list[stat]->frame_list[fi];
-					anim_frame_data->src_rect = { 0, 0, w, h };
-				}
-			}
-#endif
+			// do nothing
 		}
 		else {
 			for (int fi = 0; fi < str_list.size(); fi++) {

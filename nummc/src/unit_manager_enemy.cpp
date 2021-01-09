@@ -144,6 +144,19 @@ void unit_manager_enemy_set_anim_stat(int unit_id, int stat)
 
 	// DIE
 	if ((enemy[unit_id].anim->stat == ANIM_STAT_FLAG_DIE) && enemy[unit_id].col_shape->b2body) {
+		// reset face
+		if ((enemy[unit_id].col_shape->joint_type != COLLISION_JOINT_TYPE_PIN) && (enemy[unit_id].col_shape->joint_type != COLLISION_JOINT_TYPE_PIN_ROUND)) {
+			if (enemy[unit_id].col_shape->face != UNIT_FACE_W) {
+				int backup_face = enemy[unit_id].col_shape->face;
+				collision_manager_set_face(enemy[unit_id].col_shape, enemy[unit_id].base->col_shape, enemy[unit_id].base->anim->base_w, enemy[unit_id].base->anim->base_h, UNIT_FACE_W);
+				collision_manager_set_angle(enemy[unit_id].col_shape, 0);
+
+				// set face for DIE
+				collision_manager_set_face(enemy[unit_id].col_shape, enemy[unit_id].base->col_shape, enemy[unit_id].base->anim->base_w, enemy[unit_id].base->anim->base_h, backup_face);
+			}
+		}
+
+		// delete b2body
 		g_stage_world->DestroyBody(enemy[unit_id].col_shape->b2body);
 		enemy[unit_id].col_shape->b2body = NULL;
 	}
@@ -179,26 +192,17 @@ void unit_manager_enemy_set_effect_stat(int unit_id, int stat, bool off_on)
 			int i = 0; int flg = 0x00000001;
 			while (stat != flg) { i++; flg <<= 1; }
 
-			// joint
-			float b2_effect_x = enemy[unit_id].col_shape->b2body->GetPosition().x;
-			float b2_effect_y = enemy[unit_id].col_shape->b2body->GetPosition().y;
+			int pos_x, pos_y;
+			unit_manager_get_position((unit_data_t*)&enemy[unit_id], &pos_x, &pos_y);
+
 			if (enemy[unit_id].col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) {
-				float disp_angle = enemy[unit_id].col_shape->b2body->GetAngle(); // radian
-				float sin_val = game_utils_sin(disp_angle);
-				float cos_val = game_utils_cos(disp_angle);
-				float pin_offset_x = cos_val * enemy[unit_id].col_shape->joint_x - sin_val * enemy[unit_id].col_shape->joint_y;
-				float pin_offset_y = sin_val * enemy[unit_id].col_shape->joint_x + cos_val * enemy[unit_id].col_shape->joint_y;
-
-				b2_effect_x += PIX2MET(pin_offset_x - enemy[unit_id].col_shape->joint_x);
-				b2_effect_y += PIX2MET(pin_offset_y - enemy[unit_id].col_shape->joint_y);
-
 				// set moter speed (1/3)
 				if (stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
 					collision_manager_set_moter_speed(enemy[unit_id].col_shape, ((float)enemy[unit_id].col_shape->joint_val1 / (3 * 1000.0f)) * b2_pi);
 				}
 			}
 
-			unit_manager_effect_set_b2position(enemy[unit_id].effect_param[i].id, b2_effect_x, b2_effect_y);
+			unit_manager_effect_set_b2position(enemy[unit_id].effect_param[i].id, PIX2MET(pos_x), PIX2MET(pos_y));
 			unit_manager_effect_set_anim_stat(enemy[unit_id].effect_param[i].id, ANIM_STAT_FLAG_IDLE);
 			enemy[unit_id].effect_param[i].timer = enemy_effect_default[i].timer;
 			enemy[unit_id].effect_param[i].counter = enemy_effect_default[i].counter;
@@ -209,20 +213,6 @@ void unit_manager_enemy_set_effect_stat(int unit_id, int stat, bool off_on)
 void unit_manager_enemy_get_face_velocity(unit_enemy_data_t* enemy_data, float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num)
 {
 	unit_manager_get_face_velocity(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
-
-	// rotate unit
-	if ((enemy_data->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) && (enemy_data->col_shape->b2body)) {
-		float disp_angle = enemy_data->col_shape->b2body->GetAngle(); // radian
-		float sin_val = game_utils_sin(disp_angle);
-		float cos_val = game_utils_cos(disp_angle);
-
-		for (int i = 0; i < bullet_num; i++) {
-			float rotate_x = cos_val * (*(vec_x + i)) - sin_val * (*(vec_y + i));
-			float rotate_y = sin_val * (*(vec_x + i)) + cos_val * (*(vec_y + i));
-			*(vec_x + i) = rotate_x;
-			*(vec_y + i) = rotate_y;
-		}
-	}
 
 	// curving velocity
 	float curving_coef = unit_manager_enemy_get_bullet_curving(enemy_data->base->id);
@@ -439,10 +429,36 @@ int unit_manager_create_enemy(int x, int y, int face, int base_index)
 	}
 
 	// collision
-	enemy[enemy_index_end].col_shape =
-		collision_manager_create_dynamic_shape(enemy_base[base_index].col_shape,
-			(void*)&enemy[enemy_index_end], enemy_base[base_index].anim->base_w, enemy_base[base_index].anim->base_h,
-			&x, &y, NULL, NULL, &face);
+	if ((enemy[enemy_index_end].base->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN)
+		|| (enemy[enemy_index_end].base->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND)) {
+
+		// fix rotation
+		enemy[enemy_index_end].col_shape =
+			collision_manager_create_dynamic_shape(enemy_base[base_index].col_shape,
+				(void*)&enemy[enemy_index_end], enemy_base[base_index].anim->base_w, enemy_base[base_index].anim->base_h,
+				&x, &y, NULL, NULL, &face);
+	}
+	else {
+		// create at FACE_W
+		enemy[enemy_index_end].col_shape =
+			collision_manager_create_dynamic_shape(enemy_base[base_index].col_shape,
+				(void*)&enemy[enemy_index_end], enemy_base[base_index].anim->base_w, enemy_base[base_index].anim->base_h,
+				&x, &y, NULL, NULL);
+
+		// face rotation
+		if ((enemy[enemy_index_end].base->col_shape->face_type != UNIT_FACE_TYPE_NONE) && (face != UNIT_FACE_W)) {
+			float angle = 0.0f;
+			if (face == UNIT_FACE_E) angle = b2_pi;
+			else if (face == UNIT_FACE_N) angle = b2_pi / 2.0f;
+			else if (face == UNIT_FACE_S) angle = b2_pi * 3.0f / 2.0f;
+
+			if (angle != 0.0f) {
+				collision_manager_set_face(enemy[enemy_index_end].col_shape, enemy[enemy_index_end].base->col_shape,
+					enemy[enemy_index_end].base->anim->base_w, enemy[enemy_index_end].base->anim->base_h, face);
+				collision_manager_set_angle(enemy[enemy_index_end].col_shape, angle);
+			}
+		}
+	}
 
 	// anim
 	enemy[enemy_index_end].anim = animation_manager_new_anim_data();
@@ -687,33 +703,20 @@ void unit_manager_enemy_update()
 #ifdef _COLLISION_ENABLE_BOX_2D_
 			enemy[ei].col_shape->x = (int)MET2PIX(enemy[ei].col_shape->b2body->GetPosition().x);
 			enemy[ei].col_shape->y = (int)MET2PIX(enemy[ei].col_shape->b2body->GetPosition().y);
-			unit_manager_update_unit_friction((unit_data_t*)&enemy[ei]);
+			if (!(enemy[ei].resistance_stat & UNIT_EFFECT_FLAG_E_NO_FRICTION)) {
+				unit_manager_update_unit_friction((unit_data_t*)&enemy[ei]);
+			}
 #endif
 
 			// update *base* effect position
-			float b2_effect_x = enemy[ei].col_shape->b2body->GetPosition().x;
-			float b2_effect_y = enemy[ei].col_shape->b2body->GetPosition().y;
 			for (int ef_i = UNIT_EFFECT_ID_E_FIRE_UP; ef_i < UNIT_EFFECT_ID_E_END; ef_i++) {
 				int effect_flg = 0x00000001 << ef_i;
 				if (enemy[ei].effect_stat & effect_flg) {
-
-					// joint
-					if (enemy[ei].col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) {
-						float disp_angle = enemy[ei].col_shape->b2body->GetAngle(); // radian
-						float sin_val = game_utils_sin(disp_angle);
-						float cos_val = game_utils_cos(disp_angle);
-						float pin_offset_x = cos_val * enemy[ei].col_shape->joint_x - sin_val * enemy[ei].col_shape->joint_y;
-						float pin_offset_y = sin_val * enemy[ei].col_shape->joint_x + cos_val * enemy[ei].col_shape->joint_y;
-
-						b2_effect_x += PIX2MET(pin_offset_x - enemy[ei].col_shape->joint_x);
-						b2_effect_y += PIX2MET(pin_offset_y - enemy[ei].col_shape->joint_y);
-					}
-
-					// set position
-					unit_manager_effect_set_b2position(enemy[ei].effect_param[ef_i].id, b2_effect_x, b2_effect_y);
+					int pos_x, pos_y;
+					unit_manager_get_position((unit_data_t*)&enemy[ei], &pos_x, &pos_y);
+					unit_manager_effect_set_b2position(enemy[ei].effect_param[ef_i].id, PIX2MET(pos_x), PIX2MET(pos_y));
 
 					enemy[ei].effect_param[ef_i].timer -= enemy_delta_time;
-
 					if (enemy[ei].effect_param[ef_i].timer < 0) {
 						unit_manager_enemy_set_effect_stat(ei, effect_flg, false);
 					}

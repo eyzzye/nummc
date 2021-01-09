@@ -232,7 +232,7 @@ struct _unit_effect_data_t {
 	int type;        // EFFECT:8
 	int id;          // unit_id_end
 	void* obj;       // char* path
-	int group;       // item group
+	int group;       // STATIC, DYNAMIC, DIE_AUTO
 
 	unit_data_t* prev;
 	unit_data_t* next;
@@ -357,6 +357,7 @@ extern void unit_display(unit_data_t* unit_data, int layer);
 extern void unit_manager_update_unit_friction(unit_data_t* unit_data);
 extern void unit_manager_unit_move(unit_data_t* unit_data, float vec_x, float vec_y, float speed=1.0f);
 extern void unit_manager_get_position(unit_data_t* unit_data, int* x, int* y);
+extern void unit_manager_get_center_position(unit_data_t* unit_data, int* x, int* y);
 extern float unit_manager_get_distance(unit_data_t* main_unit, unit_data_t* target_unit, int* x = NULL, int* y = NULL);
 extern int unit_manager_get_face(unit_data_t* unit_data);
 extern int unit_manager_get_face_relative(unit_data_t* unit_data, int original_face);
@@ -376,7 +377,6 @@ extern int unit_manager_load_player_effects();
 extern int unit_manager_load_player(std::string path);
 extern void unit_manager_create_player(int x, int y);
 extern void unit_manager_player_set_stat(int stat);
-extern void unit_manager_player_get_position(int* x, int* y);
 extern void unit_manager_player_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type = UNIT_BULLET_TRACK_LINE, int bullet_num = UNIT_BULLET_NUM_SINGLE);
 extern int unit_manager_player_get_bullet_strength();
 extern int unit_manager_player_get_bullet_life_timer();

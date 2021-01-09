@@ -287,35 +287,34 @@ void unit_display(unit_data_t* unit_data, int layer)
 			frame_num = anim->anim_stat_list[stat]->current_frame;
 			frame_data = anim->anim_stat_base_list[stat]->frame_list[frame_num];
 		}
+		else if (anim->anim_stat_base_list[stat]->type & ANIM_TYPE_DRAW) {
+			frame_num = anim->anim_stat_list[stat]->current_frame;
+			frame_data = anim->anim_stat_base_list[stat]->frame_list[frame_num];
+		}
 
 		if (frame_data) {
 			if ((unit_data->stat_timer) && (unit_data->stat_timer[UNIT_STAT_INVINCIBLE] > 0) && ((unit_data->stat_timer[UNIT_STAT_INVINCIBLE] / UNIT_ANIM_BLINK_TIMER) % 2)) {
 				// invisible for blink
 
 			}
-			else if (col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) {
-				SDL_Texture* tex = frame_data->tex;
-				SDL_Rect* src_rect = &frame_data->src_rect;
+			else if (anim->anim_stat_base_list[stat]->type & ANIM_TYPE_DRAW) {
+				SDL_SetRenderDrawColor(g_ren,
+					anim->anim_stat_base_list[stat]->color_r, anim->anim_stat_base_list[stat]->color_g, anim->anim_stat_base_list[stat]->color_b, anim->anim_stat_base_list[stat]->color_a);
 
-				int dst_x = 0, dst_y = 0;
-				if (col_shape->b2body) {
-					float disp_angle = col_shape->b2body->GetAngle(); // radian
-					float sin_val = game_utils_sin(disp_angle);
-					float cos_val = game_utils_cos(disp_angle);
-					float pin_offset_x = cos_val * col_shape->joint_x - sin_val * col_shape->joint_y;
-					float pin_offset_y = sin_val * col_shape->joint_x + cos_val * col_shape->joint_y;
-
-					dst_x = (int)MET2PIX(col_shape->b2body->GetPosition().x) + (int)pin_offset_x - col_shape->joint_x;
-					dst_y = (int)MET2PIX(col_shape->b2body->GetPosition().y) + (int)pin_offset_y - col_shape->joint_y;
-
-					SDL_Rect dst_rect = VIEW_STAGE_RECT(dst_x, dst_y, src_rect->w, src_rect->h);
-					SDL_Point dst_center = { VIEW_STAGE(col_shape->joint_x), VIEW_STAGE(col_shape->joint_y) };
-					if (disp_angle != 0.0f) {
-						SDL_RenderCopyEx(g_ren, tex, src_rect, &dst_rect, disp_angle * 180.0f / b2_pi, &dst_center, SDL_FLIP_NONE);
-					}
-					else {
-						SDL_RenderCopy(g_ren, tex, src_rect, &dst_rect);
-					}
+				if (anim->anim_stat_base_list[stat]->type == ANIM_TYPE_DRAW_RECT) {
+					int w = ((shape_box_data*)unit_data->col_shape)->w;
+					int h = ((shape_box_data*)unit_data->col_shape)->h;
+					SDL_Rect rect = VIEW_STAGE_RECT(unit_data->col_shape->x, unit_data->col_shape->y, w, h);
+					SDL_RenderDrawRect(g_ren, &rect);
+				}
+				else if (anim->anim_stat_base_list[stat]->type == ANIM_TYPE_DRAW_CIRCLE) {
+					collision_manager_display_circle(unit_data->col_shape);
+				}
+				else if (anim->anim_stat_base_list[stat]->type == ANIM_TYPE_DRAW_RECT_FILL) {
+					int w = ((shape_box_data*)unit_data->col_shape)->w;
+					int h = ((shape_box_data*)unit_data->col_shape)->h;
+					SDL_Rect rect = VIEW_STAGE_RECT(unit_data->col_shape->x, unit_data->col_shape->y, w, h);
+					SDL_RenderFillRect(g_ren, &rect);
 				}
 			}
 			else {
@@ -323,14 +322,23 @@ void unit_display(unit_data_t* unit_data, int layer)
 				SDL_Rect* src_rect = &frame_data->src_rect;
 #ifdef _COLLISION_ENABLE_BOX_2D_
 				int dst_x = 0, dst_y = 0;
-				if (col_shape->b2body) {
-					dst_x = (int)MET2PIX(col_shape->b2body->GetPosition().x);
-					dst_y = (int)MET2PIX(col_shape->b2body->GetPosition().y);
+				unit_manager_get_position(unit_data, &dst_x, &dst_y);
+
+				SDL_Point* p_dst_center = NULL;
+				SDL_Point dst_center;
+				if ((col_shape->b2body) && (col_shape->b2body->GetAngle() != 0.0f)) {
+					if (col_shape->type & COLLISION_TYPE_BOX) {
+						dst_center.x = VIEW_STAGE(col_shape->offset_x + ((shape_box_data*)col_shape)->w / 2);
+						dst_center.y = VIEW_STAGE(col_shape->offset_y + ((shape_box_data*)col_shape)->h / 2);
+						p_dst_center = &dst_center; // local center
+					}
+					else if (col_shape->type & COLLISION_TYPE_ROUND) {
+						dst_center.x = VIEW_STAGE(col_shape->offset_x);
+						dst_center.y = VIEW_STAGE(col_shape->offset_y);
+						p_dst_center = &dst_center; // local center
+					}
 				}
-				else {
-					dst_x = col_shape->x;
-					dst_y = col_shape->y;
-				}
+
 				SDL_Rect dst_rect = VIEW_STAGE_RECT(dst_x, dst_y, src_rect->w, src_rect->h);
 #endif
 				int disp_face = UNIT_FACE_W;
@@ -357,8 +365,16 @@ void unit_display(unit_data_t* unit_data, int layer)
 					}
 				}
 
+				if (col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) {
+					if (col_shape->b2body) {
+						disp_face = UNIT_FACE_NONE;
+						disp_angle = col_shape->b2body->GetAngle() * 180.0 / b2_pi;
+						disp_flip = SDL_FLIP_NONE;
+					}
+				}
+
 				if (disp_face != UNIT_FACE_W) {
-					SDL_RenderCopyEx(g_ren, tex, src_rect, &dst_rect, disp_angle, NULL, disp_flip);
+					SDL_RenderCopyEx(g_ren, tex, src_rect, &dst_rect, disp_angle, p_dst_center, disp_flip);
 				}
 				else {
 					SDL_RenderCopy(g_ren, tex, src_rect, &dst_rect);
@@ -422,20 +438,28 @@ void unit_manager_unit_move(unit_data_t* unit_data, float vec_x, float vec_y, fl
 #endif
 
 	// set face
-	if (vec_x > 0.0f) {
-		collision_manager_set_face(unit_data->col_shape, unit_data->base->col_shape, unit_data->base->anim->base_w, unit_data->base->anim->base_h, UNIT_FACE_E);
-	}
-	else if (vec_x < 0.0f) {
-		collision_manager_set_face(unit_data->col_shape, unit_data->base->col_shape, unit_data->base->anim->base_w, unit_data->base->anim->base_h, UNIT_FACE_W);
+	if ((unit_data->col_shape->face_type == UNIT_FACE_TYPE_LR) || (unit_data->col_shape->face_type == UNIT_FACE_TYPE_ALL)) {
+		if (vec_x > 0.0f) {
+			collision_manager_set_face(unit_data->col_shape, unit_data->base->col_shape, unit_data->base->anim->base_w, unit_data->base->anim->base_h, UNIT_FACE_E);
+			collision_manager_set_angle(unit_data->col_shape, b2_pi);
+		}
+		else if (vec_x < 0.0f) {
+			collision_manager_set_face(unit_data->col_shape, unit_data->base->col_shape, unit_data->base->anim->base_w, unit_data->base->anim->base_h, UNIT_FACE_W);
+			collision_manager_set_angle(unit_data->col_shape, 0);
+		}
 	}
 
-	if (ABS(vec_y) > ABS(vec_x))
-	{
-		if (vec_y > 0.0f) {
-			collision_manager_set_face(unit_data->col_shape, unit_data->base->col_shape, unit_data->base->anim->base_w, unit_data->base->anim->base_h, UNIT_FACE_S);
-		}
-		else if (vec_y < 0.0f) {
-			collision_manager_set_face(unit_data->col_shape, unit_data->base->col_shape, unit_data->base->anim->base_w, unit_data->base->anim->base_h, UNIT_FACE_N);
+	if ((unit_data->col_shape->face_type == UNIT_FACE_TYPE_UD) || (unit_data->col_shape->face_type == UNIT_FACE_TYPE_ALL)) {
+		if (ABS(vec_y) > ABS(vec_x))
+		{
+			if (vec_y > 0.0f) {
+				collision_manager_set_face(unit_data->col_shape, unit_data->base->col_shape, unit_data->base->anim->base_w, unit_data->base->anim->base_h, UNIT_FACE_S);
+				collision_manager_set_angle(unit_data->col_shape, b2_pi * 3.0f / 2.0f);
+			}
+			else if (vec_y < 0.0f) {
+				collision_manager_set_face(unit_data->col_shape, unit_data->base->col_shape, unit_data->base->anim->base_w, unit_data->base->anim->base_h, UNIT_FACE_N);
+				collision_manager_set_angle(unit_data->col_shape, b2_pi / 2.0f);
+			}
 		}
 	}
 
@@ -481,8 +505,50 @@ void unit_manager_unit_set_anim_stat(unit_data_t* unit_data, int stat)
 
 void unit_manager_get_position(unit_data_t* unit_data, int* x, int* y)
 {
-	*x = unit_data->col_shape->x;
-	*y = unit_data->col_shape->y;
+	int pos_x = unit_data->col_shape->x;
+	int pos_y = unit_data->col_shape->y;
+
+	if ((unit_data->col_shape->type & COLLISION_TYPE_BOX) || (unit_data->col_shape->type & COLLISION_TYPE_ROUND)) {
+		if (unit_data->col_shape->b2body) {
+			float disp_angle = unit_data->col_shape->b2body->GetAngle(); // radian
+			if (disp_angle != 0.0f) {
+				b2Transform old_xf = unit_data->col_shape->b2body->GetTransform();
+				b2Vec2 old_center = unit_data->col_shape->b2body->GetWorldCenter();
+				float sin_val = game_utils_sin(-disp_angle);
+				float cos_val = game_utils_cos(-disp_angle);
+				float vec_x = old_xf.p.x - old_center.x;
+				float vec_y = old_xf.p.y - old_center.y;
+				float new_x = old_center.x + cos_val * vec_x - sin_val * vec_y;
+				float new_y = old_center.y + sin_val * vec_x + cos_val * vec_y;
+				pos_x = (int)MET2PIX(new_x);
+				pos_y = (int)MET2PIX(new_y);
+			}
+		}
+	}
+
+	*x = pos_x;
+	*y = pos_y;
+}
+
+void unit_manager_get_center_position(unit_data_t* unit_data, int* x, int* y)
+{
+	int pos_x, pos_y;
+	unit_manager_get_position(unit_data, &pos_x, &pos_y);
+
+	if (unit_data->col_shape->type & COLLISION_TYPE_BOX) {
+		int w = ((shape_box_data*)(unit_data->col_shape))->w;
+		int h = ((shape_box_data*)(unit_data->col_shape))->h;
+		*x = pos_x + unit_data->col_shape->offset_x + w / 2;
+		*y = pos_y + unit_data->col_shape->offset_y + h / 2;
+	}
+	else if (unit_data->col_shape->type & COLLISION_TYPE_ROUND) {
+		*x = pos_x + unit_data->col_shape->offset_x;
+		*y = pos_y + unit_data->col_shape->offset_y;
+	}
+	else {
+		*x = unit_data->col_shape->x;
+		*y = unit_data->col_shape->y;
+	}
 }
 
 float unit_manager_get_distance(unit_data_t* main_unit, unit_data_t* target_unit, int* p_x, int* p_y)
@@ -563,6 +629,25 @@ int unit_manager_get_face_relative(unit_data_t* unit_data, int original_face)
 			if (unit_data->col_shape->face == UNIT_FACE_S) { // flip UD
 				if (original_face == UNIT_FACE_S) relative_face = UNIT_FACE_N;
 				else if (original_face == UNIT_FACE_N) relative_face = UNIT_FACE_S;
+			}
+		}
+		else if (unit_data->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) {
+			if (unit_data->col_shape->b2body) {
+				int local_face = 0; // W:0, N:1, E:2, S:3
+				if (original_face == UNIT_FACE_W) local_face = 0;
+				else if (original_face == UNIT_FACE_N) local_face = 1;
+				else if (original_face == UNIT_FACE_E) local_face = 2;
+				else if (original_face == UNIT_FACE_S) local_face = 3;
+
+				// rotate clockwise
+				float angle = unit_data->col_shape->b2body->GetAngle();
+				int count = (int)(angle / (b2_pi / 2.0f));
+				local_face = (local_face + count) % 4; // W->N->E->S->W->N ...
+
+				if (local_face == 0) relative_face = UNIT_FACE_W;
+				else if (local_face == 1) relative_face = UNIT_FACE_N;
+				else if (local_face == 2) relative_face = UNIT_FACE_E;
+				else if (local_face == 3) relative_face = UNIT_FACE_S;
 			}
 		}
 		else {
@@ -795,18 +880,11 @@ static void get_bullet_start_pos_single(unit_data_t* unit_data, unit_data_t* uni
 		}
 	}
 
-	if ((unit_data->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) && (unit_data->col_shape->b2body)) {
-		float disp_angle = unit_data->col_shape->b2body->GetAngle(); // radian
-		float sin_val = game_utils_sin(disp_angle);
-		float cos_val = game_utils_cos(disp_angle);
-		float rotate_x = cos_val * (float)offset_vec_x - sin_val * (float)offset_vec_y;
-		float rotate_y = sin_val * (float)offset_vec_x + cos_val * (float)offset_vec_y;
-		offset_vec_x = (int)rotate_x;
-		offset_vec_y = (int)rotate_y;
-	}
+	int pos_x, pos_y;
+	unit_manager_get_position(unit_data, &pos_x, &pos_y);
 
-	*x = unit_data->col_shape->x + offset_vec_x;
-	*y = unit_data->col_shape->y + offset_vec_y;
+	*x = pos_x + offset_vec_x;
+	*y = pos_y + offset_vec_y;
 }
 
 static void get_bullet_start_pos_line(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_num, int face, int* x, int* y)
@@ -815,6 +893,9 @@ static void get_bullet_start_pos_line(unit_data_t* unit_data, unit_data_t* unit_
 		get_bullet_start_pos_single(unit_data, unit_bullet_data, bullet_num, face, x, y);
 	}
 	else {
+		int pos_x, pos_y;
+		unit_manager_get_position(unit_data, &pos_x, &pos_y);
+
 		int bullet_offset_x = 0, bullet_offset_y = 0;
 		int bullet_w = 0, bullet_h = 0;
 		if (unit_bullet_data->col_shape->type == COLLISION_TYPE_BOX_D) {
@@ -831,62 +912,62 @@ static void get_bullet_start_pos_line(unit_data_t* unit_data, unit_data_t* unit_
 
 			if (bullet_num == UNIT_BULLET_NUM_DOUBLE) {
 				if (face == UNIT_FACE_N) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 1 / 4 - bullet_h / 2;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 3 / 4 - bullet_h / 2;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
+					*x = pos_x + unit_data->col_shape->offset_x + w * 1 / 4 - bullet_h / 2;
+					*y = pos_y + unit_data->col_shape->offset_y - 1 - bullet_h;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x + w * 3 / 4 - bullet_h / 2;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y - 1 - bullet_h;
 				}
 				else if (face == UNIT_FACE_S) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 1 / 4 - bullet_h / 2;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 3 / 4 - bullet_h / 2;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
+					*x = pos_x + unit_data->col_shape->offset_x + w * 1 / 4 - bullet_h / 2;
+					*y = pos_y + unit_data->col_shape->offset_y + h + 1;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x + w * 3 / 4 - bullet_h / 2;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y + h + 1;
 				}
 				else if (face == UNIT_FACE_W) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 1 / 4 - bullet_h / 2;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 3 / 4 - bullet_h / 2;
+					*x = pos_x + unit_data->col_shape->offset_x - 1 - bullet_w;
+					*y = pos_y + unit_data->col_shape->offset_y + h * 1 / 4 - bullet_h / 2;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x - 1 - bullet_w;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y + h * 3 / 4 - bullet_h / 2;
 				}
 				else if (face == UNIT_FACE_E) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 1 / 4 - bullet_h / 2;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 3 / 4 - bullet_h / 2;
+					*x = pos_x + unit_data->col_shape->offset_x + w;
+					*y = pos_y + unit_data->col_shape->offset_y + h * 1 / 4 - bullet_h / 2;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x + w;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y + h * 3 / 4 - bullet_h / 2;
 				}
 			}
 			else if (bullet_num == UNIT_BULLET_NUM_TRIPLE) {
 				if (face == UNIT_FACE_N) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 1 / 4 - bullet_h / 2;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 2 / 4 - bullet_h / 2;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
-					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 3 / 4 - bullet_h / 2;
-					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
+					*x = pos_x + unit_data->col_shape->offset_x + w * 1 / 4 - bullet_h / 2;
+					*y = pos_y + unit_data->col_shape->offset_y - 1 - bullet_h;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x + w * 2 / 4 - bullet_h / 2;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y - 1 - bullet_h;
+					*(x + 2) = pos_x + unit_data->col_shape->offset_x + w * 3 / 4 - bullet_h / 2;
+					*(y + 2) = pos_y + unit_data->col_shape->offset_y - 1 - bullet_h;
 				}
 				else if (face == UNIT_FACE_S) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 1 / 4 - bullet_h / 2;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 2 / 4 - bullet_h / 2;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
-					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w * 3 / 4 - bullet_h / 2;
-					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
+					*x = pos_x + unit_data->col_shape->offset_x + w * 1 / 4 - bullet_h / 2;
+					*y = pos_y + unit_data->col_shape->offset_y + h + 1;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x + w * 2 / 4 - bullet_h / 2;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y + h + 1;
+					*(x + 2) = pos_x + unit_data->col_shape->offset_x + w * 3 / 4 - bullet_h / 2;
+					*(y + 2) = pos_y + unit_data->col_shape->offset_y + h + 1;
 				}
 				else if (face == UNIT_FACE_W) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 1 / 4 - bullet_h / 2;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 2 / 4 - bullet_h / 2;
-					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
-					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 3 / 4 - bullet_h / 2;
+					*x = pos_x + unit_data->col_shape->offset_x - 1 - bullet_w;
+					*y = pos_y + unit_data->col_shape->offset_y + h * 1 / 4 - bullet_h / 2;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x - 1 - bullet_w;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y + h * 2 / 4 - bullet_h / 2;
+					*(x + 2) = pos_x + unit_data->col_shape->offset_x - 1 - bullet_w;
+					*(y + 2) = pos_y + unit_data->col_shape->offset_y + h * 3 / 4 - bullet_h / 2;
 				}
 				else if (face == UNIT_FACE_E) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 1 / 4 - bullet_h / 2;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 2 / 4 - bullet_h / 2;
-					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
-					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y + h * 3 / 4 - bullet_h / 2;
+					*x = pos_x + unit_data->col_shape->offset_x + w;
+					*y = pos_y + unit_data->col_shape->offset_y + h * 1 / 4 - bullet_h / 2;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x + w;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y + h * 2 / 4 - bullet_h / 2;
+					*(x + 2) = pos_x + unit_data->col_shape->offset_x + w;
+					*(y + 2) = pos_y + unit_data->col_shape->offset_y + h * 3 / 4 - bullet_h / 2;
 				}
 			}
 		}
@@ -895,62 +976,62 @@ static void get_bullet_start_pos_line(unit_data_t* unit_data, unit_data_t* unit_
 
 			if (bullet_num == UNIT_BULLET_NUM_DOUBLE) {
 				if (face == UNIT_FACE_N) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - r;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
+					*x = pos_x + unit_data->col_shape->offset_x - r;
+					*y = pos_y + unit_data->col_shape->offset_y - 1;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x + r;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y - 1;
 				}
 				else if (face == UNIT_FACE_S) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - r;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
+					*x = pos_x + unit_data->col_shape->offset_x - r;
+					*y = pos_y + unit_data->col_shape->offset_y + r + 1;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x + r;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y + r + 1;
 				}
 				else if (face == UNIT_FACE_W) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - r;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r;
+					*x = pos_x + unit_data->col_shape->offset_x - 1;
+					*y = pos_y + unit_data->col_shape->offset_y - r;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x - 1;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y + r;
 				}
 				else if (face == UNIT_FACE_E) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - r;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r;
+					*x = pos_x + unit_data->col_shape->offset_x + r + 1;
+					*y = pos_y + unit_data->col_shape->offset_y - r;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x + r + 1;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y + r;
 				}
 			}
 			else if (bullet_num == UNIT_BULLET_NUM_TRIPLE) {
 				if (face == UNIT_FACE_N) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - r;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
-					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r;
-					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
+					*x = pos_x + unit_data->col_shape->offset_x - r;
+					*y = pos_y + unit_data->col_shape->offset_y - 1;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y - 1;
+					*(x + 2) = pos_x + unit_data->col_shape->offset_x + r;
+					*(y + 2) = pos_y + unit_data->col_shape->offset_y - 1;
 				}
 				else if (face == UNIT_FACE_S) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - r;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
-					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r;
-					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
+					*x = pos_x + unit_data->col_shape->offset_x - r;
+					*y = pos_y + unit_data->col_shape->offset_y + r + 1;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y + r + 1;
+					*(x + 2) = pos_x + unit_data->col_shape->offset_x + r;
+					*(y + 2) = pos_y + unit_data->col_shape->offset_y + r + 1;
 				}
 				else if (face == UNIT_FACE_W) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - r;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y;
-					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
-					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r;
+					*x = pos_x + unit_data->col_shape->offset_x - 1;
+					*y = pos_y + unit_data->col_shape->offset_y - r;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x - 1;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y;
+					*(x + 2) = pos_x + unit_data->col_shape->offset_x - 1;
+					*(y + 2) = pos_y + unit_data->col_shape->offset_y + r;
 				}
 				else if (face == UNIT_FACE_E) {
-					*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
-					*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - r;
-					*(x + 1) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
-					*(y + 1) = unit_data->col_shape->y + unit_data->col_shape->offset_y;
-					*(x + 2) = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
-					*(y + 2) = unit_data->col_shape->y + unit_data->col_shape->offset_y + r;
+					*x = pos_x + unit_data->col_shape->offset_x + r + 1;
+					*y = pos_y + unit_data->col_shape->offset_y - r;
+					*(x + 1) = pos_x + unit_data->col_shape->offset_x + r + 1;
+					*(y + 1) = pos_y + unit_data->col_shape->offset_y;
+					*(x + 2) = pos_x + unit_data->col_shape->offset_x + r + 1;
+					*(y + 2) = pos_y + unit_data->col_shape->offset_y + r;
 				}
 			}
 		}
@@ -963,6 +1044,9 @@ static void get_bullet_start_pos_radial(unit_data_t* unit_data, unit_data_t* uni
 		get_bullet_start_pos_single(unit_data, unit_bullet_data, bullet_num, face, x, y);
 	}
 	else {
+		int pos_x, pos_y;
+		unit_manager_get_position(unit_data, &pos_x, &pos_y);
+
 		int bullet_offset_x = 0, bullet_offset_y = 0;
 		int bullet_w = 0, bullet_h = 0;
 		if (unit_bullet_data->col_shape->type == COLLISION_TYPE_BOX_D) {
@@ -980,20 +1064,20 @@ static void get_bullet_start_pos_radial(unit_data_t* unit_data, unit_data_t* uni
 			if ((bullet_num == UNIT_BULLET_NUM_DOUBLE) || (bullet_num == UNIT_BULLET_NUM_TRIPLE)) {
 				for (int i = 0; i < bullet_num; i++) {
 					if (face == UNIT_FACE_N) {
-						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
-						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1 - bullet_h;
+						*x = pos_x + unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
+						*y = pos_y + unit_data->col_shape->offset_y - 1 - bullet_h;
 					}
 					else if (face == UNIT_FACE_S) {
-						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
-						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h + 1;
+						*x = pos_x + unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
+						*y = pos_y + unit_data->col_shape->offset_y + h + 1;
 					}
 					else if (face == UNIT_FACE_W) {
-						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1 - bullet_w;
-						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
+						*x = pos_x + unit_data->col_shape->offset_x - 1 - bullet_w;
+						*y = pos_y + unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
 					}
 					else if (face == UNIT_FACE_E) {
-						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + w;
-						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
+						*x = pos_x + unit_data->col_shape->offset_x + w;
+						*y = pos_y + unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
 					}
 					x++;
 					y++;
@@ -1006,20 +1090,20 @@ static void get_bullet_start_pos_radial(unit_data_t* unit_data, unit_data_t* uni
 			if ((bullet_num == UNIT_BULLET_NUM_DOUBLE) || (bullet_num == UNIT_BULLET_NUM_TRIPLE)) {
 				for (int i = 0; i < bullet_num; i++) {
 					if (face == UNIT_FACE_N) {
-						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x;
-						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y - 1;
+						*x = pos_x + unit_data->col_shape->offset_x;
+						*y = pos_y + unit_data->col_shape->offset_y - 1;
 					}
 					else if (face == UNIT_FACE_S) {
-						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x;
-						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y + r + 1;
+						*x = pos_x + unit_data->col_shape->offset_x;
+						*y = pos_y + unit_data->col_shape->offset_y + r + 1;
 					}
 					else if (face == UNIT_FACE_W) {
-						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x - 1;
-						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y;
+						*x = pos_x + unit_data->col_shape->offset_x - 1;
+						*y = pos_y + unit_data->col_shape->offset_y;
 					}
 					else if (face == UNIT_FACE_E) {
-						*x = unit_data->col_shape->x + unit_data->col_shape->offset_x + r + 1;
-						*y = unit_data->col_shape->y + unit_data->col_shape->offset_y;
+						*x = pos_x + unit_data->col_shape->offset_x + r + 1;
+						*y = pos_y + unit_data->col_shape->offset_y;
 					}
 					x++;
 					y++;
@@ -1183,6 +1267,9 @@ void unit_manager_get_spawn_items_pos_for_target(unit_data_t* spawner_unit, unit
 }
 
 void unit_manager_enemy_drop_item(unit_enemy_data_t* unit_data) {
+	int pos_x, pos_y;
+	unit_manager_get_position((unit_data_t*)unit_data, &pos_x, &pos_y);
+
 	if (unit_data->level == 1) {
 		int drop_judge = game_utils_random_gen(g_stage_data->current_section_data->level1_drop_rate - 1, 0);
 		if ((drop_judge == 1) // hit on 1/N
@@ -1191,7 +1278,7 @@ void unit_manager_enemy_drop_item(unit_enemy_data_t* unit_data) {
 			// drop random
 			int max = (int)g_stage_data->current_section_data->drop_items_id_list.size() - 1;
 			int item_id = (max <= 0) ? 0 : game_utils_random_gen(max, 0);
-			int spawn_id = unit_manager_create_items(unit_data->col_shape->x, unit_data->col_shape->y, g_stage_data->current_section_data->drop_items_id_list[item_id]);
+			int spawn_id = unit_manager_create_items(pos_x, pos_y, g_stage_data->current_section_data->drop_items_id_list[item_id]);
 
 			unit_items_data_t* new_item = unit_manager_get_items(spawn_id);
 			std::string star_path = "units/effect/star/star.unit";
@@ -1206,13 +1293,13 @@ void unit_manager_enemy_drop_item(unit_enemy_data_t* unit_data) {
 	}
 	else if ((unit_data->level == 2) && (unit_data->col_shape)) {
 		if (unit_data->drop_item >= 0) {
-			unit_manager_create_items(unit_data->col_shape->x, unit_data->col_shape->y, unit_data->drop_item);
+			unit_manager_create_items(pos_x, pos_y, unit_data->drop_item);
 		}
 		else {
 			// drop random
 			int max = (int)g_stage_data->current_section_data->drop_items_id_list.size() - 1;
 			int item_id = (max <= 0) ? 0 : game_utils_random_gen(max, 0);
-			unit_manager_create_items(unit_data->col_shape->x, unit_data->col_shape->y, g_stage_data->current_section_data->drop_items_id_list[item_id]);
+			unit_manager_create_items(pos_x, pos_y, g_stage_data->current_section_data->drop_items_id_list[item_id]);
 		}
 	}
 }

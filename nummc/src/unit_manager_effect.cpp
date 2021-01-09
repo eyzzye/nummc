@@ -79,6 +79,8 @@ void unit_manager_effect_set_b2position(int unit_id, float x, float y)
 {
 	b2Vec2 b2_effect_pos = { x, y };
 	effect[unit_id].col_shape->b2body->SetTransform(b2_effect_pos, 0.0f);
+	effect[unit_id].col_shape->x = (int)MET2PIX(effect[unit_id].col_shape->b2body->GetPosition().x);
+	effect[unit_id].col_shape->y = (int)MET2PIX(effect[unit_id].col_shape->b2body->GetPosition().y);
 }
 
 unit_effect_data_t* unit_manager_get_effect(int index)
@@ -265,7 +267,9 @@ void unit_manager_effect_update()
 #ifdef _COLLISION_ENABLE_BOX_2D_
 			if (effect[i].trace_unit) {
 				if (effect[i].trace_unit->col_shape && effect[i].trace_unit->col_shape->b2body) {
-					unit_manager_effect_set_b2position(i, effect[i].trace_unit->col_shape->b2body->GetPosition().x, effect[i].trace_unit->col_shape->b2body->GetPosition().y);
+					int pos_x, pos_y;
+					unit_manager_get_position(effect[i].trace_unit, &pos_x, &pos_y);
+					unit_manager_effect_set_b2position(i, PIX2MET(pos_x), PIX2MET(pos_y));
 				}
 				else { // parent die?
 					set_stat_die = true;
@@ -299,7 +303,8 @@ void unit_manager_effect_update()
 			}
 		}
 
-		if ((stat != -1) && (effect[i].anim->anim_stat_base_list[stat]->type == ANIM_TYPE_DYNAMIC)) {
+		if ((stat != -1)
+			&& ((effect[i].anim->anim_stat_base_list[stat]->type == ANIM_TYPE_DYNAMIC) || (effect[i].anim->anim_stat_base_list[stat]->type & ANIM_TYPE_DRAW))) {
 			// set current_time
 			effect[i].anim->anim_stat_list[stat]->current_time += g_delta_time;
 

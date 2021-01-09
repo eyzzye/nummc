@@ -18,10 +18,11 @@
 #define AI_TYPE_GO_TO_BOM    11
 #define AI_TYPE_END          12
 
-#define AI_PARAM_NONE         (0x00000000)
-#define AI_PARAM_ATTACK       (0x00000001)
-#define AI_PARAM_ALWAYS       (0x00000002)
-#define AI_PARAM_IN_REGION    (0x00000004)
+#define AI_PARAM_NONE          (0x00000000)
+#define AI_PARAM_ATTACK        (0x00000001)
+#define AI_PARAM_ALWAYS        (0x00000002)
+#define AI_PARAM_IN_REGION     (0x00000004)
+#define AI_PARAM_SLOPE_ATTACK  (0x00000008)
 
 // bullet ai
 #define AI_TYPE_BULLET             (0x00010000)

@@ -205,6 +205,7 @@ extern b2World* g_stage_world;
 extern int collision_manager_init();
 extern void collision_manager_unload();
 extern int collision_manager_dynamic_update();
+extern void collision_manager_display_circle(shape_data* col_shape);
 extern void collision_manager_display();
 extern void collision_manager_delete_shape(shape_data* delete_data);
 extern shape_box_data* collision_manager_new_shape_box(int static_or_dynamic = COLLISION_ID_DYNAMIC_SHAPE);
@@ -218,5 +219,6 @@ extern void collision_manager_create_static_wall(int wall_type, void* unit_data,
 extern int collision_manager_set_group(shape_data* shape, std::string& group);
 extern void collision_manager_set_face(shape_data* shape, shape_data* base_shape, int img_w, int img_h, int new_face);
 extern int collision_manager_set_mass(shape_data* shape, float weight);
+extern void collision_manager_set_angle(shape_data* shape, float angle /* rad */);
 extern int collision_manager_set_moter_speed(shape_data* shape, float speed);
 extern int collision_manager_set_force(shape_data* shape, float strength_x, float strength_y);

@@ -1,0 +1,16 @@
+#
+# eight animation (type=MOVE)
+#
+
+[frame]
+duration=300,300
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/enemy/8/
+path=eight_idle1.png,eight_idle2.png
+offset_x=*
+offset_y=*
+effect=color:S:0:0:0:D:255:0:0
+[/img]

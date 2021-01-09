@@ -634,6 +634,7 @@ static void section_init()
 		unit_manager_load_effect("units/effect/trash/trash.unit");
 		unit_manager_load_effect("units/effect/star/star.unit");
 		unit_manager_load_effect("units/effect/damage/damage.unit");
+		unit_manager_load_effect("units/effect/high_light_line/high_light_line.unit");
 	}
 
 	// load items
@@ -703,7 +704,7 @@ static void drop_goal_items()
 	// drop items
 	int x, y, drop_x;
 	int drop_y = g_map_y_max * g_tile_height / 2;
-	unit_manager_player_get_position(&x, &y);
+	unit_manager_get_center_position((unit_data_t*)&g_player, &x, &y);
 	if (x > (g_map_x_max * g_tile_width / 2)) {
 		// drop on left side
 		drop_x = g_map_x_max * g_tile_width / 4;
@@ -729,7 +730,7 @@ static void drop_goal_items()
 static void scroll_view()
 {
 	int new_x = 0, new_y = 0;
-	unit_manager_player_get_position(&new_x, &new_y);
+	unit_manager_get_center_position((unit_data_t*)&g_player, &new_x, &new_y);
 
 	int new_offset_x = VIEW_STAGE(new_x) - VIEW_SCALE(SCREEN_WIDTH) / 2;
 	int new_offset_y = VIEW_STAGE(new_y) - VIEW_SCALE(SCREEN_HEIGHT) / 2;
