@@ -184,6 +184,14 @@ void unit_manager_enemy_set_effect_stat(int unit_id, int stat, bool off_on)
 			unit_manager_effect_set_anim_stat(enemy[unit_id].effect_param[i].id, ANIM_STAT_FLAG_HIDE);
 			enemy[unit_id].effect_param[i].counter = 0;
 		}
+		else {
+			int i = 0; int flg = 0x00000001;
+			while (stat != flg) { i++; flg <<= 1; }
+
+			// update timer
+			enemy[unit_id].effect_param[i].timer = enemy_effect_default[i].timer;
+			enemy[unit_id].effect_param[i].counter = enemy_effect_default[i].counter;
+		}
 	}
 	else { // off
 		if (off_on == true) {

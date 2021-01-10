@@ -354,6 +354,14 @@ void unit_manager_player_set_effect_stat(int stat, bool off_on)
 			unit_manager_effect_set_anim_stat(g_player.base->effect_param[i].id, ANIM_STAT_FLAG_HIDE);
 			g_player.effect_param[i].counter = 0;
 		}
+		else {
+			int i = 0; int flg = 0x00000001;
+			while (stat != flg) { i++; flg <<= 1; }
+
+			// update timer
+			g_player.effect_param[i].timer = player_effect_default[i].timer;
+			g_player.effect_param[i].counter = player_effect_default[i].counter;
+		}
 	}
 	else { // off
 		if (off_on == true) {
