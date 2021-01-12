@@ -146,7 +146,8 @@ static void main_event() {
 	}
 
 #ifdef _COLLISION_ENABLE_BOX_2D_
-	g_stage_world->Step(1.0f/60.0f, 8, 3);
+	//g_stage_world->Step(1.0f/60.0f, 8, 3);
+	g_stage_world->Step((g_delta_time / ONE_FRAME_TIME) * 1.0f / 60.0f, 8, 3);
 #endif
 
 	// unit update (anim timer & frame command)
@@ -209,6 +210,7 @@ static void main_event() {
 
 			int unit_id = unit_manager_create_player_bullet(x, y, vec_x, vec_y, face, bullet_base_id);
 			unit_manager_player_bullet_set_anim_stat(unit_id, ANIM_STAT_FLAG_ATTACK);
+			unit_manager_player_bullet_set_effect_stat(unit_id, g_player.effect_stat);
 			unit_manager_player_bullet_set_hp(unit_id, unit_manager_player_get_bullet_strength());
 			unit_manager_player_bullet_set_bullet_life_timer(unit_id, unit_manager_player_get_bullet_life_timer());
 

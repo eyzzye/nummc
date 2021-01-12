@@ -82,6 +82,11 @@ void unit_manager_player_bullet_set_anim_stat(int unit_id, int stat)
 	}
 }
 
+void unit_manager_player_bullet_set_effect_stat(int unit_id, int stat)
+{
+	player_bullet[unit_id].effect_stat = stat;
+}
+
 void unit_manager_player_bullet_set_hp(int unit_id, int hp)
 {
 	player_bullet[unit_id].hp = hp;

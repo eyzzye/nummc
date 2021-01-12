@@ -406,8 +406,8 @@ static bool within_trap(unit_data_t* unit_data, int step, float delta_x, float d
 static void ai_unit_prediction_point_single_step(unit_data_t* unit_data, int delta_time, float& x, float& y, float& vec_x, float& vec_y)
 {
 	// step
-	x += vec_x * 1.0f / 60.0f;
-	y += vec_y * 1.0f / 60.0f;
+	x += vec_x * (g_delta_time / ONE_FRAME_TIME) * 1.0f / 60.0f;
+	y += vec_y * (g_delta_time / ONE_FRAME_TIME) * 1.0f / 60.0f;
 
 	// friction
 	if ((unit_data->type == UNIT_TYPE_PLAYER) || (unit_data->type == UNIT_TYPE_ENEMY) || (unit_data->type == UNIT_TYPE_ITEMS)) {
@@ -434,11 +434,11 @@ void ai_unit_prediction_point(unit_data_t* unit_data, int delta_time, int* p_x, 
 	float vec_x = (float)unit_data->col_shape->vec_x;
 	float vec_y = (float)unit_data->col_shape->vec_y;
 
-	int time_count = delta_time / DELTA_TIME_MIN;
-	int last_time = delta_time % DELTA_TIME_MIN;
+	int time_count = delta_time / ONE_FRAME_TIME;
+	int last_time = delta_time % ONE_FRAME_TIME;
 
 	for (int i = 0; i < time_count; i++) {
-		ai_unit_prediction_point_single_step(unit_data, DELTA_TIME_MIN, x, y, vec_x, vec_y);
+		ai_unit_prediction_point_single_step(unit_data, ONE_FRAME_TIME, x, y, vec_x, vec_y);
 	}
 
 	if (last_time > 0) {
@@ -611,7 +611,7 @@ static void update_simple(ai_data_t* ai_data)
 	}
 
 	if (ai_stat->timer1 > 0) {
-		ai_stat->timer1 -= g_delta_time;
+		ai_stat->timer1 -= unit_manager_enemy_get_delta_time((unit_enemy_data_t*)unit_data);
 		return;  // waitting
 	}
 
@@ -709,15 +709,15 @@ static void update_simple(ai_data_t* ai_data)
 
 static void update_left_right(ai_data_t* ai_data)
 {
-	ai_stat_data_t* ai_stat = (ai_stat_data_t*)ai_data;
-	if (ai_stat->timer1 > 0) {
-		ai_stat->timer1 -= g_delta_time;
-		return;  // waitting
-	}
-
 	unit_data_t* unit_data = (unit_data_t*)ai_data->obj;
 	if (unit_data->type != UNIT_TYPE_ENEMY) {
 		LOG_ERROR("Error: update_left_right param error.");
+	}
+
+	ai_stat_data_t* ai_stat = (ai_stat_data_t*)ai_data;
+	if (ai_stat->timer1 > 0) {
+		ai_stat->timer1 -= unit_manager_enemy_get_delta_time((unit_enemy_data_t*)unit_data);
+		return;  // waitting
 	}
 
 	// attack
@@ -768,15 +768,15 @@ static void update_left_right(ai_data_t* ai_data)
 
 static void update_stay(ai_data_t* ai_data)
 {
-	ai_stat_data_t* ai_stat = (ai_stat_data_t*)ai_data;
-	if (ai_stat->timer1 > 0) {
-		ai_stat->timer1 -= g_delta_time;
-		return;  // waitting
-	}
-
 	unit_data_t* unit_data = (unit_data_t*)ai_data->obj;
 	if (unit_data->type != UNIT_TYPE_ENEMY) {
 		LOG_ERROR("Error: update_stay param error.");
+	}
+
+	ai_stat_data_t* ai_stat = (ai_stat_data_t*)ai_data;
+	if (ai_stat->timer1 > 0) {
+		ai_stat->timer1 -= unit_manager_enemy_get_delta_time((unit_enemy_data_t*)unit_data);
+		return;  // waitting
 	}
 
 	// attack
@@ -857,7 +857,7 @@ static void update_stay(ai_data_t* ai_data)
 				unit_manager_enemy_get_face_velocity((unit_enemy_data_t*)unit_data, &vec_x, &vec_y, enemy_face, abs_vec, bullet_track_type, bullet_num);
 
 				set_dummy_unit_data((unit_data_t*)bullet_data, x, y, vec_x, vec_y);
-				ai_unit_prediction_point(&dummy_unit_data, 8000, &new_x, &new_y);
+				ai_unit_prediction_point(&dummy_unit_data, 5120, &new_x, &new_y);
 
 				int delta_x = new_x - x;
 				int delta_y = new_y - y;
@@ -894,15 +894,15 @@ static void update_stay(ai_data_t* ai_data)
 
 static void update_round(ai_data_t* ai_data)
 {
-	ai_stat_data_t* ai_stat = (ai_stat_data_t*)ai_data;
-	if (ai_stat->timer1 > 0) {
-		ai_stat->timer1 -= g_delta_time;
-		return;  // waitting
-	}
-
 	unit_data_t* unit_data = (unit_data_t*)ai_data->obj;
 	if (unit_data->type != UNIT_TYPE_ENEMY) {
 		LOG_ERROR("Error: update_round param error.");
+	}
+
+	ai_stat_data_t* ai_stat = (ai_stat_data_t*)ai_data;
+	if (ai_stat->timer1 > 0) {
+		ai_stat->timer1 -= unit_manager_enemy_get_delta_time((unit_enemy_data_t*)unit_data);
+		return;  // waitting
 	}
 
 	// step
@@ -949,20 +949,20 @@ static void update_round(ai_data_t* ai_data)
 	}
 
 	// set wait timer
-	ai_stat->timer1 = DELTA_TIME_MIN * 10;
+	ai_stat->timer1 = ONE_FRAME_TIME * 10;
 }
 
 static void update_go_to_bom(ai_data_t* ai_data)
 {
-	ai_stat_data_t* ai_stat = (ai_stat_data_t*)ai_data;
-	if (ai_stat->timer1 > 0) {
-		ai_stat->timer1 -= g_delta_time;
-		return;  // waitting
-	}
-
 	unit_data_t* unit_data = (unit_data_t*)ai_data->obj;
 	if (unit_data->type != UNIT_TYPE_ENEMY) {
 		LOG_ERROR("Error: update_go_to_bom param error.");
+	}
+
+	ai_stat_data_t* ai_stat = (ai_stat_data_t*)ai_data;
+	if (ai_stat->timer1 > 0) {
+		ai_stat->timer1 -= unit_manager_enemy_get_delta_time((unit_enemy_data_t*)unit_data);
+		return;  // waitting
 	}
 
 	// step
@@ -1053,10 +1053,14 @@ static void update_bullet_wave(ai_stat_bullet_t* ai_bullet) {
 
 	int delta_val = ai_bullet->val1; // wave width
 	if (ai_bullet->timer1 < BULLET_WAVE_TIMER_TERM1) {
-		delta_val = delta_val / (BULLET_WAVE_TIMER_TERM1 / DELTA_TIME_MIN);
+		delta_val = delta_val / (BULLET_WAVE_TIMER_TERM1 / ONE_FRAME_TIME);
 	}
 	else {
-		delta_val = -delta_val / (BULLET_WAVE_TIMER_TERM2 / DELTA_TIME_MIN);
+		delta_val = -delta_val / (BULLET_WAVE_TIMER_TERM2 / ONE_FRAME_TIME);
+	}
+
+	if (unit_enemy_bullet->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
+		delta_val >>= 1; // div 2
 	}
 
 	bool move_dirt = false;
@@ -1089,7 +1093,7 @@ static void update_bullet_wave(ai_stat_bullet_t* ai_bullet) {
 	}
 
 	if (ai_bullet->timer1 < BULLET_WAVE_TIMER_MAX) {
-		ai_bullet->timer1 += DELTA_TIME_MIN;
+		ai_bullet->timer1 += unit_manager_enemy_bullet_get_delta_time(unit_enemy_bullet);
 	}
 	else {
 		ai_bullet->timer1 = 0;
@@ -1100,6 +1104,10 @@ static void update_bullet_random(ai_stat_bullet_t* ai_bullet) {
 	unit_enemy_bullet_data_t* unit_enemy_bullet = (unit_enemy_bullet_data_t*)ai_bullet->obj;
 	b2Vec2 new_vec = unit_enemy_bullet->col_shape->b2body->GetLinearVelocity();
 	float fall_vec = (float)ai_bullet->val1 / 1000.0f;
+
+	if (unit_enemy_bullet->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
+		fall_vec *= 0.5f;
+	}
 	new_vec.y += fall_vec;
 
 	unit_enemy_bullet->col_shape->b2body->SetLinearVelocity(new_vec);

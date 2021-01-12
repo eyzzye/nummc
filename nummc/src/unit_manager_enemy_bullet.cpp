@@ -82,6 +82,11 @@ void unit_manager_enemy_bullet_set_anim_stat(int unit_id, int stat)
 	}
 }
 
+void unit_manager_enemy_bullet_set_effect_stat(int unit_id, int stat)
+{
+	enemy_bullet[unit_id].effect_stat = stat;
+}
+
 void unit_manager_enemy_bullet_set_hp(int unit_id, int hp)
 {
 	enemy_bullet[unit_id].hp = hp;
@@ -99,6 +104,15 @@ void unit_manager_enemy_bullet_set_force(int unit_id, float strength_x, float st
 
 unit_enemy_bullet_data_t* unit_manager_get_enemy_bullet_base(int index) {
 	return &enemy_bullet_base[index];
+}
+
+int unit_manager_enemy_bullet_get_delta_time(unit_enemy_bullet_data_t* enemy_bullet_data)
+{
+	int enemy_bullet_delta_time = g_delta_time;
+	if (enemy_bullet_data->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
+		enemy_bullet_delta_time >>= 1; // div 2
+	}
+	return enemy_bullet_delta_time;
 }
 
 int unit_manager_load_enemy_bullet(std::string path)

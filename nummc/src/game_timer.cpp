@@ -4,6 +4,7 @@
 Uint32 g_start_time;
 Uint32 g_current_time;
 Uint32 g_latest_time;
+Uint32 g_elapsed_time;
 Uint32 g_delta_time;
 Uint32 g_pause_time;
 
@@ -23,6 +24,7 @@ void game_timer_init()
 	g_start_time = 0;
 	g_current_time = 0;
 	g_latest_time = 0;
+	g_elapsed_time = 0;
 	g_delta_time = 0;
 	g_pause_time = 0;
 }
@@ -42,7 +44,7 @@ Uint32 game_timer_pause(bool on)
 	}
 	else {
 		g_latest_time = SDL_GetTicks();
-		g_current_time = MAX(0, g_latest_time - g_delta_time);
+		g_current_time = MAX(0, g_latest_time - g_elapsed_time);
 	}
 	return 0;
 }
@@ -50,8 +52,21 @@ Uint32 game_timer_pause(bool on)
 Uint32 game_timer_update()
 {
 	g_current_time = SDL_GetTicks();
-	g_delta_time = MIN(DELTA_TIME_MIN, MAX(0, g_current_time - g_latest_time));
+	g_elapsed_time += MIN(DELTA_TIME_MIN, MAX(0, g_current_time - g_latest_time));
 	g_latest_time = g_current_time;
+	return g_elapsed_time;
+}
+
+Uint32 game_timer_get_delta_time()
+{
+	if ((g_elapsed_time - ONE_FRAME_TIME) < 0) {
+		// return remain time
+		g_delta_time = g_elapsed_time;
+	}
+	else {
+		g_delta_time = ONE_FRAME_TIME;
+		g_elapsed_time -= g_delta_time;
+	}
 	return g_delta_time;
 }
 
@@ -62,7 +77,7 @@ Uint32 game_timer_test()
 
 Uint32 game_timer_fps()
 {
-	elapse_time_for_fps += g_delta_time;
+	elapse_time_for_fps += g_elapsed_time;
 	frame_count++;
 	if (elapse_time_for_fps > 1000) {
 		current_fps = frame_count / (elapse_time_for_fps / 1000);

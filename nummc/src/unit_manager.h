@@ -276,13 +276,13 @@ struct _unit_player_bullet_data_t {
 
 	int hp;
 	int bullet_life_timer;
+	int effect_stat;	                    // FLAG_P_FIRE_UP,FREEZE_UP,BOOST,SHIELD
 	int reserve3;
-	int reserve4;
 
 	int speed;
 	int special;
 	int special_value;
-	int reserve5;
+	int reserve4;
 };
 
 struct _unit_enemy_bullet_data_t {
@@ -304,7 +304,7 @@ struct _unit_enemy_bullet_data_t {
 	int hp;
 	int bullet_life_timer;
 	int owner_base_id;
-	int reserve4;
+	int effect_stat;	                    // FLAG_E_FIRE_UP,FREEZE_UP
 
 	int speed;
 	int special;
@@ -346,7 +346,9 @@ extern void unit_manager_items_set_anim_stat(int unit_id, int stat);
 extern void unit_manager_trap_set_anim_stat(int unit_id, int stat);
 extern void unit_manager_effect_set_anim_stat(int unit_id, int stat);
 extern void unit_manager_player_bullet_set_anim_stat(int unit_id, int stat);
+extern void unit_manager_player_bullet_set_effect_stat(int unit_id, int stat);
 extern void unit_manager_enemy_bullet_set_anim_stat(int unit_id, int stat);
+extern void unit_manager_enemy_bullet_set_effect_stat(int unit_id, int stat);
 
 extern void load_collision(std::string& line, shape_data** col_shape);
 extern void load_anim(std::string& line, anim_data_t* anim);
@@ -406,6 +408,7 @@ extern int unit_manager_load_enemy(std::string path);
 extern int unit_manager_create_enemy(int x, int y, int face, int base_index = -1);
 extern void unit_manager_clear_enemy(unit_enemy_data_t* enemy);
 extern bool unit_manager_enemy_exist();
+extern int unit_manager_enemy_get_delta_time(unit_enemy_data_t* enemy_data);
 extern void unit_manager_enemy_get_face_velocity(unit_enemy_data_t* enemy_data, float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num);
 extern int unit_manager_enemy_get_bullet_strength(int base_id);
 extern int unit_manager_enemy_get_bullet_life_timer(int base_id);
@@ -474,6 +477,7 @@ extern void unit_manager_enemy_bullet_set_hp(int unit_id, int hp);
 extern void unit_manager_enemy_bullet_set_bullet_life_timer(int unit_id, int bullet_life_timer);
 extern void unit_manager_enemy_bullet_set_force(int unit_id, float strength_x, float strength_y);
 extern unit_enemy_bullet_data_t* unit_manager_get_enemy_bullet_base(int index);
+extern int unit_manager_enemy_bullet_get_delta_time(unit_enemy_bullet_data_t* enemy_bullet_data);
 extern int unit_manager_load_enemy_bullet(std::string path);
 extern int unit_manager_create_enemy_bullet(int x, int y, float vec_x, float vec_y, int face, int owner_base_id, int base_index = -1, ai_data_t* ai_bullet=NULL);
 extern void unit_manager_clear_enemy_bullet(unit_enemy_bullet_data_t* bullet);

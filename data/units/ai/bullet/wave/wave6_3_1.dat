@@ -11,7 +11,7 @@ bullet_face=W
 #wave width
 val1=32
 #wave term1 time
-val2=100
+val2=64
 #wave term2 time
-val3=100
+val3=64
 [/basic]

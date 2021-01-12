@@ -556,6 +556,15 @@ bool unit_manager_enemy_exist()
 	return enemy_count > 0;
 }
 
+int unit_manager_enemy_get_delta_time(unit_enemy_data_t* enemy_data)
+{
+	int enemy_delta_time = g_delta_time;
+	if (enemy_data->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
+		enemy_delta_time >>= 1; // div 2
+	}
+	return enemy_delta_time;
+}
+
 int unit_manager_enemy_get_damage_force(unit_enemy_data_t* enemy_data, int hp)
 {
 	enemy_data->hp += hp;
@@ -651,6 +660,7 @@ int unit_manager_enemy_attack(unit_enemy_data_t* enemy_data, int stat)
 	for (int i = 0; i < bullet_num; i++) {
 		int unit_id = unit_manager_create_enemy_bullet(x[i], y[i], vec_x[i], vec_y[i], bullet_face, enemy_data->base->id, bullet_base_id, (ai_data_t*)ai_bullet);
 		unit_manager_enemy_bullet_set_anim_stat(unit_id, ANIM_STAT_FLAG_ATTACK);
+		unit_manager_enemy_bullet_set_effect_stat(unit_id, enemy_data->effect_stat);
 		unit_manager_enemy_bullet_set_hp(unit_id, unit_manager_enemy_get_bullet_strength(enemy_data->base->id));
 		unit_manager_enemy_bullet_set_bullet_life_timer(unit_id, unit_manager_enemy_get_bullet_life_timer(enemy_data->base->id));
 	}

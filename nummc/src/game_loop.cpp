@@ -10,8 +10,6 @@
 #include "dialog_message.h"
 #include "game_log.h"
 
-#define ONE_FRAME_TIME_MIN 15
-
 static bool quit = false;
 
 static void game_exit()
@@ -67,8 +65,10 @@ void game_loop_main()
 		}
 		if (quit) continue;
 
-		// main process
-		scene_manager_main_event();
+		if (game_timer_get_delta_time() == ONE_FRAME_TIME) {
+			// main process
+			scene_manager_main_event();
+		}
 
 		// draw
 		scene_manager_pre_draw();
@@ -76,9 +76,11 @@ void game_loop_main()
 		scene_manager_after_draw();
 
 		Uint32 next_dt = game_timer_test();
-		if (ONE_FRAME_TIME_MIN > next_dt) {
-			Sleep(ONE_FRAME_TIME_MIN - next_dt);
+		if (ONE_FRAME_TIME > next_dt) {
+			Sleep(ONE_FRAME_TIME - next_dt);
 			//LOG_DEBUG("next_dt:  %d\n", next_dt);
 		}
+
+		//Sleep(25); // for low-spec testing
 	}
 }
