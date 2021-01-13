@@ -616,28 +616,57 @@ static void update_simple(ai_data_t* ai_data)
 	}
 
 	// attack
-	if (ai_stat->step[AI_STAT_STEP_W] == 1) {
-		if (ai_stat->val1 & AI_PARAM_ATTACK) {
-			unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
-			ai_stat->step[AI_STAT_STEP_W] += 1;
-			ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
-			return;
+	if ((unit_data->col_shape->face_type == UNIT_FACE_TYPE_LR) || (unit_data->col_shape->face_type == UNIT_FACE_TYPE_ALL)) {
+		if (ai_stat->step[AI_STAT_STEP_W] == 1) {
+			if (ai_stat->val1 & AI_PARAM_ATTACK) {
+				unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
+				ai_stat->step[AI_STAT_STEP_W] += 1;
+				ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
+				return;
+			}
+			else {
+				// do next step
+				ai_stat->step[AI_STAT_STEP_W] += 1;
+			}
 		}
-		else {
-			// do next step
-			ai_stat->step[AI_STAT_STEP_W] += 1;
+		else if (ai_stat->step[AI_STAT_STEP_E] == 1) {
+			if (ai_stat->val1 & AI_PARAM_ATTACK) {
+				unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
+				ai_stat->step[AI_STAT_STEP_E] += 1;
+				ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
+				return;
+			}
+			else {
+				// do next step
+				ai_stat->step[AI_STAT_STEP_E] += 1;
+			}
 		}
 	}
-	else if (ai_stat->step[AI_STAT_STEP_E] == 1) {
-		if (ai_stat->val1 & AI_PARAM_ATTACK) {
-			unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
-			ai_stat->step[AI_STAT_STEP_E] += 1;
-			ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
-			return;
+
+	if ((unit_data->col_shape->face_type == UNIT_FACE_TYPE_UD) || (unit_data->col_shape->face_type == UNIT_FACE_TYPE_ALL)) {
+		if (ai_stat->step[AI_STAT_STEP_N] == 1) {
+			if (ai_stat->val1 & AI_PARAM_ATTACK) {
+				unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
+				ai_stat->step[AI_STAT_STEP_N] += 1;
+				ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
+				return;
+			}
+			else {
+				// do next step
+				ai_stat->step[AI_STAT_STEP_N] += 1;
+			}
 		}
-		else {
-			// do next step
-			ai_stat->step[AI_STAT_STEP_E] += 1;
+		else if (ai_stat->step[AI_STAT_STEP_S] == 1) {
+			if (ai_stat->val1 & AI_PARAM_ATTACK) {
+				unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
+				ai_stat->step[AI_STAT_STEP_S] += 1;
+				ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
+				return;
+			}
+			else {
+				// do next step
+				ai_stat->step[AI_STAT_STEP_S] += 1;
+			}
 		}
 	}
 
