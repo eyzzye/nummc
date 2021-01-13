@@ -10,8 +10,7 @@
 
 #include "resource_manager.h"
 
-#define EFFECT_BASE_LIST_SIZE (UNIT_EFFECT_LIST_SIZE/8)
-static unit_effect_data_t effect_base[EFFECT_BASE_LIST_SIZE];
+static unit_effect_data_t effect_base[UNIT_EFFECT_BASE_LIST_SIZE];
 static unit_effect_data_t effect[UNIT_EFFECT_LIST_SIZE];
 static int effect_base_index_end;
 static int effect_index_end;
@@ -33,7 +32,7 @@ int unit_manager_init_effect()
 
 void unit_manager_unload_effect()
 {
-	for (int i = 0; i < EFFECT_BASE_LIST_SIZE; i++) {
+	for (int i = 0; i < UNIT_EFFECT_BASE_LIST_SIZE; i++) {
 		if (effect_base[i].obj) {
 			delete[] effect_base[i].obj;
 			effect_base[i].obj = NULL;

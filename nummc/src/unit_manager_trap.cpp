@@ -14,8 +14,7 @@
 #include "sound_manager.h"
 #include "scene_play_stage.h"
 
-#define TRAP_BASE_LIST_SIZE (UNIT_TRAP_LIST_SIZE / 4)
-static unit_trap_data_t trap_base[TRAP_BASE_LIST_SIZE];
+static unit_trap_data_t trap_base[UNIT_TRAP_BASE_LIST_SIZE];
 static unit_trap_data_t trap[UNIT_TRAP_LIST_SIZE];
 static int trap_base_index_end;
 static int trap_index_end;
@@ -37,7 +36,7 @@ int unit_manager_init_trap()
 
 void unit_manager_unload_trap()
 {
-	for (int i = 0; i < TRAP_BASE_LIST_SIZE; i++) {
+	for (int i = 0; i < UNIT_TRAP_BASE_LIST_SIZE; i++) {
 		if (trap_base[i].obj) {
 			delete[] trap_base[i].obj;
 			trap_base[i].obj = NULL;

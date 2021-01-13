@@ -17,6 +17,8 @@
 #define UNIT_EFFECT_ID_HIGH_LIGHT_LINE  7
 #define UNIT_EFFECT_ID_END              8
 
+#define UNIT_EFFECT_ID_IGNORE           (-1)
+
 // for player
 #define UNIT_EFFECT_ID_P_NONE         (0)
 #define UNIT_EFFECT_ID_P_FIRE_UP      (1)

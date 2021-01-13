@@ -15,7 +15,7 @@
 #include "unit_manager.h"
 
 // static body
-#define STATIC_SHAPE_LIST_SIZE 4096
+#define STATIC_SHAPE_LIST_SIZE ((((MAP_WIDTH_NUM_MAX*MAP_HEIGHT_NUM_MAX*MAP_TYPE_END + 32 /* trap, item, effect */) + 64) / 64) * 64)
 static shape_data static_shape_data_list[STATIC_SHAPE_LIST_SIZE];
 static shape_data* static_shape_list_box_start;
 static shape_data* static_shape_list_box_end;
@@ -24,7 +24,7 @@ static shape_data* static_shape_list_rnd_end;
 static Uint32 static_shape_id_end;
 
 // dynamic body
-#define DYNAMIC_SHAPE_LIST_SIZE 256
+#define DYNAMIC_SHAPE_LIST_SIZE ((((1 + UNIT_ENEMY_LIST_SIZE + UNIT_ITEMS_LIST_SIZE + UNIT_TRAP_LIST_SIZE + UNIT_PLAYER_BULLET_LIST_SIZE + UNIT_ENEMY_BULLET_LIST_SIZE) + 64) / 64) * 64)
 static shape_data dynamic_shape_data_list[DYNAMIC_SHAPE_LIST_SIZE];
 static shape_data* dynamic_shape_list_box_start;
 static shape_data* dynamic_shape_list_box_end;

@@ -15,8 +15,7 @@
 #include "scene_play_stage.h"
 #include "quest_log_manager.h"
 
-#define ENEMY_BASE_LIST_SIZE (UNIT_ENEMY_LIST_SIZE)
-static unit_enemy_data_t enemy_base[ENEMY_BASE_LIST_SIZE];
+static unit_enemy_data_t enemy_base[UNIT_ENEMY_BASE_LIST_SIZE];
 static unit_enemy_data_t enemy[UNIT_ENEMY_LIST_SIZE];
 static int enemy_base_index_end;
 static int enemy_index_end;
@@ -28,6 +27,7 @@ const unit_effect_stat_data_t enemy_effect_default[UNIT_EFFECT_ID_E_END] = {
 	{   0, 0,      0,        0,           0       },
 	{   0, 4000,   1,        2000,        5       }, // FIRE_UP
 	{   0, 1000,   0,        0,           0       }, // FREEZE_UP
+	{   0, 0,      0,        0,           0       }, // NO_FRICTION
 };
 
 // rank tables
@@ -101,7 +101,7 @@ int unit_manager_init_enemy()
 
 void unit_manager_unload_enemy()
 {
-	for (int i = 0; i < ENEMY_BASE_LIST_SIZE; i++) {
+	for (int i = 0; i < UNIT_ENEMY_BASE_LIST_SIZE; i++) {
 		if (enemy_base[i].obj) {
 			delete[] enemy_base[i].obj;
 			enemy_base[i].obj = NULL;
@@ -522,8 +522,10 @@ void unit_manager_clear_enemy(unit_enemy_data_t* enemy)
 {
 	enemy->type = UNIT_TYPE_NONE;
 	enemy->base = NULL;
-	for (int i = UNIT_EFFECT_ID_E_FIRE_UP; i < UNIT_EFFECT_ID_E_END; i++) {
-		unit_manager_clear_effect(unit_manager_get_effect(enemy->effect_param[i].id));
+	for (int i = 0; i < UNIT_EFFECT_ID_E_END; i++) {
+		if (enemy->effect_param[i].id != UNIT_EFFECT_ID_IGNORE) {
+			unit_manager_clear_effect(unit_manager_get_effect(enemy->effect_param[i].id));
+		}
 	}
 	enemy->effect_param = NULL;
 	collision_manager_delete_shape(enemy->col_shape);
@@ -547,12 +549,18 @@ int unit_manager_load_enemy_effects(int unit_id)
 		"",
 		"units/effect/fire_up/fire_up.unit",
 		"units/effect/freeze_up/freeze_up.unit",
+		""
 	};
 
-	for (int i = UNIT_EFFECT_ID_E_FIRE_UP; i < UNIT_EFFECT_ID_E_END; i++) {
+	for (int i = 0; i <= UNIT_EFFECT_ID_E_END; i++) {
 		memcpy(&enemy_effect[unit_id][i], &enemy_effect_default[i], sizeof(unit_effect_stat_data_t));
-		enemy_effect[unit_id][i].id = unit_manager_create_effect(0, 0, unit_manager_search_effect(effect_path[i]));
-		unit_manager_effect_set_anim_stat(enemy_effect[unit_id][i].id, ANIM_STAT_FLAG_HIDE);
+		if (effect_path[i] == "") {
+			enemy_effect[unit_id][i].id = UNIT_EFFECT_ID_IGNORE;
+		}
+		else {
+			enemy_effect[unit_id][i].id = unit_manager_create_effect(0, 0, unit_manager_search_effect(effect_path[i]));
+			unit_manager_effect_set_anim_stat(enemy_effect[unit_id][i].id, ANIM_STAT_FLAG_HIDE);
+		}
 	}
 
 	return 0;
@@ -734,7 +742,7 @@ void unit_manager_enemy_update()
 #endif
 
 			// update *base* effect position
-			for (int ef_i = UNIT_EFFECT_ID_E_FIRE_UP; ef_i < UNIT_EFFECT_ID_E_END; ef_i++) {
+			for (int ef_i = UNIT_EFFECT_ID_E_FIRE_UP; ef_i <= UNIT_EFFECT_ID_E_FREEZE_UP; ef_i++) {
 				int effect_flg = 0x00000001 << ef_i;
 				if (enemy[ei].effect_stat & effect_flg) {
 					int pos_x, pos_y;

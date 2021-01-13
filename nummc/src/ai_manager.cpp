@@ -15,13 +15,13 @@
 
 static std::string high_light_line_path = "units/effect/high_light_line/high_light_line.unit";
 
-#define AI_BASE_DATA_LIST_SIZE 32 * 4
+#define AI_BASE_DATA_LIST_SIZE (UNIT_ENEMY_LIST_SIZE * 3 + UNIT_ENEMY_BULLET_BASE_LIST_SIZE)
 static ai_data_t ai_base_data_list[AI_BASE_DATA_LIST_SIZE];
 static ai_data_t* ai_base_data_list_start;
 static ai_data_t* ai_base_data_list_end;
 static int ai_base_data_index_end;
 
-#define AI_DATA_LIST_SIZE 32 * 4
+#define AI_DATA_LIST_SIZE (UNIT_ENEMY_LIST_SIZE * 3 + UNIT_ENEMY_BULLET_LIST_SIZE)
 static ai_data_t ai_data_list[AI_DATA_LIST_SIZE];
 static ai_data_t* ai_data_list_start;
 static ai_data_t* ai_data_list_end;

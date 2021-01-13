@@ -14,8 +14,7 @@
 #include "sound_manager.h"
 #include "scene_play_stage.h"
 
-#define ITEMS_BASE_LIST_SIZE (UNIT_ITEMS_LIST_SIZE)
-static unit_items_data_t items_base[ITEMS_BASE_LIST_SIZE];
+static unit_items_data_t items_base[UNIT_ITEMS_BASE_LIST_SIZE];
 static unit_items_data_t items[UNIT_ITEMS_LIST_SIZE];
 static int items_base_index_end;
 static int items_index_end;
@@ -92,7 +91,7 @@ int unit_manager_init_items()
 
 void unit_manager_unload_items()
 {
-	for (int i = 0; i < ITEMS_BASE_LIST_SIZE; i++) {
+	for (int i = 0; i < UNIT_ITEMS_BASE_LIST_SIZE; i++) {
 		if (items_base[i].obj) {
 			delete[] items_base[i].obj;
 			items_base[i].obj = NULL;

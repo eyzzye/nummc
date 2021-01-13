@@ -6,6 +6,7 @@
 #include "game_utils.h"
 #include "resource_manager.h"
 #include "sound_manager.h"
+#include "map_manager.h"
 
 #define ANIM_TAG_FRAME      0
 #define ANIM_TAG_IMG        1
@@ -15,10 +16,15 @@
 // ANIM_DATA_LIST_SIZE =
 //  all unit base num
 //   + TILE_TEX_NUM
-//   + PLAYER * (UNIT_EFFECT_ID_P_END) + ENEMY_LIST_SIZE * (UNIT_EFFECT_ID_E_END)
+//   + PLAYER + ENEMY_LIST_SIZE
 //   + UNIT_ITEMS_LIST_SIZE + UNIT_TRAP_LIST_SIZE + UNIT_PLAYER_BULLET_LIST_SIZE + UNIT_ENEMY_BULLET_LIST_SIZE
 //   + effect inst num
-#define ANIM_DATA_LIST_SIZE 256
+#define ANIM_DATA_LIST_SIZE ((((UNIT_PLAYER_BASE_LIST_SIZE + UNIT_ENEMY_BASE_LIST_SIZE + UNIT_ITEMS_BASE_LIST_SIZE \
+        + UNIT_EFFECT_BASE_LIST_SIZE + UNIT_TRAP_BASE_LIST_SIZE + UNIT_PLAYER_BULLET_BASE_LIST_SIZE + UNIT_ENEMY_BULLET_BASE_LIST_SIZE \
+        + MAP_TYPE_END \
+        + 1 + UNIT_ENEMY_LIST_SIZE \
+        + UNIT_ITEMS_LIST_SIZE + UNIT_TRAP_LIST_SIZE + UNIT_PLAYER_BULLET_LIST_SIZE + UNIT_ENEMY_BULLET_LIST_SIZE \
+        + UNIT_EFFECT_LIST_SIZE) + 64) / 64) * 64)
 
 static anim_data_t anim_data_list[ANIM_DATA_LIST_SIZE];
 static anim_data_t* anim_data_list_start;

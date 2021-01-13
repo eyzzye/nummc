@@ -23,8 +23,7 @@ const char* g_enemy_bullet_path[UNIT_BULLET_ID_END] = {
 	"units/bullet/leaser/enemy/leaser.unit",
 };
 
-#define ENEMY_BASE_BULLET_LIST_SIZE (UNIT_ENEMY_BULLET_LIST_SIZE / 8)
-static unit_enemy_bullet_data_t enemy_bullet_base[ENEMY_BASE_BULLET_LIST_SIZE];
+static unit_enemy_bullet_data_t enemy_bullet_base[UNIT_ENEMY_BULLET_BASE_LIST_SIZE];
 static unit_enemy_bullet_data_t enemy_bullet[UNIT_ENEMY_BULLET_LIST_SIZE];
 static int enemy_bullet_base_index_end;
 static int enemy_bullet_index_end;
@@ -46,7 +45,7 @@ int unit_manager_init_enemy_bullet()
 
 void unit_manager_unload_enemy_bullet()
 {
-	for (int i = 0; i < ENEMY_BASE_BULLET_LIST_SIZE; i++) {
+	for (int i = 0; i < UNIT_ENEMY_BULLET_BASE_LIST_SIZE; i++) {
 		if (enemy_bullet_base[i].obj) {
 			delete[] enemy_bullet_base[i].obj;
 			enemy_bullet_base[i].obj = NULL;

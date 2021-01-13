@@ -23,8 +23,7 @@ const char* g_player_bullet_path[UNIT_BULLET_ID_END] = {
 	"units/bullet/leaser/leaser.unit",
 };
 
-#define PLAYER_BULLET_BASE_LIST_SIZE (UNIT_PLAYER_BULLET_LIST_SIZE/2)
-static unit_player_bullet_data_t player_bullet_base[PLAYER_BULLET_BASE_LIST_SIZE];
+static unit_player_bullet_data_t player_bullet_base[UNIT_PLAYER_BULLET_BASE_LIST_SIZE];
 static unit_player_bullet_data_t player_bullet[UNIT_PLAYER_BULLET_LIST_SIZE];
 static int player_bullet_base_index_end;
 static int player_bullet_index_end;
@@ -46,7 +45,7 @@ int unit_manager_init_player_bullet()
 
 void unit_manager_unload_player_bullet()
 {
-	for (int i = 0; i < PLAYER_BULLET_BASE_LIST_SIZE; i++) {
+	for (int i = 0; i < UNIT_PLAYER_BULLET_BASE_LIST_SIZE; i++) {
 		if (player_bullet_base[i].obj) {
 			delete[] player_bullet_base[i].obj;
 			player_bullet_base[i].obj = NULL;

@@ -20,8 +20,7 @@ unit_player_data_t g_player;
 unit_player_data_t g_player_backup;
 static char player_backup_path[MAX_PATH];
 
-#define PLAYER_BASE_LIST_SIZE (16)
-static unit_player_data_t player_base[PLAYER_BASE_LIST_SIZE];
+static unit_player_data_t player_base[UNIT_PLAYER_BASE_LIST_SIZE];
 static int player_base_index_end;
 static int player_stat_timer[UNIT_STAT_END];
 
@@ -123,7 +122,7 @@ int unit_manager_init_player()
 
 void unit_manager_unload_player()
 {
-	for (int i = 0; i < PLAYER_BASE_LIST_SIZE; i++) {
+	for (int i = 0; i < UNIT_PLAYER_BASE_LIST_SIZE; i++) {
 		if (player_base[i].obj) {
 			delete[] player_base[i].obj;
 			player_base[i].obj = NULL;
@@ -178,10 +177,15 @@ int unit_manager_load_player_effects()
 		"units/effect/shield/shield.unit",
 	};
 
-	for (int i = UNIT_EFFECT_ID_P_FIRE_UP; i < UNIT_EFFECT_ID_P_END; i++) {
+	for (int i = 0; i < UNIT_EFFECT_ID_P_END; i++) {
 		memcpy(&player_base_effect[i], &player_effect_default[i], sizeof(unit_effect_stat_data_t));
-		player_base_effect[i].id = unit_manager_create_effect(0, 0, unit_manager_search_effect(effect_path[i]));
-		unit_manager_effect_set_anim_stat(player_base_effect[i].id, ANIM_STAT_FLAG_HIDE);
+		if (effect_path[i] == "") {
+			player_base_effect[i].id = UNIT_EFFECT_ID_IGNORE;
+		}
+		else {
+			player_base_effect[i].id = unit_manager_create_effect(0, 0, unit_manager_search_effect(effect_path[i]));
+			unit_manager_effect_set_anim_stat(player_base_effect[i].id, ANIM_STAT_FLAG_HIDE);
+		}
 	}
 
 	return 0;

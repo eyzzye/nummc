@@ -18,6 +18,9 @@
 #define MAP_TYPE_EFFECT  3
 #define MAP_TYPE_END     4
 
+#define MAP_WIDTH_NUM_MAX    15
+#define MAP_HEIGHT_NUM_MAX    9
+
 typedef struct _tile_data_t tile_data_t;
 typedef struct _tile_base_data_t tile_base_data_t;
 typedef struct _tile_instance_data_t tile_instance_data_t;
