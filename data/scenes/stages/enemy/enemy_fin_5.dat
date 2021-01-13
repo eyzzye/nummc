@@ -63,7 +63,7 @@ face=W
 [/enemy]
 
 [enemy]
-type=units/enemy/7/seven.unit
+type=units/enemy/7/lv3/seven.unit
 x=192
 y=160
 vec_x=0

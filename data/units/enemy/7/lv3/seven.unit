@@ -3,16 +3,19 @@
 #
 
 [unit]
-hp=20
+hp=30
 bullet_life_timer=400
 bullet_curving=5
+drop_item=units/items/stock/simple_bom/simple_bom.unit
 speed=7
 strength=5
-exp=20
+exp=30
 hp_max=20
 exp_max=0
-level=1
-next_level=units/enemy/7/lv2/seven.unit
+level=3
+next_level=null
+
+resistance=FIRE_UP,FREEZE_UP
 [/unit]
 
 [collision]
@@ -32,10 +35,10 @@ vec_y_delta=2.0
 [anim]
 base_w=32
 base_h=32
-units/enemy/7/seven.IDLE.anim
-units/enemy/7/seven.MOVE.anim
-units/enemy/7/seven.ATTACK1.anim
-units/enemy/7/seven.DIE.anim
+units/enemy/7/lv3/seven.IDLE.anim
+units/enemy/7/lv3/seven.MOVE.anim
+units/enemy/7/lv3/seven.ATTACK1.anim
+units/enemy/7/lv3/seven.DIE.anim
 [/anim]
 
 [ai]
