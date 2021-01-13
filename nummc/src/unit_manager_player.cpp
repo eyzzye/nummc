@@ -370,6 +370,12 @@ void unit_manager_player_set_effect_stat(int stat, bool off_on)
 			int i = 0; int flg = 0x00000001;
 			while (stat != flg) { i++; flg <<= 1; }
 
+			if (stat & UNIT_EFFECT_FLAG_P_FREEZE_UP) {
+				b2Vec2 new_vec = g_player.col_shape->b2body->GetLinearVelocity();
+				new_vec *= 0.5f;
+				g_player.col_shape->b2body->SetLinearVelocity(new_vec);
+			}
+
 			unit_manager_effect_set_b2position(g_player.base->effect_param[i].id, PIX2MET(g_player.col_shape->x), PIX2MET(g_player.col_shape->y));
 			unit_manager_effect_set_anim_stat(g_player.base->effect_param[i].id, ANIM_STAT_FLAG_IDLE);
 			g_player.effect_param[i].timer   = player_effect_default[i].timer;

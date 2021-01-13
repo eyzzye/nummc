@@ -209,6 +209,13 @@ void unit_manager_enemy_set_effect_stat(int unit_id, int stat, bool off_on)
 					collision_manager_set_moter_speed(enemy[unit_id].col_shape, ((float)enemy[unit_id].col_shape->joint_val1 / (3 * 1000.0f)) * b2_pi);
 				}
 			}
+			else {
+				if (stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
+					b2Vec2 new_vec = enemy[unit_id].col_shape->b2body->GetLinearVelocity();
+					new_vec *= 0.5f;
+					enemy[unit_id].col_shape->b2body->SetLinearVelocity(new_vec);
+				}
+			}
 
 			unit_manager_effect_set_b2position(enemy[unit_id].effect_param[i].id, PIX2MET(pos_x), PIX2MET(pos_y));
 			unit_manager_effect_set_anim_stat(enemy[unit_id].effect_param[i].id, ANIM_STAT_FLAG_IDLE);
