@@ -27,7 +27,6 @@ const unit_effect_stat_data_t enemy_effect_default[UNIT_EFFECT_ID_E_END] = {
 	{   0, 0,      0,        0,           0       },
 	{   0, 4000,   1,        2000,        5       }, // FIRE_UP
 	{   0, 1000,   0,        0,           0       }, // FREEZE_UP
-	{   0, 0,      0,        0,           0       }, // NO_FRICTION
 };
 
 // rank tables
@@ -549,7 +548,6 @@ int unit_manager_load_enemy_effects(int unit_id)
 		"",
 		"units/effect/fire_up/fire_up.unit",
 		"units/effect/freeze_up/freeze_up.unit",
-		""
 	};
 
 	for (int i = 0; i <= UNIT_EFFECT_ID_E_END; i++) {

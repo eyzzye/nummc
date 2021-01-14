@@ -33,14 +33,16 @@
 #define UNIT_EFFECT_FLAG_P_BOOST      (0x00000001 << UNIT_EFFECT_ID_P_BOOST)
 #define UNIT_EFFECT_FLAG_P_SHIELD     (0x00000001 << UNIT_EFFECT_ID_P_SHIELD)
 
-// for enemy
+// for enemy (effect)
 #define UNIT_EFFECT_ID_E_NONE               (0)
 #define UNIT_EFFECT_ID_E_FIRE_UP            (1)
 #define UNIT_EFFECT_ID_E_FREEZE_UP          (2)
-#define UNIT_EFFECT_ID_E_NO_FRICTION        (3)
-#define UNIT_EFFECT_ID_E_END                (4)
+#define UNIT_EFFECT_ID_E_END                (3)
 
 #define UNIT_EFFECT_FLAG_E_NONE             (0)
 #define UNIT_EFFECT_FLAG_E_FIRE_UP          (0x00000001 << UNIT_EFFECT_ID_E_FIRE_UP)
 #define UNIT_EFFECT_FLAG_E_FREEZE_UP        (0x00000001 << UNIT_EFFECT_ID_E_FREEZE_UP)
-#define UNIT_EFFECT_FLAG_E_NO_FRICTION      (0x00000001 << UNIT_EFFECT_ID_E_NO_FRICTION)
+
+// for enemy (stat only)
+#define UNIT_EFFECT_ID_E_NO_FRICTION        (16)
+#define UNIT_EFFECT_FLAG_E_NO_FRICTION      (0x00010000 << (UNIT_EFFECT_ID_E_NO_FRICTION - 16))

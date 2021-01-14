@@ -35,17 +35,18 @@
 #define UNIT_PLAYER_BULLET_LIST_SIZE   32
 #define UNIT_ENEMY_BULLET_LIST_SIZE    (UNIT_ENEMY_LIST_SIZE * 4)  // ENEMY_LIST_SIZE * bullet_num
 
-// trash(32) + trash smoke(32) + high_light_line(32) + goal smoke(1) + item star(32) + item smoke(32) + enemy smoke(32) + enemy effect(32*2) + enemy damage(32*4)
-// + player smoke(1) + player effect(4) + player star(2) + player damage(1)
+// trash(32) + trash smoke(32) + high_light_line(32) + goal smoke(1) + item star(64) + item smoke(64)
+// + enemy smoke(32) + enemy effect(32*(UNIT_EFFECT_ID_P_END-1) = 32*2) + enemy damage(32*4)
+// + player smoke(1) + player effect(UNIT_EFFECT_ID_P_END-1 = 4) + player star(2) + player damage(1)
 #define UNIT_EFFECT_LIST_SIZE             ((((32*2 + 32 + 1 + UNIT_ITEMS_LIST_SIZE * 2 + UNIT_ENEMY_LIST_SIZE * (1+2+4) + 8) + 64) / 64) * 64)  // 64bit alignment
 
 #define UNIT_PLAYER_BASE_LIST_SIZE         16
 #define UNIT_ENEMY_BASE_LIST_SIZE          (UNIT_ENEMY_LIST_SIZE)
-#define UNIT_ITEMS_BASE_LIST_SIZE          (UNIT_ITEMS_LIST_SIZE / 2)
+#define UNIT_ITEMS_BASE_LIST_SIZE          (UNIT_ITEMS_LIST_SIZE / 2)          // div 2 => rough estimate
 #define UNIT_EFFECT_BASE_LIST_SIZE         32
-#define UNIT_TRAP_BASE_LIST_SIZE           (UNIT_TRAP_LIST_SIZE / 4)
-#define UNIT_PLAYER_BULLET_BASE_LIST_SIZE  (UNIT_PLAYER_BULLET_LIST_SIZE / 2)
-#define UNIT_ENEMY_BULLET_BASE_LIST_SIZE   (UNIT_ENEMY_BULLET_LIST_SIZE / 8)
+#define UNIT_TRAP_BASE_LIST_SIZE           (UNIT_TRAP_LIST_SIZE / 4)           // div 4 => rough estimate
+#define UNIT_PLAYER_BULLET_BASE_LIST_SIZE  (UNIT_PLAYER_BULLET_LIST_SIZE / 2)  // div 2 => rough estimate
+#define UNIT_ENEMY_BULLET_BASE_LIST_SIZE   (UNIT_ENEMY_BULLET_LIST_SIZE / 8)   // div 8 => rough estimate
 
 typedef void void_func();
 typedef void void_p_func(void*);
