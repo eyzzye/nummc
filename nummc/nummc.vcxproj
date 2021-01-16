@@ -63,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ai_manager.cpp" />
+    <ClCompile Include="src\ai_manager_boss.cpp" />
     <ClCompile Include="src\animation_manager.cpp" />
     <ClCompile Include="src\collision_manager.cpp" />
     <ClCompile Include="src\dialog_exit.cpp" />

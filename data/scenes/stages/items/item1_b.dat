@@ -2,3 +2,6 @@
 units/items/recovery/heart/heart.unit
 units/items/stock/simple_bom/simple_bom.unit
 [/drop_items]
+[goal_items]
+units/items/bullet/leaser_bullet/leaser_bullet.unit
+[/goal_items]

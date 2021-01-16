@@ -1,0 +1,16 @@
+#
+# three animation (type=MOVE)
+#
+
+[frame]
+duration=100,300,4000
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/enemy/3/boss/
+path=three_idle1.png,three_move1.png,three_move2.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

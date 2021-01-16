@@ -32,7 +32,6 @@ static unit_data_t dummy_unit_data;
 static shape_data dummy_shape_data;
 
 static void load_basic(std::string& line, ai_bullet_t* bullet_data);
-static bool within_trap(unit_data_t* unit_data, int step, float delta_x, float delta_y);
 static void update_simple(ai_data_t* ai_data);
 static void update_left_right(ai_data_t* ai_data);
 static void update_stay(ai_data_t* ai_data);
@@ -40,6 +39,9 @@ static void update_round(ai_data_t* ai_data);
 static void update_go_to_bom(ai_data_t* ai_data);
 static void update_bullet_wave(ai_stat_bullet_t* ai_bullet);
 static void update_bullet_random(ai_stat_bullet_t* ai_bullet);
+
+// extern
+bool ai_manager_within_trap(unit_data_t* unit_data, int step, float delta_x, float delta_y);
 
 int ai_manager_init()
 {
@@ -81,6 +83,37 @@ void ai_manager_bullet_copy(ai_bullet_t* dst, ai_bullet_t* src)
 	dst->val2              = src->val2;
 	dst->val3              = src->val3;
 	dst->val4              = src->val4;
+}
+
+int ai_manager_get_ai_type(std::string& value)
+{
+	int ret = AI_TYPE_NONE;
+	if (value == "SIMPLE") ret = AI_TYPE_SIMPLE;
+	else if (value == "LEFT_RIGHT")  ret = AI_TYPE_LEFT_RIGHT;
+	else if (value == "UP_DOWN")     ret = AI_TYPE_UP_DOWN;
+	else if (value == "STAY")        ret = AI_TYPE_STAY;
+	else if (value == "FACE_ROUND")  ret = AI_TYPE_FACE_ROUND;
+	else if (value == "ROUND")       ret = AI_TYPE_ROUND;
+	else if (value == "ROUND_LR")    ret = AI_TYPE_ROUND_LR;
+	else if (value == "ROUND_MOVE")  ret = AI_TYPE_ROUND_MOVE;
+	else if (value == "RANDOM")      ret = AI_TYPE_RANDOM;
+	else if (value == "RANDOM_GRID") ret = AI_TYPE_RANDOM_GRID;
+	else if (value == "GO_TO_BOM")   ret = AI_TYPE_GO_TO_BOM;
+	// boss
+	else if (value == "BOSS_ONE")   ret = AI_TYPE_BOSS_ONE;
+	else if (value == "BOSS_TWO")   ret = AI_TYPE_BOSS_TWO;
+	else if (value == "BOSS_THREE") ret = AI_TYPE_BOSS_THREE;
+	else if (value == "BOSS_FOUR")  ret = AI_TYPE_BOSS_FOUR;
+	else if (value == "BOSS_FIVE")  ret = AI_TYPE_BOSS_FIVE;
+	else if (value == "BOSS_SIX")   ret = AI_TYPE_BOSS_SIX;
+	else if (value == "BOSS_SEVEN") ret = AI_TYPE_BOSS_SEVEN;
+	else if (value == "BOSS_EIGHT") ret = AI_TYPE_BOSS_EIGHT;
+	else if (value == "BOSS_NINE")  ret = AI_TYPE_BOSS_NINE;
+	else if (value == "BOSS_X")     ret = AI_TYPE_BOSS_X;
+	else if (value == "BOSS_Y")     ret = AI_TYPE_BOSS_Y;
+	else if (value == "BOSS_Z")     ret = AI_TYPE_BOSS_Z;
+
+	return ret;
 }
 
 int ai_manager_load_bullet_file(std::string path, ai_bullet_t* bullet_base)
@@ -161,6 +194,9 @@ static void load_basic(std::string& line, ai_bullet_t* bullet_data)
 		}
 		else if (strcmp(bullet_path, "TRIPLE") == 0) {
 			bullet_num = UNIT_BULLET_NUM_TRIPLE;
+		}
+		else if (strcmp(bullet_path, "QUADRUPLE") == 0) {
+			bullet_num = UNIT_BULLET_NUM_QUADRUPLE;
 		}
 		else {
 			bullet_num = atoi(bullet_path);
@@ -332,6 +368,19 @@ int ai_manager_update(ai_data_t* ai_data)
 	else if (ai_data->type == AI_TYPE_GO_TO_BOM) {
 		update_go_to_bom(ai_data);
 	}
+	// boss
+	else if (ai_data->type == AI_TYPE_BOSS_ONE) {
+		ai_manager_boss_update_one(ai_data);
+	}
+	else if (ai_data->type == AI_TYPE_BOSS_TWO) {
+		ai_manager_boss_update_two(ai_data);
+	}
+	else if (ai_data->type == AI_TYPE_BOSS_THREE) {
+		ai_manager_boss_update_three(ai_data);
+	}
+	else if (ai_data->type == AI_TYPE_BOSS_FOUR) {
+		ai_manager_boss_update_four(ai_data);
+	}
 
 	return 0;
 }
@@ -352,7 +401,7 @@ int ai_manager_bullet_update(ai_data_t* ai_data)
 	return 0;
 }
 
-static bool within_trap(unit_data_t* unit_data, int step, float delta_x, float delta_y)
+bool ai_manager_within_trap(unit_data_t* unit_data, int step, float delta_x, float delta_y)
 {
 	float float_x = 0.0f, float_y = 0.0f;
 	if (unit_data->col_shape->type == COLLISION_TYPE_BOX_D) {
@@ -599,7 +648,7 @@ static void update_simple(ai_data_t* ai_data)
 			}
 
 			// reset timer
-			ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
+			ai_stat->timer1 = AI_WAIT_TIMER_SIMPLE;
 			ai_stat->timer2 = 0;
 			return;
 		}
@@ -621,7 +670,7 @@ static void update_simple(ai_data_t* ai_data)
 			if (ai_stat->val1 & AI_PARAM_ATTACK) {
 				unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
 				ai_stat->step[AI_STAT_STEP_W] += 1;
-				ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
+				ai_stat->timer1 = AI_WAIT_TIMER_SIMPLE;
 				return;
 			}
 			else {
@@ -633,7 +682,7 @@ static void update_simple(ai_data_t* ai_data)
 			if (ai_stat->val1 & AI_PARAM_ATTACK) {
 				unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
 				ai_stat->step[AI_STAT_STEP_E] += 1;
-				ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
+				ai_stat->timer1 = AI_WAIT_TIMER_SIMPLE;
 				return;
 			}
 			else {
@@ -648,7 +697,7 @@ static void update_simple(ai_data_t* ai_data)
 			if (ai_stat->val1 & AI_PARAM_ATTACK) {
 				unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
 				ai_stat->step[AI_STAT_STEP_N] += 1;
-				ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
+				ai_stat->timer1 = AI_WAIT_TIMER_SIMPLE;
 				return;
 			}
 			else {
@@ -660,7 +709,7 @@ static void update_simple(ai_data_t* ai_data)
 			if (ai_stat->val1 & AI_PARAM_ATTACK) {
 				unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
 				ai_stat->step[AI_STAT_STEP_S] += 1;
-				ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
+				ai_stat->timer1 = AI_WAIT_TIMER_SIMPLE;
 				return;
 			}
 			else {
@@ -706,25 +755,25 @@ static void update_simple(ai_data_t* ai_data)
 	bool move_dirt = false;
 	float vec_x = 0.0f, vec_y = 0.0f;
 	if (new_step == AI_STAT_STEP_N) {
-		if (within_trap((unit_data_t*)ai_data->obj, new_step, 0.0f, (float)(-g_tile_height / 2)) == false) {
+		if (ai_manager_within_trap((unit_data_t*)ai_data->obj, new_step, 0.0f, (float)(-g_tile_height / 2)) == false) {
 			vec_y = -((unit_data_t*)ai_data->obj)->col_shape->vec_y_delta;
 			move_dirt = true;
 		}
 	}
 	else if (new_step == AI_STAT_STEP_E) {
-		if (within_trap((unit_data_t*)ai_data->obj, new_step, (float)(g_tile_width / 2), 0.0f) == false) {
+		if (ai_manager_within_trap((unit_data_t*)ai_data->obj, new_step, (float)(g_tile_width / 2), 0.0f) == false) {
 			vec_x = ((unit_data_t*)ai_data->obj)->col_shape->vec_x_delta;
 			move_dirt = true;
 		}
 	}
 	else if (new_step == AI_STAT_STEP_W) {
-		if (within_trap((unit_data_t*)ai_data->obj, new_step, (float)(-g_tile_width / 2), 0.0f) == false) {
+		if (ai_manager_within_trap((unit_data_t*)ai_data->obj, new_step, (float)(-g_tile_width / 2), 0.0f) == false) {
 			vec_x = -((unit_data_t*)ai_data->obj)->col_shape->vec_x_delta;
 			move_dirt = true;
 		}
 	}
 	else if (new_step == AI_STAT_STEP_S) {
-		if (within_trap((unit_data_t*)ai_data->obj, new_step, 0.0f, (float)(g_tile_height / 2)) == false) {
+		if (ai_manager_within_trap((unit_data_t*)ai_data->obj, new_step, 0.0f, (float)(g_tile_height / 2)) == false) {
 			vec_y = ((unit_data_t*)ai_data->obj)->col_shape->vec_y_delta;
 			move_dirt = true;
 		}
@@ -733,7 +782,7 @@ static void update_simple(ai_data_t* ai_data)
 	if (move_dirt) unit_manager_enemy_move((unit_enemy_data_t*)ai_data->obj, vec_x, vec_y);
 
 	// set wait timer
-	ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
+	ai_stat->timer1 = AI_WAIT_TIMER_SIMPLE;
 }
 
 static void update_left_right(ai_data_t* ai_data)
@@ -754,7 +803,7 @@ static void update_left_right(ai_data_t* ai_data)
 		if (ai_stat->val1 & AI_PARAM_ATTACK) {
 			unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK1);
 			ai_stat->step[AI_STAT_STEP_E] += 1;
-			ai_stat->timer1 = AI_SIMPLE_WAIT_TIMER;
+			ai_stat->timer1 = AI_WAIT_TIMER_LEFT_RIGHT;
 			return;
 		}
 		else {
@@ -792,7 +841,7 @@ static void update_left_right(ai_data_t* ai_data)
 	}
 
 	// set wait timer
-	ai_stat->timer1 = AI_LEFT_RIGHT_WAIT_TIMER;
+	ai_stat->timer1 = AI_WAIT_TIMER_LEFT_RIGHT;
 }
 
 static void update_stay(ai_data_t* ai_data)
@@ -902,7 +951,7 @@ static void update_stay(ai_data_t* ai_data)
 				unit_manager_enemy_set_anim_stat(unit_data->id, anim_stat_flag);
 				ai_stat->step[AI_STAT_STEP_W] += 1;
 				if (ai_stat->step[AI_STAT_STEP_W] > 3) ai_stat->step[AI_STAT_STEP_W] = 0;
-				ai_stat->timer1 = AI_STAY_WAIT_TIMER;
+				ai_stat->timer1 = AI_WAIT_TIMER_STAY;
 				return;
 			}
 		}
@@ -918,7 +967,7 @@ static void update_stay(ai_data_t* ai_data)
 	}
 
 	// set wait timer
-	ai_stat->timer1 = AI_STAY_WAIT_TIMER;
+	ai_stat->timer1 = AI_WAIT_TIMER_STAY;
 }
 
 static void update_round(ai_data_t* ai_data)
@@ -978,7 +1027,7 @@ static void update_round(ai_data_t* ai_data)
 	}
 
 	// set wait timer
-	ai_stat->timer1 = ONE_FRAME_TIME * 10;
+	ai_stat->timer1 = AI_WAIT_TIMER_ROUND;
 }
 
 static void update_go_to_bom(ai_data_t* ai_data)
@@ -1069,7 +1118,7 @@ static void update_go_to_bom(ai_data_t* ai_data)
 	}
 
 	// set wait timer
-	ai_stat->timer1 = AI_STAY_WAIT_TIMER;
+	ai_stat->timer1 = AI_WAIT_TIMER_GO_TO_BOM;
 }
 
 static void update_bullet_wave(ai_stat_bullet_t* ai_bullet) {

@@ -1,0 +1,10 @@
+#
+# enemy4 boss
+#
+
+[basic]
+bullet_unit=units/bullet/ice/enemy/ice.unit
+bullet_track_type=LINE
+bullet_num=SINGLE
+bullet_face=W
+[/basic]

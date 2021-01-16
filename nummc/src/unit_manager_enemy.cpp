@@ -670,6 +670,16 @@ int unit_manager_enemy_attack(unit_enemy_data_t* enemy_data, int stat)
 	unit_manager_get_bullet_start_pos((unit_data_t*)enemy_data, (unit_data_t*)unit_manager_get_enemy_bullet_base(bullet_base_id), bullet_track_type, bullet_num, bullet_face, x, y);
 	unit_manager_enemy_get_face_velocity(enemy_data, vec_x, vec_y, bullet_face, abs_vec, bullet_track_type, bullet_num);
 
+	if (ai_bullet->val1 & AI_BULLET_PARAM_CONTINUE) {
+		int i = ((ai_stat_bullet_t*)ai_bullet)->timer2;
+		int unit_id = unit_manager_create_enemy_bullet(x[i], y[i], vec_x[i], vec_y[i], bullet_face, enemy_data->base->id, bullet_base_id, (ai_data_t*)ai_bullet);
+		unit_manager_enemy_bullet_set_anim_stat(unit_id, ANIM_STAT_FLAG_ATTACK);
+		unit_manager_enemy_bullet_set_effect_stat(unit_id, enemy_data->effect_stat);
+		unit_manager_enemy_bullet_set_hp(unit_id, unit_manager_enemy_get_bullet_strength(enemy_data->base->id));
+		unit_manager_enemy_bullet_set_bullet_life_timer(unit_id, unit_manager_enemy_get_bullet_life_timer(enemy_data->base->id));
+		return 0;	// finish create
+	}
+
 	for (int i = 0; i < bullet_num; i++) {
 		int unit_id = unit_manager_create_enemy_bullet(x[i], y[i], vec_x[i], vec_y[i], bullet_face, enemy_data->base->id, bullet_base_id, (ai_data_t*)ai_bullet);
 		unit_manager_enemy_bullet_set_anim_stat(unit_id, ANIM_STAT_FLAG_ATTACK);

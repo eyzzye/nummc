@@ -260,5 +260,8 @@
     <ClCompile Include="src\quest_log_manager.cpp">
       <Filter>src\source</Filter>
     </ClCompile>
+    <ClCompile Include="src\ai_manager_boss.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -52,11 +52,12 @@
 #define UNIT_BULLET_TRACK_RANDOM  6
 #define UNIT_BULLET_TRACK_END     7
 
-#define UNIT_BULLET_NUM_NONE    0
-#define UNIT_BULLET_NUM_SINGLE  1
-#define UNIT_BULLET_NUM_DOUBLE  2
-#define UNIT_BULLET_NUM_TRIPLE  3
-#define UNIT_BULLET_NUM_MAX     5
+#define UNIT_BULLET_NUM_NONE       0
+#define UNIT_BULLET_NUM_SINGLE     1
+#define UNIT_BULLET_NUM_DOUBLE     2
+#define UNIT_BULLET_NUM_TRIPLE     3
+#define UNIT_BULLET_NUM_QUADRUPLE  4
+#define UNIT_BULLET_NUM_MAX        5
 
 #include "unit_manager_player.h"
 #include "unit_manager_enemy.h"
