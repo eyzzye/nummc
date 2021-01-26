@@ -6,7 +6,6 @@
 hp=30
 bullet_life_timer=800
 bullet_curving=5
-#drop_item=units/items/stock/simple_bom/simple_bom.unit
 speed=5
 strength=5
 exp=20

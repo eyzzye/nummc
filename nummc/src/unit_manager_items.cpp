@@ -59,7 +59,7 @@ public:
 					unit_manager_create_effect(unit_data->col_shape->x, unit_data->col_shape->y, unit_manager_search_effect(effect_path));
 				}
 			}
-			else if (unit_data->type == UNIT_TYPE_ITEMS) {
+			else if ((unit_data->type == UNIT_TYPE_ITEMS) && (unit_data->col_shape->stat == COLLISION_STAT_ENABLE)) {
 				bool overlap = b2TestOverlap(shape, 0, &m_circle, 0, body->GetTransform(), m_transform);
 				if (overlap) {
 					unit_manager_items_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_DIE);

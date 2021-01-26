@@ -29,6 +29,30 @@ const unit_effect_stat_data_t enemy_effect_default[UNIT_EFFECT_ID_E_END] = {
 	{   0, 1000,   0,        0,           0       }, // FREEZE_UP
 };
 
+static std::string enemy_effect_path[ANIM_BASE_SIZE_END][UNIT_EFFECT_ID_E_END] = {
+	// 32x32
+	{	"",
+		"units/effect/fire_up/fire_up.unit",
+		"units/effect/freeze_up/freeze_up.unit",
+	},
+	// 48x48
+	{	"",
+		"units/effect/fire_up/48x48/fire_up.unit",
+		"units/effect/freeze_up/48x48/freeze_up.unit",
+	},
+	// 64x64
+	{	"",
+		"units/effect/fire_up/64x64/fire_up.unit",
+		"units/effect/freeze_up/64x64/freeze_up.unit",
+	},
+};
+
+static std::string enemy_damage_path[ANIM_BASE_SIZE_END] = {
+	"units/effect/damage/damage.unit",
+	"units/effect/damage/48x48/damage.unit",
+	"units/effect/damage/64x64/damage.unit",
+};
+
 // rank tables
 #define UNIT_ENEMY_BULLET_CURVING_RANK_MIN    3
 #define UNIT_ENEMY_BULLET_CURVING_RANK_MAX   10
@@ -142,22 +166,28 @@ void unit_manager_enemy_set_anim_stat(int unit_id, int stat)
 	unit_manager_unit_set_anim_stat((unit_data_t*)&enemy[unit_id], stat);
 
 	// DIE
-	if ((enemy[unit_id].anim->stat == ANIM_STAT_FLAG_DIE) && enemy[unit_id].col_shape->b2body) {
-		// reset face
-		if ((enemy[unit_id].col_shape->joint_type != COLLISION_JOINT_TYPE_PIN) && (enemy[unit_id].col_shape->joint_type != COLLISION_JOINT_TYPE_PIN_ROUND)) {
-			if (enemy[unit_id].col_shape->face != UNIT_FACE_W) {
-				int backup_face = enemy[unit_id].col_shape->face;
-				collision_manager_set_face(enemy[unit_id].col_shape, enemy[unit_id].base->col_shape, enemy[unit_id].base->anim->base_w, enemy[unit_id].base->anim->base_h, UNIT_FACE_W);
-				collision_manager_set_angle(enemy[unit_id].col_shape, 0);
+	if (enemy[unit_id].anim->stat == ANIM_STAT_FLAG_DIE) {
+		if (enemy[unit_id].col_shape->b2body) {
+			// reset face
+			if ((enemy[unit_id].col_shape->joint_type != COLLISION_JOINT_TYPE_PIN) && (enemy[unit_id].col_shape->joint_type != COLLISION_JOINT_TYPE_PIN_ROUND)) {
+				if (enemy[unit_id].col_shape->face != UNIT_FACE_W) {
+					int backup_face = enemy[unit_id].col_shape->face;
+					collision_manager_set_face(enemy[unit_id].col_shape, enemy[unit_id].base->col_shape, enemy[unit_id].base->anim->base_w, enemy[unit_id].base->anim->base_h, UNIT_FACE_W);
+					collision_manager_set_angle(enemy[unit_id].col_shape, 0);
 
-				// set face for DIE
-				collision_manager_set_face(enemy[unit_id].col_shape, enemy[unit_id].base->col_shape, enemy[unit_id].base->anim->base_w, enemy[unit_id].base->anim->base_h, backup_face);
+					// set face for DIE
+					collision_manager_set_face(enemy[unit_id].col_shape, enemy[unit_id].base->col_shape, enemy[unit_id].base->anim->base_w, enemy[unit_id].base->anim->base_h, backup_face);
+				}
 			}
+
+			// delete b2body
+			g_stage_world->DestroyBody(enemy[unit_id].col_shape->b2body);
+			enemy[unit_id].col_shape->b2body = NULL;
 		}
 
-		// delete b2body
-		g_stage_world->DestroyBody(enemy[unit_id].col_shape->b2body);
-		enemy[unit_id].col_shape->b2body = NULL;
+		if (enemy[unit_id].ai) {
+			ai_manager_stop(enemy[unit_id].ai);
+		}
 	}
 }
 
@@ -224,6 +254,10 @@ void unit_manager_enemy_set_effect_stat(int unit_id, int stat, bool off_on)
 	}
 }
 
+unit_enemy_data_t* unit_manager_get_enemy(int index) {
+	return &enemy[index];
+}
+
 void unit_manager_enemy_get_face_velocity(unit_enemy_data_t* enemy_data, float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num)
 {
 	unit_manager_get_face_velocity(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
@@ -240,6 +274,19 @@ void unit_manager_enemy_get_face_velocity(unit_enemy_data_t* enemy_data, float* 
 			*(vec_y + i) = *(vec_y + i) + curving_coef * enemy_data->col_shape->vec_y;
 		}
 	}
+
+	// freeze bullet speed (= 1/2)
+	if (enemy_data->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
+		for (int i = 0; i < bullet_num; i++) {
+			*(vec_x + i) = *(vec_x + i) * 0.5f;
+			*(vec_y + i) = *(vec_y + i) * 0.5f;
+		}
+	}
+}
+
+void unit_manager_enemy_get_target_velocity(unit_enemy_data_t* enemy_data, float* vec_x, float* vec_y, int target_x, int target_y, float abs_velocity, int bullet_track_type, int bullet_num)
+{
+	unit_manager_get_target_velocity(vec_x, vec_y, (unit_data_t*)enemy_data, target_x, target_y, abs_velocity, bullet_track_type, bullet_num);
 
 	// freeze bullet speed (= 1/2)
 	if (enemy_data->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
@@ -267,6 +314,10 @@ float unit_manager_enemy_get_bullet_curving(int base_id)
 	return enemy_bullet_curving_rank[rank];
 }
 
+void unit_manager_set_ai_step(int index, int step) {
+	((ai_stat_data_t*)enemy[index].ai)->step[AI_STAT_STEP_W] = step;
+}
+
 int unit_manager_load_enemy(std::string path)
 {
 	if (unit_manager_search_enemy(path) >= 0) return 0; // regist already
@@ -291,6 +342,7 @@ int unit_manager_load_enemy(std::string path)
 				enemy_base[enemy_base_index_end].id = enemy_base_index_end;
 				enemy_base[enemy_base_index_end].effect_stat = UNIT_EFFECT_FLAG_E_NONE;
 				enemy_base[enemy_base_index_end].effect_param = NULL;
+				enemy_base[enemy_base_index_end].resistance_stat = UNIT_EFFECT_FLAG_E_NONE;
 				enemy_base[enemy_base_index_end].drop_item = -1; // disable
 				continue;
 			}
@@ -400,8 +452,14 @@ static void load_unit_enemy(std::string& line, unit_enemy_data_t* enemy_data)
 			else if (stat_list[i] == "FREEZE_UP") {
 				resistance_val |= UNIT_EFFECT_FLAG_E_FREEZE_UP;
 			}
+			else if (stat_list[i] == "NO_FRICTION") {
+				resistance_val |= UNIT_EFFECT_FLAG_E_NO_FRICTION;
+			}
+			else if (stat_list[i] == "NO_TRAP_DAMAGE") {
+				resistance_val |= UNIT_EFFECT_FLAG_E_NO_TRAP_DAMAGE;
+			}
 		}
-		enemy_data->resistance_stat = resistance_val;
+		enemy_data->resistance_stat |= resistance_val;
 	}
 }
 
@@ -437,7 +495,7 @@ int unit_manager_create_enemy(int x, int y, int face, int base_index)
 	enemy[enemy_index_end].type = UNIT_TYPE_ENEMY;
 
 	// set effect
-	if (unit_manager_load_enemy_effects(enemy_index_end) == 0) {
+	if (unit_manager_load_enemy_effects(enemy_index_end, enemy[enemy_index_end].base->anim->base_w) == 0) {
 		enemy[enemy_index_end].effect_stat  = UNIT_EFFECT_FLAG_P_NONE;
 		enemy[enemy_index_end].effect_param = &enemy_effect[enemy_index_end][0];
 	}
@@ -492,6 +550,7 @@ int unit_manager_create_enemy(int x, int y, int face, int base_index)
 	enemy[enemy_index_end].ai = ai_manager_new_ai_data();
 	enemy[enemy_index_end].ai->obj = (void*)&enemy[enemy_index_end];
 	ai_manager_copy(enemy[enemy_index_end].ai, enemy[enemy_index_end].base->ai);
+	((ai_stat_data_t*)enemy[enemy_index_end].ai)->ghost_id = UNIT_TRAP_ID_IGNORE;
 
 	for (int i = 0; i < UNIT_ENEMY_BULLET_NUM; i++) {
 		ai_bullet_t* ai_bullet_base_data = (ai_bullet_t*)enemy[enemy_index_end].base->bullet[i];
@@ -542,21 +601,17 @@ void unit_manager_clear_enemy(unit_enemy_data_t* enemy)
 	}
 }
 
-int unit_manager_load_enemy_effects(int unit_id)
+int unit_manager_load_enemy_effects(int unit_id, int base_w)
 {
-	std::string effect_path[UNIT_EFFECT_ID_E_END] = {
-		"",
-		"units/effect/fire_up/fire_up.unit",
-		"units/effect/freeze_up/freeze_up.unit",
-	};
+	int base_size_index = animation_manager_get_base_size_index(base_w);
 
 	for (int i = 0; i <= UNIT_EFFECT_ID_E_END; i++) {
 		memcpy(&enemy_effect[unit_id][i], &enemy_effect_default[i], sizeof(unit_effect_stat_data_t));
-		if (effect_path[i] == "") {
+		if (enemy_effect_path[base_size_index][i] == "") {
 			enemy_effect[unit_id][i].id = UNIT_EFFECT_ID_IGNORE;
 		}
 		else {
-			enemy_effect[unit_id][i].id = unit_manager_create_effect(0, 0, unit_manager_search_effect(effect_path[i]));
+			enemy_effect[unit_id][i].id = unit_manager_create_effect(0, 0, unit_manager_search_effect(enemy_effect_path[base_size_index][i]));
 			unit_manager_effect_set_anim_stat(enemy_effect[unit_id][i].id, ANIM_STAT_FLAG_HIDE);
 		}
 	}
@@ -567,6 +622,11 @@ int unit_manager_load_enemy_effects(int unit_id)
 bool unit_manager_enemy_exist()
 {
 	return enemy_count > 0;
+}
+
+int unit_manager_enemy_get_enemy_count()
+{
+	return enemy_count;
 }
 
 int unit_manager_enemy_get_delta_time(unit_enemy_data_t* enemy_data)
@@ -591,6 +651,13 @@ int unit_manager_enemy_get_damage_force(unit_enemy_data_t* enemy_data, int hp)
 		// give exp
 		unit_manager_player_get_exp(enemy_data->exp);
 
+		// spawn enemy
+		if (enemy_data->ai) {
+			if (((ai_stat_data_t*)enemy_data->ai)->val1 & AI_PARAM_SPAWNER) {
+				ai_manager_spawn(enemy_data->ai);
+			}
+		}
+
 		// die enemy
 		unit_manager_enemy_set_anim_stat(enemy_data->id, ANIM_STAT_FLAG_DIE);
 		enemy_count -= 1;
@@ -611,6 +678,13 @@ int unit_manager_enemy_get_damage(unit_enemy_data_t* enemy_data, int hp)
 	if (enemy_data->hp <= 0) {
 		// give exp
 		unit_manager_player_get_exp(enemy_data->exp);
+
+		// spawn enemy
+		if (enemy_data->ai) {
+			if (((ai_stat_data_t*)enemy_data->ai)->val1 & AI_PARAM_SPAWNER) {
+				ai_manager_spawn(enemy_data->ai);
+			}
+		}
 
 		// die enemy
 		unit_manager_enemy_set_anim_stat(enemy_data->id, ANIM_STAT_FLAG_DIE);
@@ -667,9 +741,52 @@ int unit_manager_enemy_attack(unit_enemy_data_t* enemy_data, int stat)
 
 	std::string bullet_path = g_enemy_bullet_path[bullet];
 	int bullet_base_id = unit_manager_search_enemy_bullet(bullet_path);
-	unit_manager_get_bullet_start_pos((unit_data_t*)enemy_data, (unit_data_t*)unit_manager_get_enemy_bullet_base(bullet_base_id), bullet_track_type, bullet_num, bullet_face, x, y);
-	unit_manager_enemy_get_face_velocity(enemy_data, vec_x, vec_y, bullet_face, abs_vec, bullet_track_type, bullet_num);
 
+	if (ai_bullet->val1 & AI_BULLET_PARAM_TARGET) {
+		int target_x = ((ai_stat_bullet_t*)ai_bullet)->val2;
+		int target_y = ((ai_stat_bullet_t*)ai_bullet)->val3;
+		bullet_face = ((ai_stat_bullet_t*)ai_bullet)->val4;
+		unit_manager_get_bullet_start_pos((unit_data_t*)enemy_data, (unit_data_t*)unit_manager_get_enemy_bullet_base(bullet_base_id), bullet_track_type, bullet_num, UNIT_FACE_NONE, x, y);
+		unit_manager_enemy_get_target_velocity(enemy_data, vec_x, vec_y, target_x, target_y, abs_vec, bullet_track_type, bullet_num);
+	}
+	else if (bullet_track_type == UNIT_BULLET_TRACK_CROSS) {
+		if (((ai_stat_bullet_t*)ai_bullet)->val2 == AI_BULLET_PARAM_XCROSS_ON) {
+			bullet_track_type = UNIT_BULLET_TRACK_XCROSS;
+		}
+		unit_manager_get_bullet_start_pos((unit_data_t*)enemy_data, (unit_data_t*)unit_manager_get_enemy_bullet_base(bullet_base_id), bullet_track_type, bullet_num, UNIT_FACE_NONE, x, y);
+		unit_manager_enemy_get_face_velocity(enemy_data, vec_x, vec_y, bullet_face, abs_vec, bullet_track_type, bullet_num);
+
+		for (int i = 0; i < bullet_num; i++) {
+			int cross_face = i + 1;
+			int unit_id = unit_manager_create_enemy_bullet(x[i], y[i], vec_x[i], vec_y[i], cross_face, enemy_data->base->id, bullet_base_id, (ai_data_t*)ai_bullet);
+			unit_manager_enemy_bullet_set_anim_stat(unit_id, ANIM_STAT_FLAG_ATTACK);
+			unit_manager_enemy_bullet_set_effect_stat(unit_id, enemy_data->effect_stat);
+			unit_manager_enemy_bullet_set_hp(unit_id, unit_manager_enemy_get_bullet_strength(enemy_data->base->id));
+			unit_manager_enemy_bullet_set_bullet_life_timer(unit_id, unit_manager_enemy_get_bullet_life_timer(enemy_data->base->id));
+		}
+		return 0;	// finish create
+	}
+	else if (bullet_track_type == UNIT_BULLET_TRACK_XCROSS) {
+		unit_manager_get_bullet_start_pos((unit_data_t*)enemy_data, (unit_data_t*)unit_manager_get_enemy_bullet_base(bullet_base_id), bullet_track_type, bullet_num, UNIT_FACE_NONE, x, y);
+		unit_manager_enemy_get_face_velocity(enemy_data, vec_x, vec_y, bullet_face, abs_vec, bullet_track_type, bullet_num);
+
+		for (int i = 0; i < bullet_num; i++) {
+			int xcross_face = i + 1;
+			int unit_id = unit_manager_create_enemy_bullet(x[i], y[i], vec_x[i], vec_y[i], xcross_face, enemy_data->base->id, bullet_base_id, (ai_data_t*)ai_bullet);
+			unit_manager_enemy_bullet_set_anim_stat(unit_id, ANIM_STAT_FLAG_ATTACK);
+			unit_manager_enemy_bullet_set_effect_stat(unit_id, enemy_data->effect_stat);
+			unit_manager_enemy_bullet_set_hp(unit_id, unit_manager_enemy_get_bullet_strength(enemy_data->base->id));
+			unit_manager_enemy_bullet_set_bullet_life_timer(unit_id, unit_manager_enemy_get_bullet_life_timer(enemy_data->base->id));
+		}
+		return 0;	// finish create
+	}
+	// other track type
+	else {
+		unit_manager_get_bullet_start_pos((unit_data_t*)enemy_data, (unit_data_t*)unit_manager_get_enemy_bullet_base(bullet_base_id), bullet_track_type, bullet_num, bullet_face, x, y);
+		unit_manager_enemy_get_face_velocity(enemy_data, vec_x, vec_y, bullet_face, abs_vec, bullet_track_type, bullet_num);
+	}
+
+	// fire indexed unit
 	if (ai_bullet->val1 & AI_BULLET_PARAM_CONTINUE) {
 		int i = ((ai_stat_bullet_t*)ai_bullet)->timer2;
 		int unit_id = unit_manager_create_enemy_bullet(x[i], y[i], vec_x[i], vec_y[i], bullet_face, enemy_data->base->id, bullet_base_id, (ai_data_t*)ai_bullet);
@@ -680,6 +797,7 @@ int unit_manager_enemy_attack(unit_enemy_data_t* enemy_data, int stat)
 		return 0;	// finish create
 	}
 
+	// fire all
 	for (int i = 0; i < bullet_num; i++) {
 		int unit_id = unit_manager_create_enemy_bullet(x[i], y[i], vec_x[i], vec_y[i], bullet_face, enemy_data->base->id, bullet_base_id, (ai_data_t*)ai_bullet);
 		unit_manager_enemy_bullet_set_anim_stat(unit_id, ANIM_STAT_FLAG_ATTACK);
@@ -768,8 +886,8 @@ void unit_manager_enemy_update()
 						if (enemy[ei].effect_param[ef_i].timer < enemy[ei].effect_param[ef_i].delta_time * damage_count) {
 							// damage 5 hp
 							if (unit_manager_enemy_get_damage_force(&enemy[ei], -enemy[ei].effect_param[ef_i].damage) == 0) {
-								std::string damage_path = "units/effect/damage/damage.unit";
-								int effect_id = unit_manager_create_effect(enemy[ei].col_shape->x, enemy[ei].col_shape->y, unit_manager_search_effect(damage_path));
+								int base_size_index = animation_manager_get_base_size_index(enemy[ei].base->anim->base_w);
+								int effect_id = unit_manager_create_effect(enemy[ei].col_shape->x, enemy[ei].col_shape->y, unit_manager_search_effect(enemy_damage_path[base_size_index]));
 								unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&enemy[ei]);
 							}
 

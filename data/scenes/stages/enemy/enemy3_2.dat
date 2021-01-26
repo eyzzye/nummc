@@ -4,10 +4,10 @@
 
 [enemy]
 type=units/enemy/3/three.unit
-x=128,320
-y=160,160
-vec_x=0,0
-vec_y=0,0
-delay=0,0
-face=W,E
+x=96,352,128,320
+y=128,128,192,192
+vec_x=0,0,0,0
+vec_y=0,0,0,0
+delay=0,0,0,0
+face=E,W,W,E
 [/enemy]

@@ -3,13 +3,13 @@
 #
 
 [frame]
-duration=300,4000
+duration=100,100,100,100
 [/frame]
 
 [img]
-layer=1
+layer=3
 dir_path=images/units/enemy/4/boss/
-path=four_idle1.png,four_move1.png
+path=four_idle1.png,four_move1.png,four_idle1.png,four_move1.png
 offset_x=*
 offset_y=*
 effect=*

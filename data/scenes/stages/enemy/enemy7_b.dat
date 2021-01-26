@@ -1,0 +1,13 @@
+#
+# 7-b
+#
+
+[enemy]
+type=units/enemy/7/boss/seven.unit
+x=240
+y=80
+vec_x=0
+vec_y=0
+delay=0
+face=W
+[/enemy]

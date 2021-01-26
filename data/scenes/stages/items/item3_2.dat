@@ -1,5 +1,4 @@
 [drop_items]
 units/items/recovery/heart/heart.unit
-units/items/stock/simple_bom/simple_bom.unit
 units/items/special/bullet_curving_up/curve.unit
 [/drop_items]

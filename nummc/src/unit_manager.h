@@ -366,6 +366,9 @@ extern int unit_manager_get_face(unit_data_t* unit_data);
 extern int unit_manager_get_face_relative(unit_data_t* unit_data, int original_face);
 extern int unit_manager_get_face_other_side(unit_data_t* unit_data);
 extern void unit_manager_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type = UNIT_BULLET_TRACK_LINE, int bullet_num = UNIT_BULLET_NUM_SINGLE);
+extern void unit_manager_get_target_velocity(float* vec_x, float* vec_y,
+	unit_data_t* unit_data, int target_x, int target_y,
+	float abs_velocity, int bullet_track_type = UNIT_BULLET_TRACK_LINE, int bullet_num = UNIT_BULLET_NUM_SINGLE);
 extern void unit_manager_get_bullet_start_pos(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_track_type, int bullet_num, int face, int* x, int* y);
 extern void unit_manager_get_spawn_items_pos(unit_data_t* spawner_unit, unit_data_t* avoid_unit, int item_num, int* x, int* y);
 extern void unit_manager_get_spawn_items_pos_under_foot(unit_data_t* spawner_unit, int item_num, int* x, int* y);
@@ -404,16 +407,20 @@ extern void unit_manager_player_display(int layer);
 
 // enemy
 extern int unit_manager_search_enemy(std::string& path);
-extern int unit_manager_load_enemy_effects(int unit_id);
+extern unit_enemy_data_t* unit_manager_get_enemy(int index);
+extern int unit_manager_load_enemy_effects(int unit_id, int base_w = 32);
 extern int unit_manager_load_enemy(std::string path);
 extern int unit_manager_create_enemy(int x, int y, int face, int base_index = -1);
 extern void unit_manager_clear_enemy(unit_enemy_data_t* enemy);
 extern bool unit_manager_enemy_exist();
+extern int unit_manager_enemy_get_enemy_count();
 extern int unit_manager_enemy_get_delta_time(unit_enemy_data_t* enemy_data);
 extern void unit_manager_enemy_get_face_velocity(unit_enemy_data_t* enemy_data, float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num);
+extern void unit_manager_enemy_get_target_velocity(unit_enemy_data_t* enemy_data, float* vec_x, float* vec_y, int target_x, int target_y, float abs_velocity, int bullet_track_type, int bullet_num);
 extern int unit_manager_enemy_get_bullet_strength(int base_id);
 extern int unit_manager_enemy_get_bullet_life_timer(int base_id);
 extern float unit_manager_enemy_get_bullet_curving(int base_id);
+extern void unit_manager_set_ai_step(int index, int step);
 extern int unit_manager_enemy_get_damage_force(unit_enemy_data_t* enemy_data, int hp);
 extern int unit_manager_enemy_get_damage(unit_enemy_data_t* enemy_data, int hp);
 extern int unit_manager_enemy_get_damage_with_bullet(unit_enemy_data_t* enemy_data, unit_player_bullet_data_t* player_bullet_data);
@@ -442,6 +449,7 @@ extern void unit_manager_items_display(int layer);
 
 // trap
 extern int unit_manager_search_trap(std::string& path);
+extern unit_trap_data_t* unit_manager_get_trap(int index);
 extern bool unit_manager_trap_within(int x, int y);
 extern int unit_manager_load_trap(std::string path);
 extern void unit_manager_clear_all_trap();

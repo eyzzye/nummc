@@ -14,6 +14,8 @@
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define ABS(x) (((x) < 0) ? -(x) : (x))
+#define UPPER_BIT(a) (a & 0xFFFF0000)
+#define LOWER_BIT(a) (a & 0x0000FFFF)
 #define FLOAT_NEAR_ZERO  (0.0005f)
 
 #define UNIT_FACE_TYPE_NONE  0

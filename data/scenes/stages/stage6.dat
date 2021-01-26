@@ -49,3 +49,13 @@ enemy_path=scenes/stages/enemy/enemy6_3.dat
 items_path=scenes/stages/items/item6_3.dat
 trap_path=scenes/stages/trap/trap6_3.dat
 [/section]
+
+[section]
+section=4
+level1_drop_rate=4
+map_path=map/stage6/n_st6.tmx
+bgm_path=music/6.ogg
+enemy_path=scenes/stages/enemy/enemy6_b.dat
+items_path=scenes/stages/items/item6_b.dat
+trap_path=scenes/stages/trap/trap6_b.dat
+[/section]

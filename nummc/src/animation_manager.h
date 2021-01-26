@@ -47,6 +47,12 @@
 #define ANIM_TEX_LAYER_MIN  1
 #define ANIM_TEX_LAYER_MAX  3
 
+// base_size
+#define ANIM_BASE_SIZE_32x32  0
+#define ANIM_BASE_SIZE_48x48  1
+#define ANIM_BASE_SIZE_64x64  2
+#define ANIM_BASE_SIZE_END    3
+
 typedef struct _anim_frame_data_t anim_frame_data_t;
 typedef struct _anim_stat_base_data_t anim_stat_base_data_t;
 typedef struct _anim_stat_data_t anim_stat_data_t;
@@ -136,3 +142,4 @@ extern anim_frame_data_t* animation_manager_new_anim_frame();
 extern void animation_manager_new_anim_stat_base_data(anim_data_t* anim_data);
 extern anim_data_t* animation_manager_new_anim_data();
 extern int animation_manager_load_file(std::string path, anim_data_t* anim_data, int stat);
+extern int animation_manager_get_base_size_index(int base_size);

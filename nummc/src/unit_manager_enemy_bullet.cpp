@@ -20,6 +20,7 @@ const char* g_enemy_bullet_path[UNIT_BULLET_ID_END] = {
 	"units/bullet/big_point/enemy/big_point.unit",
 	"units/bullet/fire/enemy/fire.unit",
 	"units/bullet/ice/enemy/ice.unit",
+	"units/bullet/ice_ball/enemy/ice_ball.unit",
 	"units/bullet/leaser/enemy/leaser.unit",
 };
 

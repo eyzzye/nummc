@@ -298,6 +298,9 @@ static void update_trap_collision(b2Body* body1)
 				event_id = EVENT_MSG_COLLISION_DYNAMIC_PvT;
 			}
 			else if (unit_data2->type == UNIT_TYPE_ENEMY) {
+				if (((unit_enemy_data_t*)unit_data2)->resistance_stat & UNIT_EFFECT_FLAG_E_NO_TRAP_DAMAGE) {
+					continue;
+				}
 				event_id = EVENT_MSG_COLLISION_DYNAMIC_EvT;
 			}
 			else {
@@ -686,37 +689,49 @@ int collision_manager_set_group(shape_data* shape, std::string& group) {
 	return 0;
 }
 
+int collision_manager_set_group_option(shape_data* shape, std::string& group_option) {
+	if (group_option == "THROUGH_MAP") {
+		shape->group |= COLLISION_GROUP_U_THROUGH_MAP;
+	}
+	return 0;
+}
+
 #ifdef _COLLISION_ENABLE_BOX_2D_
 static void set_filter(int group, b2Filter& filter)
 {
-	if (group == COLLISION_GROUP_NONE) {
+	int group_low = LOWER_BIT(group);
+	int group_high = UPPER_BIT(group);
+	if (group_low == COLLISION_GROUP_NONE) {
 		filter.groupIndex = COLLISION_B2GROUP_NEVER_COLLIDE;
 	}
-	else if (group == COLLISION_GROUP_PLAYER) {
+	else if (group_low == COLLISION_GROUP_PLAYER) {
 		filter.categoryBits = COLLISION_GROUP_MASK_PLAYER;
 		filter.maskBits = COLLISION_GROUP_MASK_ENEMY | COLLISION_GROUP_MASK_ITEMS | COLLISION_GROUP_MASK_ENEMY_BULLET | COLLISION_GROUP_MASK_MAP;
 	}
-	else if (group == COLLISION_GROUP_ENEMY) {
+	else if (group_low == COLLISION_GROUP_ENEMY) {
 		filter.categoryBits = COLLISION_GROUP_MASK_ENEMY;
-		filter.maskBits = COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_ITEMS | COLLISION_GROUP_MASK_PLAYER_BULLET | COLLISION_GROUP_MASK_MAP;
+		if (group_high & COLLISION_GROUP_U_THROUGH_MAP) filter.maskBits = COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_ITEMS | COLLISION_GROUP_MASK_PLAYER_BULLET;
+		else filter.maskBits = COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_ITEMS | COLLISION_GROUP_MASK_PLAYER_BULLET | COLLISION_GROUP_MASK_MAP;
 	}
-	else if (group == COLLISION_GROUP_ITEMS) {
+	else if (group_low == COLLISION_GROUP_ITEMS) {
 		filter.categoryBits = COLLISION_GROUP_MASK_ITEMS;
 		filter.maskBits = COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_ENEMY | COLLISION_GROUP_MASK_MAP;
 	}
-	else if (group == COLLISION_GROUP_PLAYER_BULLET) {
+	else if (group_low == COLLISION_GROUP_PLAYER_BULLET) {
 		filter.categoryBits = COLLISION_GROUP_MASK_PLAYER_BULLET;
-		filter.maskBits = COLLISION_GROUP_MASK_ENEMY | COLLISION_GROUP_MASK_MAP;
+		if (group_high & COLLISION_GROUP_U_THROUGH_MAP) filter.maskBits = COLLISION_GROUP_MASK_ENEMY;
+		else filter.maskBits = COLLISION_GROUP_MASK_ENEMY | COLLISION_GROUP_MASK_MAP;
 	}
-	else if (group == COLLISION_GROUP_ENEMY_BULLET) {
+	else if (group_low == COLLISION_GROUP_ENEMY_BULLET) {
 		filter.categoryBits = COLLISION_GROUP_MASK_ENEMY_BULLET;
-		filter.maskBits = COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_MAP;
+		if (group_high & COLLISION_GROUP_U_THROUGH_MAP) filter.maskBits = COLLISION_GROUP_MASK_PLAYER;
+		else filter.maskBits = COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_MAP;
 	}
-	else if (group == COLLISION_GROUP_MAP) {
+	else if (group_low == COLLISION_GROUP_MAP) {
 		filter.categoryBits = COLLISION_GROUP_MASK_MAP;
 		filter.maskBits = COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_ENEMY | COLLISION_GROUP_MASK_ITEMS | COLLISION_GROUP_MASK_PLAYER_BULLET | COLLISION_GROUP_MASK_ENEMY_BULLET;
 	}
-	else if (group == COLLISION_GROUP_TRAP) {
+	else if (group_low == COLLISION_GROUP_TRAP) {
 		filter.categoryBits = COLLISION_GROUP_MASK_TRAP;
 		filter.maskBits = COLLISION_GROUP_MASK_MAP;
 	}
@@ -1200,6 +1215,27 @@ void collision_manager_set_angle(shape_data* shape, float angle /* rad */) {
 	shape->y = (int)MET2PIX(shape->b2body->GetPosition().y);
 }
 
+const void* collision_manager_get_filter(shape_data* shape) {
+	if (shape->b2body) {
+		b2Fixture* tmp_list = shape->b2body->GetFixtureList();
+		if (tmp_list) {
+			const b2Filter& filter = tmp_list->GetFilterData();
+			return (const void*)&filter;
+		}
+	}
+	return NULL;
+}
+
+void collision_manager_set_filter(shape_data* shape, const b2Filter& filter) {
+	if (shape->b2body) {
+		b2Fixture* tmp_list = shape->b2body->GetFixtureList();
+		if (tmp_list) {
+			tmp_list->SetFilterData(filter);
+			return;
+		}
+	}
+}
+
 int collision_manager_set_moter_speed(shape_data* shape, float speed) {
 	int ret = -1;
 
@@ -1212,6 +1248,49 @@ int collision_manager_set_moter_speed(shape_data* shape, float speed) {
 				ret = 0;
 			}
 			joint_itr = joint_itr->next;
+		}
+	}
+
+	return ret;
+}
+
+int collision_manager_set_joint(void* unit_data) {
+	int ret = -1;
+	shape_data* shape = ((unit_data_t*)unit_data)->col_shape;
+	unit_data_t* unit_data_base = ((unit_data_t*)unit_data)->base;
+
+	if (shape->joint_type == COLLISION_JOINT_TYPE_PIN) {
+		if (static_wall[COLLISION_STATIC_WALL_TOP]) {
+			b2RevoluteJointDef rjd;
+			b2Vec2 rjd_center(PIX2MET(shape->x + unit_data_base->col_shape->joint_x), PIX2MET(shape->y + +unit_data_base->col_shape->joint_y));
+			rjd.Initialize(static_wall[COLLISION_STATIC_WALL_TOP], shape->b2body, rjd_center);
+			rjd.lowerAngle = 0.0f;
+			rjd.upperAngle = 0.0f;
+			rjd.enableLimit = true;
+			rjd.enableMotor = false;
+			rjd.collideConnected = false;
+
+			g_stage_world->CreateJoint(&rjd);
+			ret = 0;
+		}
+	}
+
+	return ret;
+}
+
+int collision_manager_delete_joint(shape_data* shape) {
+	int ret = -1;
+
+	if (shape->b2body) {
+		b2JointEdge* joint_itr = shape->b2body->GetJointList();
+		while (joint_itr != NULL) {
+			b2Joint* joint = joint_itr->joint;
+			joint_itr = joint_itr->next;
+
+			if (joint->GetType() == b2JointType::e_revoluteJoint) {
+				g_stage_world->DestroyJoint(joint);
+				ret = 0;
+			}
 		}
 	}
 

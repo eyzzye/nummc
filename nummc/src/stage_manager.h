@@ -58,6 +58,7 @@ struct _enemy_data_t {
 	int vec_y;
 	Uint32 delay;
 	int face;
+	int ai_step;
 };
 
 struct _section_data_t {

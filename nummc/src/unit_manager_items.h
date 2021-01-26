@@ -69,8 +69,9 @@
 #define UNIT_BULLET_ID_INVISIBLE    (3)
 #define UNIT_BULLET_ID_FIRE         (4)
 #define UNIT_BULLET_ID_ICE          (5)
-#define UNIT_BULLET_ID_LEASER       (6)
-#define UNIT_BULLET_ID_END          (7)
+#define UNIT_BULLET_ID_ICE_BALL     (6)
+#define UNIT_BULLET_ID_LEASER       (7)
+#define UNIT_BULLET_ID_END          (8)
 
 // TRESURE BOX
 #define UNIT_TBOX_ID_NONE         (0)
@@ -78,6 +79,11 @@
 #define UNIT_TBOX_ID_RANDOM       (2)
 #define UNIT_TBOX_ID_END          (3)
 
+// BOM
+#define UNIT_BOM_ID_NONE         (0)
+#define UNIT_BOM_ID_SIMPLE       (1)
+#define UNIT_BOM_ID_FALL         (2)
+#define UNIT_BOM_ID_END          (3)
 
 //
 // ALL ITEMS (sid)
@@ -141,4 +147,5 @@
 #define UNIT_ITEM_ID_TB_RANDOM             (UNIT_ITEM_FLAG_TBOX       |   UNIT_TBOX_ID_RANDOM)
 
 // BOM
-#define UNIT_ITEM_ID_BM_STANDARD           (UNIT_ITEM_FLAG_BOM        |   1)
+#define UNIT_ITEM_ID_BM_SIMPLE             (UNIT_ITEM_FLAG_BOM        |   UNIT_BOM_ID_SIMPLE)
+#define UNIT_ITEM_ID_BM_FALL               (UNIT_ITEM_FLAG_BOM        |   UNIT_BOM_ID_FALL)

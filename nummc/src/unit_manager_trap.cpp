@@ -61,6 +61,11 @@ int unit_manager_search_trap(std::string& path)
 	else return (-1);           // not found
 }
 
+unit_trap_data_t* unit_manager_get_trap(int index)
+{
+	return &trap[index];
+}
+
 bool unit_manager_trap_within(int x, int y)
 {
 	bool ret = false;

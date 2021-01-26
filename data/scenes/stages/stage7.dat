@@ -46,3 +46,12 @@ bgm_path=music/7.ogg
 enemy_path=scenes/stages/enemy/enemy7_3.dat
 items_path=scenes/stages/items/item7_3.dat
 [/section]
+
+[section]
+section=4
+level1_drop_rate=4
+map_path=map/stage7/n_st7.tmx
+bgm_path=music/7.ogg
+enemy_path=scenes/stages/enemy/enemy7_b.dat
+items_path=scenes/stages/items/item7_b.dat
+[/section]

@@ -46,3 +46,12 @@ bgm_path=music/2.ogg
 enemy_path=scenes/stages/enemy/enemy2_3.dat
 items_path=scenes/stages/items/item2_3.dat
 [/section]
+
+[section]
+section=4
+level1_drop_rate=4
+map_path=map/stage2/n_st2.tmx
+bgm_path=music/2.ogg
+enemy_path=scenes/stages/enemy/enemy2_b.dat
+items_path=scenes/stages/items/item2_b.dat
+[/section]

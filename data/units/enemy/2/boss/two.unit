@@ -4,7 +4,7 @@
 
 [unit]
 hp=120
-bullet_life_timer=400
+bullet_life_timer=600
 bullet_curving=5
 speed=6
 strength=5
@@ -39,7 +39,7 @@ units/enemy/2/boss/two.DIE.anim
 [/anim]
 
 [ai]
-type=LEFT_RIGHT
+type=BOSS_TWO
 
 # AI_PARAM_ATTACK | AI_PARAM_ALWAYS
 val1=3

@@ -1,0 +1,23 @@
+#
+# ghost
+#
+
+[unit]
+group=DAMAGE
+hp=5
+[/unit]
+
+[collision]
+type=BOX
+group=TRAP
+x=17
+y=7
+w=32
+h=50
+[/collision]
+
+[anim]
+base_w=64
+base_h=64
+units/trap/ghost/ghost.IDLE.anim
+[/anim]

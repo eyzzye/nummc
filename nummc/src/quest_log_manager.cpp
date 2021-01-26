@@ -37,6 +37,7 @@ static int frame_points[4] = { 964, 4, 1272, 652 };
 #define VERTICAL_LINES_SIZE    2
 static SDL_Rect horizontal_lines[HORIZONTAL_LINES_SIZE];
 static SDL_Rect vertical_lines[VERTICAL_LINES_SIZE];
+static SDL_Rect quest_log_background;
 
 static void tex_info_init();
 static void all_message_reset();
@@ -70,6 +71,9 @@ void quest_log_manager_reset()
 		line_size, VIEW_SCALE_Y(frame_points[3]) - VIEW_SCALE_Y(frame_points[1]) + line_size };
 	vertical_lines[1] = { VIEW_SCALE_X(frame_points[2]), VIEW_SCALE_Y(frame_points[1]),
 		line_size, VIEW_SCALE_Y(frame_points[3]) - VIEW_SCALE_Y(frame_points[1]) + line_size };
+
+	quest_log_background = { VIEW_SCALE_X(frame_points[0]), VIEW_SCALE_Y(frame_points[1]),
+		VIEW_SCALE(frame_points[2] - frame_points[0] + 1), VIEW_SCALE(frame_points[3] - frame_points[1] + 1) };
 
 	all_message_reset();
 }
@@ -185,6 +189,8 @@ void quest_log_manager_update()
 void quest_log_manager_display()
 {
 	// draw frame
+	SDL_SetRenderDrawColor(g_ren, 255, 255, 255, 255);
+	SDL_RenderFillRect(g_ren, &quest_log_background);
 	SDL_SetRenderDrawColor(g_ren, 0, 0, 0, 255);
 	SDL_RenderFillRects(g_ren, horizontal_lines, (int)LENGTH_OF(horizontal_lines));
 	SDL_RenderFillRects(g_ren, vertical_lines, (int)LENGTH_OF(vertical_lines));

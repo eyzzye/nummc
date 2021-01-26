@@ -407,10 +407,14 @@ static void pre_load_event(void* null) {
 	// quest_log init
 	quest_log_manager_init();
 
-	// load player effect
+	// load effect
 	unit_manager_load_effect("units/effect/boost/boost.unit");
 	unit_manager_load_effect("units/effect/fire_up/fire_up.unit");
+	unit_manager_load_effect("units/effect/fire_up/48x48/fire_up.unit");
+	unit_manager_load_effect("units/effect/fire_up/64x64/fire_up.unit");
 	unit_manager_load_effect("units/effect/freeze_up/freeze_up.unit");
+	unit_manager_load_effect("units/effect/freeze_up/48x48/freeze_up.unit");
+	unit_manager_load_effect("units/effect/freeze_up/64x64/freeze_up.unit");
 	unit_manager_load_effect("units/effect/shield/shield.unit");
 
 	// load common items
@@ -621,6 +625,7 @@ static void section_init()
 		unit_manager_load_enemy_bullet("units/bullet/point/enemy/point.unit");
 		unit_manager_load_enemy_bullet("units/bullet/fire/enemy/fire.unit");
 		unit_manager_load_enemy_bullet("units/bullet/ice/enemy/ice.unit");
+		unit_manager_load_enemy_bullet("units/bullet/ice_ball/enemy/ice_ball.unit");
 		unit_manager_load_enemy_bullet("units/bullet/leaser/enemy/leaser.unit");
 		unit_manager_load_enemy_bullet("units/bullet/big_point/enemy/big_point.unit");
 
@@ -628,6 +633,7 @@ static void section_init()
 		unit_manager_load_player_bullet("units/bullet/point/point.unit");
 		unit_manager_load_player_bullet("units/bullet/fire/fire.unit");
 		unit_manager_load_player_bullet("units/bullet/ice/ice.unit");
+		//unit_manager_load_player_bullet("units/bullet/ice_ball/ice_ball.unit");
 		unit_manager_load_player_bullet("units/bullet/leaser/leaser.unit");
 		unit_manager_load_player_bullet("units/bullet/big_point/big_point.unit");
 
@@ -636,7 +642,15 @@ static void section_init()
 		unit_manager_load_effect("units/effect/trash/trash.unit");
 		unit_manager_load_effect("units/effect/star/star.unit");
 		unit_manager_load_effect("units/effect/damage/damage.unit");
+		unit_manager_load_effect("units/effect/damage/48x48/damage.unit");
+		unit_manager_load_effect("units/effect/damage/64x64/damage.unit");
 		unit_manager_load_effect("units/effect/high_light_line/high_light_line.unit");
+		unit_manager_load_effect("units/effect/shadow/shadow.unit");
+		unit_manager_load_effect("units/effect/shadow/48x48/shadow.unit");
+		unit_manager_load_effect("units/effect/shadow/64x64/shadow.unit");
+		unit_manager_load_effect("units/effect/shadow/shadow_drop.unit");
+		unit_manager_load_effect("units/effect/shadow/48x48/shadow_drop.unit");
+		unit_manager_load_effect("units/effect/shadow/64x64/shadow_drop.unit");
 	}
 
 	// load items
@@ -662,13 +676,18 @@ static void section_init()
 	// load trap
 	for (int i = 0; i < p_section->trap_list.size(); i++) {
 		unit_manager_load_trap(p_section->trap_list[i]->type);
-		unit_manager_create_trap(p_section->trap_list[i]->x, p_section->trap_list[i]->y, unit_manager_search_trap(p_section->trap_list[i]->type));
+		if ((p_section->trap_list[i]->x >= 0) && (p_section->trap_list[i]->y >= 0)) {
+			unit_manager_create_trap(p_section->trap_list[i]->x, p_section->trap_list[i]->y, unit_manager_search_trap(p_section->trap_list[i]->type));
+		}
 	}
 
 	// load enemy unit
 	for (int i = 0; i < p_section->enemy_list.size(); i++) {
 		unit_manager_load_enemy(p_section->enemy_list[i]->type);
-		unit_manager_create_enemy(p_section->enemy_list[i]->x, p_section->enemy_list[i]->y, p_section->enemy_list[i]->face, unit_manager_search_enemy(p_section->enemy_list[i]->type));
+		int enemy_id = unit_manager_create_enemy(p_section->enemy_list[i]->x, p_section->enemy_list[i]->y, p_section->enemy_list[i]->face, unit_manager_search_enemy(p_section->enemy_list[i]->type));
+		if (p_section->enemy_list[i]->ai_step != 0) {
+			unit_manager_set_ai_step(enemy_id, p_section->enemy_list[i]->ai_step);
+		}
 
 		if (g_stage_data->current_section_index != 0) {
 			// create smoke effect
@@ -749,7 +768,7 @@ static void event_msg_handler()
 	{
 		if (msg.id == EVENT_MSG_COLLISION_DYNAMIC_PvI) {
 			game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)msg.param;
-			if (msg_param->obj2->group == COLLISION_GROUP_ITEMS) {
+			if (LOWER_BIT(msg_param->obj2->group) == COLLISION_GROUP_ITEMS) {
 				if (msg_param->obj2->obj) {
 					unit_items_data_t* item_data = (unit_items_data_t*)msg_param->obj2->obj;
 					if ((item_data->type == UNIT_TYPE_ITEMS) && (item_data->col_shape->stat == COLLISION_STAT_ENABLE)) {
@@ -761,7 +780,7 @@ static void event_msg_handler()
 
 		if (msg.id == EVENT_MSG_COLLISION_DYNAMIC_PvT) {
 			game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)msg.param;
-			if (msg_param->obj2->group == COLLISION_GROUP_TRAP) {
+			if (LOWER_BIT(msg_param->obj2->group) == COLLISION_GROUP_TRAP) {
 				if (msg_param->obj2->obj) {
 					unit_trap_data_t* trap_data = (unit_trap_data_t*)msg_param->obj2->obj;
 					if ((trap_data->type == UNIT_TYPE_TRAP) && (trap_data->col_shape->stat == COLLISION_STAT_ENABLE)) {
@@ -772,7 +791,7 @@ static void event_msg_handler()
 		}
 		if (msg.id == EVENT_MSG_COLLISION_DYNAMIC_EvT) {
 			game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)msg.param;
-			if (msg_param->obj2->group == COLLISION_GROUP_TRAP) {
+			if (LOWER_BIT(msg_param->obj2->group) == COLLISION_GROUP_TRAP) {
 				if (msg_param->obj2->obj) {
 					unit_trap_data_t* trap_data = (unit_trap_data_t*)msg_param->obj2->obj;
 					if ((trap_data->type == UNIT_TYPE_TRAP) && (trap_data->col_shape->stat == COLLISION_STAT_ENABLE)) {
@@ -787,11 +806,11 @@ static void event_msg_handler()
 
 		if (msg.id == EVENT_MSG_COLLISION_DYNAMIC_PBvE) {
 			game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)msg.param;
-			if (msg_param->obj1->group == COLLISION_GROUP_PLAYER_BULLET) {
+			if (LOWER_BIT(msg_param->obj1->group) == COLLISION_GROUP_PLAYER_BULLET) {
 				if (msg_param->obj1->obj) {
 					unit_player_bullet_data_t* p_bullet_data = (unit_player_bullet_data_t*)msg_param->obj1->obj;
 					if ((p_bullet_data->type == UNIT_TYPE_PLAYER_BULLET) && (p_bullet_data->col_shape->stat == COLLISION_STAT_ENABLE)) {
-						if (msg_param->obj2->group == COLLISION_GROUP_ENEMY) {
+						if (LOWER_BIT(msg_param->obj2->group) == COLLISION_GROUP_ENEMY) {
 							if (msg_param->obj2->obj) {
 								unit_enemy_data_t* enemy_data = (unit_enemy_data_t*)msg_param->obj2->obj;
 								if ((enemy_data->type == UNIT_TYPE_ENEMY) && (enemy_data->col_shape->stat == COLLISION_STAT_ENABLE)) {
@@ -808,11 +827,11 @@ static void event_msg_handler()
 		}
 		if (msg.id == EVENT_MSG_COLLISION_DYNAMIC_EBvP) {
 			game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)msg.param;
-			if (msg_param->obj1->group == COLLISION_GROUP_ENEMY_BULLET) {
+			if (LOWER_BIT(msg_param->obj1->group) == COLLISION_GROUP_ENEMY_BULLET) {
 				if (msg_param->obj1->obj) {
 					unit_enemy_bullet_data_t* e_bullet_data = (unit_enemy_bullet_data_t*)msg_param->obj1->obj;
 					if ((e_bullet_data->type == UNIT_TYPE_ENEMY_BULLET) && (e_bullet_data->col_shape->stat == COLLISION_STAT_ENABLE)) {
-						if (msg_param->obj2->group == COLLISION_GROUP_PLAYER) {
+						if (LOWER_BIT(msg_param->obj2->group) == COLLISION_GROUP_PLAYER) {
 							if (msg_param->obj2->obj) {
 								unit_player_data_t* player_data = (unit_player_data_t*)msg_param->obj2->obj;
 								if ((player_data->type == UNIT_TYPE_PLAYER) && (player_data->col_shape->stat == COLLISION_STAT_ENABLE)) {
@@ -830,7 +849,7 @@ static void event_msg_handler()
 
 		if (msg.id == EVENT_MSG_COLLISION_DYNAMIC_PBvM) {
 			game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)msg.param;
-			if (msg_param->obj1->group == COLLISION_GROUP_PLAYER_BULLET) {
+			if (LOWER_BIT(msg_param->obj1->group) == COLLISION_GROUP_PLAYER_BULLET) {
 				if (msg_param->obj1->obj) {
 					unit_player_bullet_data_t* p_bullet_data = (unit_player_bullet_data_t*)msg_param->obj1->obj;
 					if ((p_bullet_data->type == UNIT_TYPE_PLAYER_BULLET) && (p_bullet_data->col_shape->stat == COLLISION_STAT_ENABLE)) {
@@ -842,7 +861,7 @@ static void event_msg_handler()
 		}
 		if (msg.id == EVENT_MSG_COLLISION_DYNAMIC_EBvM) {
 			game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)msg.param;
-			if (msg_param->obj1->group == COLLISION_GROUP_ENEMY_BULLET) {
+			if (LOWER_BIT(msg_param->obj1->group) == COLLISION_GROUP_ENEMY_BULLET) {
 				if (msg_param->obj1->obj) {
 					unit_enemy_bullet_data_t* e_bullet_data = (unit_enemy_bullet_data_t*)msg_param->obj1->obj;
 					if ((e_bullet_data->type == UNIT_TYPE_ENEMY_BULLET) && (e_bullet_data->col_shape->stat == COLLISION_STAT_ENABLE)) {
@@ -855,7 +874,7 @@ static void event_msg_handler()
 
 		if (msg.id == EVENT_MSG_COLLISION_DYNAMIC_PvE) {
 			game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)msg.param;
-			if (msg_param->obj2->group == COLLISION_GROUP_ENEMY) {
+			if (LOWER_BIT(msg_param->obj2->group) == COLLISION_GROUP_ENEMY) {
 				if (msg_param->obj2->obj) {
 					unit_enemy_data_t* enemy_data = (unit_enemy_data_t*)msg_param->obj2->obj;
 					if ((enemy_data->type == UNIT_TYPE_ENEMY) && (enemy_data->col_shape->stat == COLLISION_STAT_ENABLE)) {
@@ -927,6 +946,15 @@ static void event_msg_handler()
 					unit_manager_enemy_bullet_set_hp(unit_id, unit_manager_enemy_get_bullet_strength(unit_data->owner_base_id));
 					unit_manager_enemy_bullet_set_bullet_life_timer(unit_id, unit_manager_enemy_get_bullet_life_timer(unit_data->owner_base_id));
 				}
+			}
+		}
+
+		if (msg.id == EVENT_MSG_UNIT_ITEMS_SPAWN_CMD) {
+			game_event_unit_t* msg_param = (game_event_unit_t*)msg.param;
+			unit_items_data_t* unit_data = (unit_items_data_t*)msg_param->obj1;
+			if (unit_data->group == UNIT_ITEM_GROUP_BOM) {
+				// activate bom
+				unit_manager_items_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_ATTACK);
 			}
 		}
 

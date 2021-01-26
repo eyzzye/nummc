@@ -1,9 +1,8 @@
 [drop_items]
 units/items/recovery/heart/heart.unit
-units/items/special/bullet_rate_up/rate.unit
 units/items/special/speed_up/speed_up.unit
 units/items/special/unknown/unknown.unit
 [/drop_items]
 [goal_items]
-units/items/stock/charge/bom_bottle/bom_bottle.unit
+units/items/special/unknown/unknown.unit
 [/goal_items]

@@ -1,0 +1,23 @@
+#
+# four animation (type=ATTACK)
+#
+
+[frame]
+duration=1500,100
+#command=1
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/enemy/8/boss/
+path=eight_idle2.png,eight_idle1.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+dir_path=sounds/
+path=sfx_warning1.ogg,*
+volume=*
+[/snd]

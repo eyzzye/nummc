@@ -4,8 +4,8 @@
 
 [enemy]
 type=units/enemy/1/boss/one.unit
-x=212
-y=96
+x=208
+y=112
 vec_x=0
 vec_y=0
 delay=0

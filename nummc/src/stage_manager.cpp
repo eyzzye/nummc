@@ -48,6 +48,7 @@ static void load_items(std::string& line);
 static void load_drop_items(std::string& line);
 static void load_goal_items(std::string& line);
 static void load_trap(std::string& line);
+static void clear_enemy(enemy_data_t* enemy_data);
 static void load_enemy(std::string& line);
 
 void stage_manager_init()
@@ -368,6 +369,8 @@ static void load_trap(std::string& line) {
 	if (key == "type") {
 		trap_data_t* new_trap = new trap_data_t();
 		new_trap->type = value;
+		new_trap->x = -1; // disable
+		new_trap->y = -1; // disable
 		current_section_data->trap_list.push_back(new_trap);
 
 		tmp_start_index = (int)current_section_data->trap_list.size() - 1;
@@ -383,6 +386,8 @@ static void load_trap(std::string& line) {
 		for (int i = 1; i < val_list.size(); i++) {
 			trap_data_t* new_trap = new trap_data_t();
 			new_trap->type = type;
+			new_trap->x = -1; // disable
+			new_trap->y = -1; // disable
 			current_section_data->trap_list.push_back(new_trap);
 			current_section_data->trap_list[(size_t)tmp_start_index + i]->x = val_list[i];
 		}
@@ -396,12 +401,24 @@ static void load_trap(std::string& line) {
 	}
 }
 
+static void clear_enemy(enemy_data_t* enemy_data) {
+	enemy_data->x = 0;
+	enemy_data->y = 0;
+	enemy_data->vec_x = 0;
+	enemy_data->vec_y = 0;
+	enemy_data->delay = 0;
+	enemy_data->face = UNIT_FACE_W;
+	enemy_data->ai_step = 0;
+}
+
 static void load_enemy(std::string& line) {
 	std::string key;
 	std::string value;
 	game_utils_split_key_value(line, key, value);
 	if (key == "type") {
 		enemy_data_t* new_enemy = new enemy_data_t();
+		clear_enemy(new_enemy);
+
 		new_enemy->type = value;
 		current_section_data->enemy_list.push_back(new_enemy);
 
@@ -417,6 +434,8 @@ static void load_enemy(std::string& line) {
 		current_section_data->enemy_list[tmp_start_index]->x = val_list[0];
 		for (int i = 1; i < val_list.size(); i++) {
 			enemy_data_t* new_enemy = new enemy_data_t();
+			clear_enemy(new_enemy);
+
 			new_enemy->type = type;
 			current_section_data->enemy_list.push_back(new_enemy);
 			current_section_data->enemy_list[(size_t)tmp_start_index + i]->x = val_list[i];
@@ -469,6 +488,13 @@ static void load_enemy(std::string& line) {
 			else {
 				current_section_data->enemy_list[(size_t)tmp_start_index + i]->face = UNIT_FACE_NONE;
 			}
+		}
+	}
+	if (key == "ai_step") {
+		std::vector<int> val_list;
+		game_utils_split_conmma(value, val_list);
+		for (int i = 0; i < val_list.size(); i++) {
+			current_section_data->enemy_list[(size_t)tmp_start_index + i]->ai_step = val_list[i];
 		}
 	}
 }

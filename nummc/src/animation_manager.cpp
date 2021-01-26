@@ -449,3 +449,13 @@ static void load_anim_snd(std::string line, anim_data_t* anim_data, int stat)
 		}
 	}
 }
+
+int animation_manager_get_base_size_index(int base_size)
+{
+	int base_size_index = ANIM_BASE_SIZE_32x32;
+	if (base_size == 48) base_size_index = ANIM_BASE_SIZE_48x48;
+	else if (base_size == 64) base_size_index = ANIM_BASE_SIZE_64x64;
+	//else base_size_index = ANIM_BASE_SIZE_32x32;
+
+	return base_size_index;
+}

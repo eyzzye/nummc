@@ -1,0 +1,16 @@
+#
+# seven animation (type=MOVE)
+#
+
+[frame]
+duration=200,4000
+[/frame]
+
+[img]
+layer=3
+dir_path=images/units/enemy/7/boss/
+path=seven_move1.png,seven_idle1.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

@@ -60,6 +60,7 @@ void load_collision(std::string& line, shape_data** col_shape)
 		}
 	}
 	if (key == "group") collision_manager_set_group(*col_shape, value);
+	if (key == "group_option") collision_manager_set_group_option(*col_shape, value);
 
 	if (key == "x") {
 		(*col_shape)->offset_x = atoi(value.c_str());
@@ -464,6 +465,8 @@ void unit_manager_unit_set_anim_stat(unit_data_t* unit_data, int stat)
 		// reset stat frame
 		int stat = unit_manager_unit_get_anim_stat(unit_data);
 		if (stat != -1) {
+			unit_data->anim->anim_stat_list[stat]->current_time = 0;
+			unit_data->anim->anim_stat_list[stat]->current_frame = 0;
 			unit_data->anim->anim_stat_list[stat]->chunk_frame = -1;
 		}
 	}
@@ -762,6 +765,27 @@ static void get_face_velocity_random(float* vec_x, float* vec_y, int face, float
 	}
 }
 
+static void get_face_velocity_cross(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num)
+{
+	for (int i = 0; i < bullet_num; i++) {
+		if (i + 1 == UNIT_FACE_N) { *(vec_x + i) = 0.0f; *(vec_y + i) = -abs_velocity; }
+		else if (i + 1 == UNIT_FACE_E) { *(vec_x + i) = abs_velocity;  *(vec_y + i) = 0.0f; }
+		else if (i + 1 == UNIT_FACE_W) { *(vec_x + i) = -abs_velocity; *(vec_y + i) = 0.0f; }
+		else if (i + 1 == UNIT_FACE_S) { *(vec_x + i) = 0.0f;          *(vec_y + i) = abs_velocity; }
+	}
+}
+
+static void get_face_velocity_xcross(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num)
+{
+	float abs_vec = abs_velocity * sinf(b2_pi * 45.0f / 180.0f);
+	for (int i = 0; i < bullet_num; i++) {
+		if (i + 1 == UNIT_FACE_N) { *(vec_x + i) = -abs_vec; *(vec_y + i) = -abs_vec; }
+		else if (i + 1 == UNIT_FACE_E) { *(vec_x + i) = abs_vec;  *(vec_y + i) = -abs_vec; }
+		else if (i + 1 == UNIT_FACE_W) { *(vec_x + i) = -abs_vec; *(vec_y + i) = abs_vec; }
+		else if (i + 1 == UNIT_FACE_S) { *(vec_x + i) = abs_vec;  *(vec_y + i) = abs_vec; }
+	}
+}
+
 void unit_manager_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num)
 {
 	if (bullet_num == UNIT_BULLET_NUM_NONE) {
@@ -779,13 +803,43 @@ void unit_manager_get_face_velocity(float* vec_x, float* vec_y, int face, float 
 			get_face_velocity_wave(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
 		}
 		else if (bullet_track_type == UNIT_BULLET_TRACK_CROSS) {
-			//get_face_velocity_cross(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
+			get_face_velocity_cross(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
 		}
 		else if (bullet_track_type == UNIT_BULLET_TRACK_XCROSS) {
-			//get_face_velocity_xcross(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
+			get_face_velocity_xcross(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
 		}
 		else if (bullet_track_type == UNIT_BULLET_TRACK_RANDOM) {
 			get_face_velocity_random(vec_x, vec_y, face, abs_velocity, bullet_track_type, bullet_num);
+		}
+	}
+}
+
+static void get_target_velocity_line(float* vec_x, float* vec_y, unit_data_t* unit_data, int target_x, int target_y, float abs_velocity, int bullet_track_type, int bullet_num)
+{
+	int unit_x;
+	int unit_y;
+	unit_manager_get_center_position(unit_data, &unit_x, &unit_y);
+
+	int dist_x = target_x - unit_x;
+	int dist_y = target_y - unit_y;
+	float length = sqrtf(float(dist_x * dist_x + dist_y * dist_y));
+	if (length <= FLOAT_NEAR_ZERO) length = abs_velocity;
+
+	if (bullet_num == UNIT_BULLET_NUM_SINGLE) {
+		*vec_x = dist_x * abs_velocity / length;
+		*vec_y = dist_y * abs_velocity / length;
+	}
+}
+
+void unit_manager_get_target_velocity(float* vec_x, float* vec_y, unit_data_t* unit_data, int target_x, int target_y, float abs_velocity, int bullet_track_type, int bullet_num)
+{
+	if (bullet_num == UNIT_BULLET_NUM_NONE) {
+		// for invisible bullet
+
+	}
+	else {
+		if (bullet_track_type == UNIT_BULLET_TRACK_LINE) {
+			get_target_velocity_line(vec_x, vec_y, unit_data, target_x, target_y, abs_velocity, bullet_track_type, bullet_num);
 		}
 	}
 }
@@ -824,6 +878,10 @@ static void get_bullet_start_pos_single(unit_data_t* unit_data, unit_data_t* uni
 			offset_vec_x = unit_data->col_shape->offset_x + w;
 			offset_vec_y = unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
 		}
+		else {
+			offset_vec_x = unit_data->col_shape->offset_x + w / 2 - bullet_h / 2;
+			offset_vec_y = unit_data->col_shape->offset_y + h / 2 - bullet_h / 2;
+		}
 	}
 	else if (unit_data->col_shape->type == COLLISION_TYPE_ROUND_D) {
 		int r = ((shape_round_data*)unit_data->col_shape)->r;
@@ -842,6 +900,10 @@ static void get_bullet_start_pos_single(unit_data_t* unit_data, unit_data_t* uni
 		}
 		else if (face == UNIT_FACE_E) {
 			offset_vec_x = unit_data->col_shape->offset_x + r + 1;
+			offset_vec_y = unit_data->col_shape->offset_y;
+		}
+		else {
+			offset_vec_x = unit_data->col_shape->offset_x;
 			offset_vec_y = unit_data->col_shape->offset_y;
 		}
 	}
@@ -1182,6 +1244,30 @@ static void get_bullet_start_pos_random(unit_data_t* unit_data, unit_data_t* uni
 	}
 }
 
+static void get_bullet_start_pos_cross(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_num, int face, int* x, int* y)
+{
+	get_bullet_start_pos_single(unit_data, unit_bullet_data, bullet_num, face, x, y);
+
+	int src_x = *x;
+	int src_y = *y;
+	for (int i = 1; i < bullet_num; i++) {
+		*(x + i) = src_x;
+		*(y + i) = src_y;
+	}
+}
+
+static void get_bullet_start_pos_xcross(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_num, int face, int* x, int* y)
+{
+	get_bullet_start_pos_single(unit_data, unit_bullet_data, bullet_num, face, x, y);
+
+	int src_x = *x;
+	int src_y = *y;
+	for (int i = 1; i < bullet_num; i++) {
+		*(x + i) = src_x;
+		*(y + i) = src_y;
+	}
+}
+
 void unit_manager_get_bullet_start_pos(unit_data_t* unit_data, unit_data_t* unit_bullet_data, int bullet_track_type, int bullet_num, int face, int* x, int* y)
 {
 	if (bullet_num == UNIT_BULLET_NUM_NONE) {
@@ -1201,13 +1287,15 @@ void unit_manager_get_bullet_start_pos(unit_data_t* unit_data, unit_data_t* unit
 			get_bullet_start_pos_wave(unit_data, unit_bullet_data, bullet_num, face, x, y);
 		}
 		else if (bullet_track_type == UNIT_BULLET_TRACK_CROSS) {
-			//get_bullet_start_pos_cross(unit_data, unit_bullet_data, bullet_num, face, x, y);
+			get_bullet_start_pos_cross(unit_data, unit_bullet_data, bullet_num, face, x, y);
 		}
 		else if (bullet_track_type == UNIT_BULLET_TRACK_XCROSS) {
-			//get_bullet_start_pos_xcross(unit_data, unit_bullet_data, bullet_num, face, x, y);
+			get_bullet_start_pos_xcross(unit_data, unit_bullet_data, bullet_num, face, x, y);
 		}
 	}
-	else if (bullet_track_type == UNIT_BULLET_TRACK_RANDOM) {
+
+	// random any bullets
+	if (bullet_track_type == UNIT_BULLET_TRACK_RANDOM) {
 		get_bullet_start_pos_random(unit_data, unit_bullet_data, bullet_num, face, x, y);
 	}
 }

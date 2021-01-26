@@ -1,0 +1,23 @@
+#
+# fire_up
+#
+
+[unit]
+group=DYNAMIC
+[/unit]
+
+[collision]
+type=BOX
+group=NONE
+x=0
+y=0
+w=64
+h=64
+[/collision]
+
+[anim]
+base_w=64
+base_h=64
+units/effect/fire_up/64x64/fire_up.IDLE.anim
+units/effect/fire_up/64x64/fire_up.HIDE.anim
+[/anim]

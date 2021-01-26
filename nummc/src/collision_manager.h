@@ -22,6 +22,7 @@
 #define COLLISION_TYPE_BOX_D           (COLLISION_ID_DYNAMIC_SHAPE | COLLISION_TYPE_BOX)
 #define COLLISION_TYPE_ROUND_D         (COLLISION_ID_DYNAMIC_SHAPE | COLLISION_TYPE_ROUND)
 
+// GROUP LOWER_BIT
 #define COLLISION_GROUP_NONE           0
 #define COLLISION_GROUP_PLAYER         1
 #define COLLISION_GROUP_ENEMY          2
@@ -32,6 +33,11 @@
 #define COLLISION_GROUP_TRAP           7
 #define COLLISION_GROUP_END            8
 
+// GROUP UPPER_BIT
+#define COLLISION_GROUP_U_NONE         (0x00000000)
+#define COLLISION_GROUP_U_THROUGH_MAP  (0x00010000)
+
+// GROUP MASK (box2d)
 #define COLLISION_GROUP_MASK_PLAYER         (0x00000001 << COLLISION_GROUP_PLAYER)
 #define COLLISION_GROUP_MASK_ENEMY          (0x00000001 << COLLISION_GROUP_ENEMY)
 #define COLLISION_GROUP_MASK_ITEMS          (0x00000001 << COLLISION_GROUP_ITEMS)
@@ -217,8 +223,13 @@ extern shape_data* collision_manager_create_dynamic_shape(shape_data* base_shape
 extern void collision_manager_create_static_wall(int wall_type, void* unit_data, b2Body* top_left, b2Body* right_bottom);
 
 extern int collision_manager_set_group(shape_data* shape, std::string& group);
+extern int collision_manager_set_group_option(shape_data* shape, std::string& group_option);
 extern void collision_manager_set_face(shape_data* shape, shape_data* base_shape, int img_w, int img_h, int new_face);
 extern int collision_manager_set_mass(shape_data* shape, float weight);
 extern void collision_manager_set_angle(shape_data* shape, float angle /* rad */);
+extern const void* collision_manager_get_filter(shape_data* shape);
+extern void collision_manager_set_filter(shape_data* shape, const b2Filter& filter);
 extern int collision_manager_set_moter_speed(shape_data* shape, float speed);
+extern int collision_manager_set_joint(void* unit_data);
+extern int collision_manager_delete_joint(shape_data* shape);
 extern int collision_manager_set_force(shape_data* shape, float strength_x, float strength_y);

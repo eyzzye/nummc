@@ -5,6 +5,6 @@
 [basic]
 bullet_unit=units/bullet/point/enemy/point.unit
 bullet_track_type=RADIAL
-bullet_num=SINGLE
+bullet_num=TRIPLE
 bullet_face=W
 [/basic]

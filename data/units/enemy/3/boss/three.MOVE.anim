@@ -3,7 +3,7 @@
 #
 
 [frame]
-duration=100,300,4000
+duration=50,50,4000
 [/frame]
 
 [img]

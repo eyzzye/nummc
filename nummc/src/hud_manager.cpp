@@ -45,6 +45,7 @@ static int vertical_points[VERTICAL_LINES_SIZE][4] = {
 	    {476,   2, 476,  68},
 };
 
+static SDL_Rect hud_background;
 static SDL_Rect horizontal_lines[HORIZONTAL_LINES_SIZE];
 static SDL_Rect vertical_lines[VERTICAL_LINES_SIZE];
 
@@ -194,6 +195,9 @@ void hud_manager_reset()
 			start_y = 50;
 		}
 	}
+
+	// background
+	hud_background = { VIEW_STAGE_HUD_X(2), VIEW_STAGE_HUD_Y(2), VIEW_STAGE(476 - 2 + 1), VIEW_STAGE(68 - 2 + 1) };
 
 	// label
 	hud_tex_info_reset(tex_info, HUD_LABEL_ID_END);
@@ -457,6 +461,10 @@ void hud_manager_update()
 
 void hud_manager_display()
 {
+	// clear background
+	SDL_SetRenderDrawColor(g_ren, 255, 255, 255, 255);
+	SDL_RenderFillRect(g_ren, &hud_background);
+
 	// charge val fill
 	if (q_val_rect.dst_rect.h > 0) {
 		SDL_SetRenderDrawColor(g_ren, 75, 196, 244, 255);

@@ -45,8 +45,8 @@ units/enemy/3/lv2/three.DIE.anim
 [ai]
 type=STAY
 
-# AI_PARAM_ATTACK | AI_PARAM_IN_REGION
-val1=5
+# AI_PARAM_ATTACK | AI_PARAM_ALWAYS
+val1=3
 [/ai]
 
 [bullet]
