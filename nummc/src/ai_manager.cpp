@@ -444,6 +444,9 @@ int ai_manager_update(ai_data_t* ai_data)
 	else if (ai_data->type == AI_TYPE_BOSS_NINE) {
 		ai_manager_boss_update_nine(ai_data);
 	}
+	else if (ai_data->type == AI_TYPE_BOSS_X) {
+		ai_manager_boss_update_x(ai_data);
+	}
 
 	return 0;
 }

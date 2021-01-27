@@ -833,6 +833,8 @@ shape_data* collision_manager_create_dynamic_shape(
 		col_box_shape->y = (y == NULL) ? tmp->y : *y;
 		col_box_shape->vec_x = (vec_x == NULL) ? tmp->vec_x : *vec_x;
 		col_box_shape->vec_y = (vec_y == NULL) ? tmp->vec_y : *vec_y;
+		col_box_shape->old_vec_x = col_box_shape->vec_x;
+		col_box_shape->old_vec_y = col_box_shape->vec_y;
 		col_box_shape->float_x = (float)col_box_shape->x;
 		col_box_shape->float_y = (float)col_box_shape->y;
 		col_box_shape->vec_x_max = tmp->vec_x_max;
@@ -931,6 +933,8 @@ shape_data* collision_manager_create_dynamic_shape(
 		col_round_shape->r = tmp->r;
 		col_round_shape->vec_x = (vec_x == NULL) ? tmp->vec_x : *vec_x;
 		col_round_shape->vec_y = (vec_y == NULL) ? tmp->vec_y : *vec_y;
+		col_round_shape->old_vec_x = col_round_shape->vec_x;
+		col_round_shape->old_vec_y = col_round_shape->vec_y;
 		col_round_shape->float_x = (float)col_round_shape->x;
 		col_round_shape->float_y = (float)col_round_shape->y;
 		col_round_shape->vec_x_max = tmp->vec_x_max;

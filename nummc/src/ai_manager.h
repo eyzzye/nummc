@@ -69,21 +69,23 @@
 #define AI_BULLET_PARAM_XCROSS_ON     (1)
 
 // ai timer
-#define AI_WAIT_TIMER_SIMPLE      1000
-#define AI_WAIT_TIMER_LEFT_RIGHT  1000
-#define AI_WAIT_TIMER_STAY        1500
-#define AI_WAIT_TIMER_ROUND       (ONE_FRAME_TIME * 10)
-#define AI_WAIT_TIMER_GO_TO_BOM   1000
+#define AI_WAIT_TIMER_SIMPLE          1000
+#define AI_WAIT_TIMER_LEFT_RIGHT      1000
+#define AI_WAIT_TIMER_STAY            1500
+#define AI_WAIT_TIMER_ROUND           (ONE_FRAME_TIME * 10)
+#define AI_WAIT_TIMER_GO_TO_BOM       1000
 // boss
-#define AI_WAIT_TIMER_BOSS_ONE    1000
-#define AI_WAIT_TIMER_BOSS_TWO    1000
-#define AI_WAIT_TIMER_BOSS_THREE  1000
-#define AI_WAIT_TIMER_BOSS_FOUR    800
-#define AI_WAIT_TIMER_BOSS_FIVE   (ONE_FRAME_TIME * 10)
-#define AI_WAIT_TIMER_BOSS_SIX    1000
-#define AI_WAIT_TIMER_BOSS_SEVEN  1000
-#define AI_WAIT_TIMER_BOSS_EIGHT  1000
-#define AI_WAIT_TIMER_BOSS_NINE   1000
+#define AI_WAIT_TIMER_BOSS_ONE        1000
+#define AI_WAIT_TIMER_BOSS_TWO        1000
+#define AI_WAIT_TIMER_BOSS_THREE      1000
+#define AI_WAIT_TIMER_BOSS_FOUR        800
+#define AI_WAIT_TIMER_BOSS_FIVE       (ONE_FRAME_TIME * 10)
+#define AI_WAIT_TIMER_BOSS_SIX        1000
+#define AI_WAIT_TIMER_BOSS_SEVEN      1000
+#define AI_WAIT_TIMER_BOSS_EIGHT      1000
+#define AI_WAIT_TIMER_BOSS_NINE       1000
+#define AI_WAIT_TIMER_BOSS_X          1000
+#define AI_WAIT_TIMER_BOSS_X_SPAWN     600
 
 typedef struct _ai_data_t ai_data_t;
 typedef struct _ai_common_data_t ai_common_data_t;
@@ -233,9 +235,11 @@ extern void ai_manager_boss_update_six(ai_data_t* ai_data);
 extern void ai_manager_boss_update_seven(ai_data_t* ai_data);
 extern void ai_manager_boss_update_eight(ai_data_t* ai_data);
 extern void ai_manager_boss_update_nine(ai_data_t* ai_data);
+extern void ai_manager_boss_update_x(ai_data_t* ai_data);
 
 extern int ai_manager_boss_spawn_six(ai_data_t* ai_data);
 extern int ai_manager_boss_spawn_eight(ai_data_t* ai_data);
 
 extern int ai_manager_boss_stop_three(ai_data_t* ai_data);
 extern int ai_manager_boss_stop_four(ai_data_t* ai_data);
+extern int ai_manager_boss_spawn_x(ai_data_t* ai_data);

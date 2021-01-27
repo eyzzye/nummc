@@ -64,3 +64,12 @@ enemy_path=scenes/stages/enemy/enemy_fin_5.dat
 items_path=scenes/stages/items/item_fin_5.dat
 trap_path=scenes/stages/trap/trap_fin_5.dat
 [/section]
+
+[section]
+section=6
+item_drop_rate=8
+map_path=map/final/n_fin.tmx
+bgm_path=music/boss.ogg
+enemy_path=scenes/stages/enemy/enemy_fin_b.dat
+items_path=scenes/stages/items/item_fin_b.dat
+[/section]

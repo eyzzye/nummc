@@ -630,10 +630,16 @@ int unit_manager_get_face_other_side(unit_data_t* unit_data)
 {
 	int other_face = UNIT_FACE_W;
 	if (unit_data->col_shape) {
-		if (unit_data->col_shape->face == UNIT_FACE_N) other_face = UNIT_FACE_S;
-		else if (unit_data->col_shape->face == UNIT_FACE_E) other_face = UNIT_FACE_W;
-		else if (unit_data->col_shape->face == UNIT_FACE_W) other_face = UNIT_FACE_E;
-		else if (unit_data->col_shape->face == UNIT_FACE_S) other_face = UNIT_FACE_N;
+		float tmp_x = unit_data->col_shape->old_vec_x;
+		float tmp_y = unit_data->col_shape->old_vec_y;
+		if (ABS(tmp_x) >= ABS(tmp_y)) {
+			if (tmp_x <= 0) other_face = UNIT_FACE_E;
+			else other_face = UNIT_FACE_W;
+		}
+		else {
+			if (tmp_y <= 0) other_face = UNIT_FACE_S;
+			else other_face = UNIT_FACE_N;
+		}
 	}
 	return other_face;
 }

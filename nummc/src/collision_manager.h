@@ -83,8 +83,8 @@ struct _shape_data {
 	// common param
 	int x;
 	int y;
-	int old_x;
-	int old_y;
+	float float_x;
+	float float_y;
 
 	int offset_x;
 	int offset_y;
@@ -93,8 +93,8 @@ struct _shape_data {
 
 	float vec_x;
 	float vec_y;
-	float float_x;
-	float float_y;
+	float old_vec_x;
+	float old_vec_y;
 
 	float vec_x_max;
 	float vec_y_max;
@@ -126,8 +126,8 @@ struct _shape_box_data {
 	// common param
 	int x;
 	int y;
-	int old_x;
-	int old_y;
+	float float_x;
+	float float_y;
 
 	int offset_x;
 	int offset_y;
@@ -136,8 +136,8 @@ struct _shape_box_data {
 
 	float vec_x;
 	float vec_y;
-	float float_x;
-	float float_y;
+	float old_vec_x;
+	float old_vec_y;
 
 	float vec_x_max;
 	float vec_y_max;
@@ -173,8 +173,8 @@ struct _shape_round_data {
 	// common param
 	int x;
 	int y;
-	int old_x;
-	int old_y;
+	float float_x;
+	float float_y;
 
 	int offset_x;
 	int offset_y;
@@ -183,8 +183,8 @@ struct _shape_round_data {
 
 	float vec_x;
 	float vec_y;
-	float float_x;
-	float float_y;
+	float old_vec_x;
+	float old_vec_y;
 
 	float vec_x_max;
 	float vec_y_max;
