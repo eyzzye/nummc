@@ -63,7 +63,7 @@ struct _enemy_data_t {
 
 struct _section_data_t {
 	int id;
-	int level1_drop_rate;
+	int item_drop_rate;
 
 	std::string map_path;
 	std::string bgm_path;
@@ -109,7 +109,7 @@ struct _stage_data_t {
 	std::vector<section_data_t*> section_list;
 
 	// tmp region
-	int level1_drop_judge_count;
+	int drop_judge_count;
 	section_data_t* current_section_data;
 	int current_section_index;
 };

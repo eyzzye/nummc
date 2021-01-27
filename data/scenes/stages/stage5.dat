@@ -22,7 +22,7 @@ scenes/stages/items/common_items.dat
 
 [section]
 section=1
-level1_drop_rate=4
+item_drop_rate=4
 map_path=map/stage5/n_st5.tmx
 bgm_path=music/5.ogg
 enemy_path=scenes/stages/enemy/enemy5_1.dat
@@ -31,7 +31,7 @@ items_path=scenes/stages/items/item5_1.dat
 
 [section]
 section=2
-level1_drop_rate=4
+item_drop_rate=4
 map_path=map/stage5/n_st5.tmx
 bgm_path=music/5.ogg
 enemy_path=scenes/stages/enemy/enemy5_2.dat
@@ -40,7 +40,7 @@ items_path=scenes/stages/items/item5_2.dat
 
 [section]
 section=3
-level1_drop_rate=4
+item_drop_rate=4
 map_path=map/stage5/n_st5.tmx
 bgm_path=music/5.ogg
 enemy_path=scenes/stages/enemy/enemy5_3.dat
@@ -49,7 +49,7 @@ items_path=scenes/stages/items/item5_3.dat
 
 [section]
 section=4
-level1_drop_rate=4
+item_drop_rate=4
 map_path=map/stage5/n_st5.tmx
 bgm_path=music/5.ogg
 enemy_path=scenes/stages/enemy/enemy5_b.dat

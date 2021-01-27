@@ -240,7 +240,7 @@ static void load_section(std::string& line) {
 		current_section_data->id = atoi(value.c_str());
 		g_stage_data->section_list.push_back(current_section_data);
 	}
-	if (key == "level1_drop_rate") current_section_data->level1_drop_rate = atoi(value.c_str());
+	if (key == "item_drop_rate") current_section_data->item_drop_rate = atoi(value.c_str());
 
 	if (key == "map_path")  current_section_data->map_path = value;
 	if (key == "bgm_path") {

@@ -611,11 +611,12 @@ static void section_init()
 	section_data_t* p_section = g_stage_data->current_section_data;
 
 	// clear tmp region
-	g_stage_data->level1_drop_judge_count = 0;
 	g_stage_data->section_timer = 0;
 
 	// first section
 	if (g_stage_data->current_section_index == 0) {
+		g_stage_data->drop_judge_count = 0;
+
 		// load map
 		map_manager_load(p_section->map_path);
 		map_manager_create_instance();

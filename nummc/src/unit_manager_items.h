@@ -23,6 +23,8 @@
 #define UNIT_ITEM_FLAG_TBOX        (0x00010000 << UNIT_ITEM_GROUP_TBOX)
 #define UNIT_ITEM_FLAG_BOM         (0x00010000 << UNIT_ITEM_GROUP_BOM)
 
+#define UNIT_ITEM_ID_IGNORE        (-1)
+
 // RECOVERY
 #define UNIT_RECOVERY_ID_NONE              (0)
 #define UNIT_RECOVERY_ID_HEART             (1)

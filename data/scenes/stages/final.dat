@@ -22,7 +22,7 @@ scenes/stages/items/common_items.dat
 
 [section]
 section=1
-level1_drop_rate=4
+item_drop_rate=4
 map_path=map/final/n_fin.tmx
 bgm_path=music/a.ogg
 enemy_path=scenes/stages/enemy/enemy_fin_1.dat
@@ -31,7 +31,7 @@ items_path=scenes/stages/items/item_fin_1.dat
 
 [section]
 section=2
-level1_drop_rate=4
+item_drop_rate=4
 bgm_path=music/a.ogg
 enemy_path=scenes/stages/enemy/enemy_fin_2.dat
 items_path=scenes/stages/items/item_fin_2.dat
@@ -40,7 +40,7 @@ trap_path=scenes/stages/trap/trap_fin_2.dat
 
 [section]
 section=3
-level1_drop_rate=4
+item_drop_rate=4
 bgm_path=music/a.ogg
 enemy_path=scenes/stages/enemy/enemy_fin_3.dat
 items_path=scenes/stages/items/item_fin_3.dat
@@ -49,7 +49,7 @@ trap_path=scenes/stages/trap/trap_fin_3.dat
 
 [section]
 section=4
-level1_drop_rate=4
+item_drop_rate=4
 bgm_path=music/a.ogg
 enemy_path=scenes/stages/enemy/enemy_fin_4.dat
 items_path=scenes/stages/items/item_fin_4.dat
@@ -58,7 +58,7 @@ trap_path=scenes/stages/trap/trap_fin_4.dat
 
 [section]
 section=5
-level1_drop_rate=4
+item_drop_rate=4
 bgm_path=music/a.ogg
 enemy_path=scenes/stages/enemy/enemy_fin_5.dat
 items_path=scenes/stages/items/item_fin_5.dat

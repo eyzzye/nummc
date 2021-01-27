@@ -373,7 +373,6 @@ extern void unit_manager_get_bullet_start_pos(unit_data_t* unit_data, unit_data_
 extern void unit_manager_get_spawn_items_pos(unit_data_t* spawner_unit, unit_data_t* avoid_unit, int item_num, int* x, int* y);
 extern void unit_manager_get_spawn_items_pos_under_foot(unit_data_t* spawner_unit, int item_num, int* x, int* y);
 extern void unit_manager_get_spawn_items_pos_for_target(unit_data_t* spawner_unit, unit_data_t* target_unit, int item_num, int* x, int* y);
-extern void unit_manager_enemy_drop_item(unit_enemy_data_t* unit_data);
 
 // player
 extern void unit_manager_backup_player();
@@ -424,6 +423,7 @@ extern void unit_manager_set_ai_step(int index, int step);
 extern int unit_manager_enemy_get_damage_force(unit_enemy_data_t* enemy_data, int hp);
 extern int unit_manager_enemy_get_damage(unit_enemy_data_t* enemy_data, int hp);
 extern int unit_manager_enemy_get_damage_with_bullet(unit_enemy_data_t* enemy_data, unit_player_bullet_data_t* player_bullet_data);
+extern void unit_manager_enemy_drop_item(unit_enemy_data_t* unit_data);
 extern int unit_manager_enemy_attack(unit_enemy_data_t* enemy_data, int stat);
 extern void unit_manager_enemy_trap(unit_enemy_data_t* enemy_data, unit_trap_data_t* trap_data);
 extern void unit_manager_enemy_move(unit_enemy_data_t* enemy_data, float vec_x, float vec_y, int speed = -1);

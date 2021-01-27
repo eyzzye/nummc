@@ -53,6 +53,8 @@ static std::string enemy_damage_path[ANIM_BASE_SIZE_END] = {
 	"units/effect/damage/64x64/damage.unit",
 };
 
+static std::string enemy_star_path = "units/effect/star/star.unit";
+
 // rank tables
 #define UNIT_ENEMY_BULLET_CURVING_RANK_MIN    3
 #define UNIT_ENEMY_BULLET_CURVING_RANK_MAX   10
@@ -343,7 +345,7 @@ int unit_manager_load_enemy(std::string path)
 				enemy_base[enemy_base_index_end].effect_stat = UNIT_EFFECT_FLAG_E_NONE;
 				enemy_base[enemy_base_index_end].effect_param = NULL;
 				enemy_base[enemy_base_index_end].resistance_stat = UNIT_EFFECT_FLAG_E_NONE;
-				enemy_base[enemy_base_index_end].drop_item = -1; // disable
+				enemy_base[enemy_base_index_end].drop_item = UNIT_ITEM_ID_IGNORE; // disable
 				continue;
 			}
 			if (line == "[/unit]") { read_flg[UNIT_TAG_UNIT] = false; continue; }
@@ -709,6 +711,34 @@ int unit_manager_enemy_get_damage_with_bullet(unit_enemy_data_t* enemy_data, uni
 		if (ret == 0) unit_manager_enemy_set_effect_stat(enemy_data->id, UNIT_EFFECT_FLAG_E_FREEZE_UP, true);
 	}
 	return ret;
+}
+
+void unit_manager_enemy_drop_item(unit_enemy_data_t* unit_data) {
+	int spawn_id = UNIT_ITEM_ID_IGNORE;
+	int pos_x, pos_y;
+	unit_manager_get_position((unit_data_t*)unit_data, &pos_x, &pos_y);
+
+	if (unit_data->drop_item >= 0) {
+		// always drop item
+		spawn_id = unit_manager_create_items(pos_x, pos_y, unit_data->drop_item);
+	}
+	else {
+		if (unit_data->level > 0) g_stage_data->drop_judge_count += unit_data->level;
+
+		if (g_stage_data->drop_judge_count >= g_stage_data->current_section_data->item_drop_rate) {
+			// drop random
+			int max = (int)g_stage_data->current_section_data->drop_items_id_list.size() - 1;
+			int item_id = (max <= 0) ? 0 : game_utils_random_gen(max, 0);
+			spawn_id = unit_manager_create_items(pos_x, pos_y, g_stage_data->current_section_data->drop_items_id_list[item_id]);
+
+			// star effect
+			unit_items_data_t* new_item = unit_manager_get_items(spawn_id);
+			int effect_id = unit_manager_create_effect(new_item->col_shape->x, new_item->col_shape->y, unit_manager_search_effect(enemy_star_path));
+			unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)new_item);
+
+			g_stage_data->drop_judge_count = 0;
+		}
+	}
 }
 
 int unit_manager_enemy_attack(unit_enemy_data_t* enemy_data, int stat)
