@@ -3,13 +3,13 @@
 #
 
 [unit]
-hp=200
+hp=1234
 bullet_life_timer=1000
 bullet_curving=5
 speed=8
 strength=5
 exp=50
-hp_max=200
+hp_max=1234
 exp_max=0
 level=8
 next_level=null

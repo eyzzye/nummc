@@ -9,3 +9,5 @@ extern void hud_manager_unload();
 extern void hud_manager_reset();
 extern void hud_manager_update();
 extern void hud_manager_display();
+
+extern void hud_manager_update_e_boss_stat(int hp_max, int hp);

@@ -620,9 +620,9 @@ int unit_manager_player_change_bullet(int weapon)
 	return 0;
 }
 
-void unit_manager_player_stock_item(unit_items_data_t* item_data)
+int unit_manager_player_stock_item(unit_items_data_t* item_data)
 {
-	inventory_manager_register_item(item_data);
+	return inventory_manager_register_item(item_data);
 }
 
 void unit_manager_player_open_tbox(unit_items_data_t* item_data)
@@ -837,8 +837,9 @@ void unit_manager_player_get_item(unit_items_data_t* item_data)
 		//
 	}
 	else if (item_data->group == UNIT_ITEM_GROUP_STOCK) {
-		unit_manager_player_stock_item(item_data);
-		unit_manager_items_set_anim_stat(item_data->id, ANIM_STAT_FLAG_DIE);
+		if (unit_manager_player_stock_item(item_data) == 0) {
+			unit_manager_items_set_anim_stat(item_data->id, ANIM_STAT_FLAG_DIE);
+		}
 	}
 	else if (item_data->group == UNIT_ITEM_GROUP_TBOX) {
 		unit_manager_player_open_tbox(item_data);

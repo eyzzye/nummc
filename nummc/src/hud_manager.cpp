@@ -85,6 +85,23 @@ static tex_info_t tex_progress_info[HUD_PROGRESS_SIZE];
 #define HUD_Q_VAL_END_INDEX   10	// horizontal_points[10][1] = 68
 rect_region_t q_val_rect;
 
+#define HUD_P_STAT_ICON_ID_FIRE_UP    0
+#define HUD_P_STAT_ICON_ID_FREEZE_UP  1
+#define HUD_P_STAT_ICON_ID_END        2
+
+static tex_info_t tex_p_stat_icon_info[HUD_P_STAT_ICON_ID_END];
+
+// boss HP
+#define HUD_E_BOSS_ID_HP      0
+#define HUD_E_BOSS_ID_HP_MAX  1
+#define HUD_E_BOSS_ID_END     2
+#define HUD_E_BOSS_HP_BAR_WIDTH   256
+#define HUD_E_BOSS_HP_BAR_HEIGHT  (32 - 4 * 2)
+static rect_region_t boss_hp_val_rect[HUD_E_BOSS_ID_END];
+static tex_info_t tex_e_boss_icon_info;
+static int e_boss_hp_max;
+static int e_boss_hp;
+
 static void hud_tex_info_init_rect(tex_info_t* tex_info, int src_w, int src_h, int dst_offset_x, int dst_offset_y);
 static void hud_tex_info_reset(tex_info_t* tex_info, int tex_info_size);
 static void hud_tex_info_draw(tex_info_t* tex_info, int tex_info_size);
@@ -203,6 +220,17 @@ void hud_manager_reset()
 	hud_tex_info_reset(tex_info, HUD_LABEL_ID_END);
 	hud_tex_info_reset(tex_icon_info, HUD_ICON_ID_END);
 	hud_tex_info_reset(tex_progress_info, HUD_PROGRESS_SIZE);
+
+	// player stat icon
+	hud_tex_info_reset(tex_p_stat_icon_info, HUD_P_STAT_ICON_ID_END);
+
+	// enemy boss stat icon
+	SDL_Rect* tmp_rect = &tex_e_boss_icon_info.dst_rect_base;
+	tex_e_boss_icon_info.dst_rect = VIEW_STAGE_RECT(tmp_rect->x, tmp_rect->y, tmp_rect->w, tmp_rect->h);
+	tmp_rect = &boss_hp_val_rect[HUD_E_BOSS_ID_HP].dst_rect_base;
+	boss_hp_val_rect[HUD_E_BOSS_ID_HP].dst_rect = VIEW_STAGE_RECT(tmp_rect->x, tmp_rect->y, tmp_rect->w, tmp_rect->h);
+	tmp_rect = &boss_hp_val_rect[HUD_E_BOSS_ID_HP_MAX].dst_rect_base;
+	boss_hp_val_rect[HUD_E_BOSS_ID_HP_MAX].dst_rect = VIEW_STAGE_RECT(tmp_rect->x, tmp_rect->y, tmp_rect->w, tmp_rect->h);
 
 	// init hud info
 	current_stocker_version = -1;
@@ -434,7 +462,48 @@ static void tex_info_init()
 		w_pos = 356;
 		h_pos = 4;
 		hud_tex_info_init_rect(&tex_info[HUD_LABEL_ID_HP], w, h, w_pos, h_pos);
+
+		// player stat icon pos
+		w_pos += w + 2;
+		h_pos += 4;
 	}
+
+	// player stat icon
+	tex_p_stat_icon_info[HUD_P_STAT_ICON_ID_FIRE_UP].tex = resource_manager_getTextureFromPath("images/gui/hud/fire_up_reg.png");
+	ret = SDL_QueryTexture(tex_p_stat_icon_info[HUD_P_STAT_ICON_ID_FIRE_UP].tex, NULL, NULL, &w, &h);
+	if (ret == 0) {
+		hud_tex_info_init_rect(&tex_p_stat_icon_info[HUD_P_STAT_ICON_ID_FIRE_UP], w, h, w_pos, h_pos);
+
+		w_pos += w + 2;
+		//h_pos = 4 + 4;
+	}
+
+	tex_p_stat_icon_info[HUD_P_STAT_ICON_ID_FREEZE_UP].tex = resource_manager_getTextureFromPath("images/gui/hud/freeze_up_reg.png");
+	ret = SDL_QueryTexture(tex_p_stat_icon_info[HUD_P_STAT_ICON_ID_FREEZE_UP].tex, NULL, NULL, &w, &h);
+	if (ret == 0) {
+		hud_tex_info_init_rect(&tex_p_stat_icon_info[HUD_P_STAT_ICON_ID_FREEZE_UP], w, h, w_pos, h_pos);
+	}
+
+	// enemy boss stat
+	tex_e_boss_icon_info.tex = resource_manager_getTextureFromPath("images/gui/hud/boss_icon.png");
+	ret = SDL_QueryTexture(tex_e_boss_icon_info.tex, NULL, NULL, &w, &h);
+	if (ret == 0) {
+		w_pos = 224 - HUD_E_BOSS_HP_BAR_WIDTH / 2;
+		h_pos = 0; // stage region top
+		tex_e_boss_icon_info.src_rect = { 0, 0, w, h };
+		tex_e_boss_icon_info.dst_rect = VIEW_STAGE_RECT(w_pos, h_pos, w, h);
+		tex_e_boss_icon_info.dst_rect_base = { w_pos, h_pos, w, h };
+
+		w_pos += w;
+	}
+
+	h_pos = 4; // stage region top (margin 4)
+	boss_hp_val_rect[HUD_E_BOSS_ID_HP].dst_rect          = VIEW_STAGE_RECT( w_pos, h_pos, HUD_E_BOSS_HP_BAR_WIDTH, HUD_E_BOSS_HP_BAR_HEIGHT);
+	boss_hp_val_rect[HUD_E_BOSS_ID_HP].dst_rect_base     = { w_pos, h_pos, HUD_E_BOSS_HP_BAR_WIDTH, HUD_E_BOSS_HP_BAR_HEIGHT };
+	boss_hp_val_rect[HUD_E_BOSS_ID_HP_MAX].dst_rect      = VIEW_STAGE_RECT( w_pos, h_pos, HUD_E_BOSS_HP_BAR_WIDTH, HUD_E_BOSS_HP_BAR_HEIGHT);
+	boss_hp_val_rect[HUD_E_BOSS_ID_HP_MAX].dst_rect_base = { w_pos, h_pos, HUD_E_BOSS_HP_BAR_WIDTH, HUD_E_BOSS_HP_BAR_HEIGHT };
+	e_boss_hp_max = 0;
+	e_boss_hp = HUD_E_BOSS_HP_BAR_WIDTH;
 
 	// E icon
 	hud_tex_info_reset_e_val(0);
@@ -457,6 +526,24 @@ void hud_manager_update()
 		hud_tex_info_reset_space_val(inventory_manager_get_special_item());
 		current_stocker_version = g_stocker.version;
 	}
+}
+
+void hud_manager_update_e_boss_stat(int hp_max, int hp)
+{
+	int hp_val;
+	if ((hp_max <= 0) || (hp <= 0)) { // reset
+		e_boss_hp_max = 0;
+		e_boss_hp = HUD_E_BOSS_HP_BAR_WIDTH;
+		hp_val = HUD_E_BOSS_HP_BAR_WIDTH;
+	}
+	else {
+		e_boss_hp_max = hp_max;
+		e_boss_hp = hp;
+		hp_val = HUD_E_BOSS_HP_BAR_WIDTH * hp / e_boss_hp_max;
+	}
+
+	boss_hp_val_rect[HUD_E_BOSS_ID_HP].dst_rect_base.w = hp_val;
+	boss_hp_val_rect[HUD_E_BOSS_ID_HP].dst_rect.w = VIEW_STAGE(hp_val);
 }
 
 void hud_manager_display()
@@ -495,4 +582,26 @@ void hud_manager_display()
 
 	// icon
 	hud_tex_info_draw(tex_icon_info, HUD_ICON_ID_END);
+
+	// player stat icon
+	if (g_player.resistance_stat & UNIT_EFFECT_FLAG_P_FIRE_UP) {
+		int i = HUD_P_STAT_ICON_ID_FIRE_UP;
+		SDL_RenderCopy(g_ren, tex_p_stat_icon_info[i].tex, &tex_p_stat_icon_info[i].src_rect, &tex_p_stat_icon_info[i].dst_rect);
+	}
+	if (g_player.resistance_stat & UNIT_EFFECT_FLAG_P_FREEZE_UP) {
+		int i = HUD_P_STAT_ICON_ID_FREEZE_UP;
+		SDL_RenderCopy(g_ren, tex_p_stat_icon_info[i].tex, &tex_p_stat_icon_info[i].src_rect, &tex_p_stat_icon_info[i].dst_rect);
+	}
+
+	// enemy boss stat icon
+	if (e_boss_hp_max > 0) {
+		// boss icon
+		SDL_RenderCopy(g_ren, tex_e_boss_icon_info.tex, &tex_e_boss_icon_info.src_rect, &tex_e_boss_icon_info.dst_rect);
+		// hp max
+		SDL_SetRenderDrawColor(g_ren, 255, 255, 255, 192);
+		SDL_RenderFillRect(g_ren, &boss_hp_val_rect[HUD_E_BOSS_ID_HP_MAX].dst_rect);
+		// hp
+		SDL_SetRenderDrawColor(g_ren, 224, 0, 0, 255);
+		SDL_RenderFillRect(g_ren, &boss_hp_val_rect[HUD_E_BOSS_ID_HP].dst_rect);
+	}
 }

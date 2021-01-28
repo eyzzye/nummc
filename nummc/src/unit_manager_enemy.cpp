@@ -660,11 +660,19 @@ int unit_manager_enemy_get_damage_force(unit_enemy_data_t* enemy_data, int hp)
 			}
 		}
 
+		// hud stat update (reset)
+		if (enemy_data->level >= UNIT_ENEMY_BOSS_LEVEL_MIN) hud_manager_update_e_boss_stat(0, enemy_data->hp);
+
 		// die enemy
 		unit_manager_enemy_set_anim_stat(enemy_data->id, ANIM_STAT_FLAG_DIE);
 		enemy_count -= 1;
 		return 1;
 	}
+	else {
+		// hud stat update
+		if (enemy_data->level >= UNIT_ENEMY_BOSS_LEVEL_MIN) hud_manager_update_e_boss_stat(enemy_data->hp_max, enemy_data->hp);
+	}
+
 	return 0;
 }
 
@@ -688,11 +696,19 @@ int unit_manager_enemy_get_damage(unit_enemy_data_t* enemy_data, int hp)
 			}
 		}
 
+		// hud stat update (reset)
+		if (enemy_data->level >= UNIT_ENEMY_BOSS_LEVEL_MIN) hud_manager_update_e_boss_stat(0, enemy_data->hp);
+
 		// die enemy
 		unit_manager_enemy_set_anim_stat(enemy_data->id, ANIM_STAT_FLAG_DIE);
 		enemy_count -= 1;
 		return 1;
 	}
+	else {
+		// hud stat update
+		if (enemy_data->level >= UNIT_ENEMY_BOSS_LEVEL_MIN) hud_manager_update_e_boss_stat(enemy_data->hp_max, enemy_data->hp);
+	}
+
 	return 0;
 }
 
