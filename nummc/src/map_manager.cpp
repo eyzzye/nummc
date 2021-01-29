@@ -167,7 +167,11 @@ void map_manager_update() {
 }
 
 void map_manager_display(int layer) {
-	if (map_raw_data[layer] == NULL) return;
+	int layer_index = MAP_LAYER_TO_INDEX(layer);
+	if ((layer_index < 0) || (MAP_TYPE_END <= layer_index)
+		|| (map_raw_data[layer_index] == NULL)) {
+		return;
+	}
 
 #ifdef _MAP_OFFSET_ENABLE_
 	int offset_y = VIEW_STAGE_NORMAL(g_map_offset_y);
@@ -198,8 +202,8 @@ void map_manager_display(int layer) {
 	for (int h = h_index_start; h < h_index_end; h++) {
 		int map_index = h * layer_width + w_index_start;
 		for (int w = w_index_start; w < w_index_end; w++) {
-			// FIELD, BLOCK, EFFECT
-			tile_instance_data_t* tile_data = (map_raw_data[layer] + map_index);
+			// FIELD, BLOCK
+			tile_instance_data_t* tile_data = (map_raw_data[layer_index] + map_index);
 			int tile = tile_data->id;
 			if (tile) {
 				anim_frame_data_t* frame_data = NULL;
@@ -800,17 +804,6 @@ int map_manager_load(std::string path)
 					tmp->x = layer_width;
 					tmp->y = layer_height;
 					tmp->map_raw_data = map_raw_data[MAP_TYPE_BLOCK];
-				}
-				else if (layer_name == "3") {
-					map_raw_data[MAP_TYPE_EFFECT] = new tile_instance_data_t[map_size];
-					read_tile_type = MAP_TYPE_EFFECT;
-
-					map_effect_data_t* tmp = (map_effect_data_t*)&map_data_list[MAP_TYPE_EFFECT];
-					tmp->type = MAP_TYPE_EFFECT;
-					tmp->layer = MAP_TYPE_EFFECT;
-					tmp->x = layer_width;
-					tmp->y = layer_height;
-					tmp->map_raw_data = map_raw_data[MAP_TYPE_EFFECT];
 				}
 
 				read_tile_index = 0;

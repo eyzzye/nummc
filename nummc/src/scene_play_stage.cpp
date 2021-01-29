@@ -303,12 +303,12 @@ static void draw() {
 
 		// draw unit
 		unit_manager_trap_display(layer);
+		unit_manager_effect_display(layer);
 		unit_manager_items_display(layer);
 		unit_manager_enemy_display(layer);
 		unit_manager_player_display(layer);
 		unit_manager_player_bullet_display(layer);
 		unit_manager_enemy_bullet_display(layer);
-		unit_manager_effect_display(layer);
 	}
 
 	// draw hud

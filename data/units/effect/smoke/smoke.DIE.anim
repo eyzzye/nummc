@@ -7,7 +7,7 @@ duration=100
 [/frame]
 
 [img]
-layer=1
+layer=3
 dir_path=images/units/effect/smoke/
 path=smoke_die1.png
 offset_x=*

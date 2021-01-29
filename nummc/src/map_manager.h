@@ -12,11 +12,10 @@
 #define TILE_BREAKABLE_FALSE  0
 #define TILE_BREAKABLE_TRUE   1
 
-#define MAP_TYPE_NONE    0
-#define MAP_TYPE_FIELD   1
-#define MAP_TYPE_BLOCK   2
-#define MAP_TYPE_EFFECT  3
-#define MAP_TYPE_END     4
+#define MAP_TYPE_FIELD   0
+#define MAP_TYPE_BLOCK   1
+#define MAP_TYPE_END     2
+#define MAP_LAYER_TO_INDEX(_LAYER_VAL)  (_LAYER_VAL - 1)
 
 #define MAP_WIDTH_NUM_MAX    15
 #define MAP_HEIGHT_NUM_MAX    9

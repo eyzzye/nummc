@@ -7,7 +7,7 @@ duration=200,4000
 [/frame]
 
 [img]
-layer=3
+layer=2
 dir_path=images/units/enemy/7/boss/
 path=seven_move1.png,seven_idle1.png
 offset_x=*

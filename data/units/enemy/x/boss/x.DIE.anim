@@ -7,7 +7,7 @@ duration=300,300,300
 [/frame]
 
 [img]
-layer=3
+layer=2
 dir_path=images/units/enemy/x/boss/
 path=x_die1.png,x_die2.png,x_die3.png
 offset_x=*

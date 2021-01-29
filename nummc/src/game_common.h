@@ -5,7 +5,7 @@
 #include "SDL_mixer.h"
 #include "SDL_ttf.h"
 
-#define GAME_VERSION "nummc ver.1.01.000\n"
+#define GAME_VERSION "nummc ver.1.02.000\n"
 
 #define _COLLISION_ENABLE_BOX_2D_
 //#define _MAP_OFFSET_ENABLE_
