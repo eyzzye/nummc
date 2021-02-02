@@ -1,0 +1,16 @@
+#
+# go_next animation (type=IDLE)
+#
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=2
+dir_path=images/units/trap/go_next/
+path=go_next.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

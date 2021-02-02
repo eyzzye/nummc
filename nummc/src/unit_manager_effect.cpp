@@ -109,6 +109,7 @@ int unit_manager_load_effect(std::string path)
 				effect_base[effect_base_index_end].obj = (void*)path_c_str;
 				effect_base[effect_base_index_end].type = UNIT_TYPE_EFFECT;
 				effect_base[effect_base_index_end].id = effect_base_index_end;
+				effect_base[effect_base_index_end].clear_type = UNIT_EFFECT_CLEAR_TYPE_NONE;
 				continue;
 			}
 			if (line == "[/unit]") { read_flg[UNIT_TAG_UNIT] = false; continue; }
@@ -209,6 +210,7 @@ int unit_manager_create_effect(int x, int y, int base_index)
 	effect[effect_index_end].type = UNIT_TYPE_EFFECT;
 	effect[effect_index_end].group = effect_base[base_index].group;
 	effect[effect_index_end].trace_unit = NULL;
+	effect[effect_index_end].clear_type = effect_base[base_index].clear_type;
 
 	// collision
 	if (effect_base[base_index].col_shape->type & COLLISION_ID_STATIC_SHAPE) {
@@ -244,6 +246,17 @@ int unit_manager_create_effect(int x, int y, int base_index)
 	}
 
 	return ret;
+}
+
+void unit_manager_clear_all_effect(int clear_type)
+{
+	for (int i = 0; i < UNIT_EFFECT_LIST_SIZE; i++) {
+		if (effect[i].type != UNIT_TYPE_EFFECT) continue;
+		if (effect[i].clear_type == clear_type) {
+			unit_manager_clear_effect(&effect[i]);
+		}
+	}
+	//effect_index_end = 0;
 }
 
 void unit_manager_clear_effect(unit_effect_data_t* effect_data)

@@ -10,6 +10,7 @@
 #include "resource_manager.h"
 #include "unit_manager.h"
 #include "game_window.h"
+#include "stage_manager.h"
 
 #ifdef _MAP_OFFSET_ENABLE_
 int g_map_offset_x;
@@ -36,16 +37,21 @@ int g_tile_height;  // pixel
 #define MAP_TAG_DATA     4
 #define MAP_TAG_END      5
 
+static int map_manager_load_tile(std::string path, tile_data_t* tile);
+static void map_manager_create_tile_instance(tile_instance_data_t* tile_inst, int w, int h, bool skip_create_col);
+static void map_manager_delete_tile_instance_col(tile_instance_data_t* tile_inst);
 static void load_tile_basic(std::string& line, tile_data_t* tile);
 static void load_tile_frame(std::string& line, tile_data_t* tile);
 static void load_tile_img(std::string& line, tile_data_t* tile);
 static void load_tile_collision(std::string& line, tile_data_t* tile);
 
+static int map_manager_load_data_element(std::string path);
 static void load_map(std::string& line);
 static void load_tileset(std::string& line, int* tile_width, int* tile_height);
 static void load_image(std::string& line, std::string& filename, int* width, int* height);
 static void load_layer(std::string& line, std::string& name, int* width, int* height);
 static void load_data(std::string& line);
+static void load_data_to_stage_data(std::string& line, int tile_type);
 
 static map_data_t map_data_list[MAP_TYPE_END];
 
@@ -54,14 +60,16 @@ static int layer_height;
 static int tile_width;
 static int tile_height;
 static tile_instance_data_t* map_raw_data[MAP_TYPE_END];
-static int read_tile_type;
-static int read_tile_index;
-static tile_instance_data_t map_wall[COLLISION_STATIC_WALL_NUM];
+static tile_instance_data_t map_wall[COLLISION_STATIC_WALL_NUM]; // for invisible col_shape
 
 #define TILE_TEX_NUM  32
 static tile_data_t tile_tex[TILE_TEX_NUM];
-static std::string dir_path;
 
+// tmp variables
+static std::string dir_path;
+static int read_tile_type;
+static int read_tile_index;
+static int write_section_map_index;
 
 int map_manager_init()
 {
@@ -92,17 +100,19 @@ int map_manager_init()
 
 void map_manager_unload()
 {
-	for (int i = 0; i < MAP_TYPE_END; i++)
-	{
-		if (map_raw_data[i]) {
-			if ((map_raw_data[i]->col_shape) && (map_raw_data[i]->col_shape->b2body)) {
-				g_stage_world->DestroyBody(map_raw_data[i]->col_shape->b2body);
-				map_raw_data[i]->col_shape->b2body = NULL;
+	for (int type = 0; type < MAP_TYPE_END; type++) {
+		for (int i = 0; i < MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX; i++) {
+			if ((map_raw_data[type] + i)) {
+				map_manager_delete_tile_instance_col(map_raw_data[type] + i);
 			}
-
-			delete [] map_raw_data[i];
-			map_raw_data[i] = NULL;
 		}
+		delete[] map_raw_data[type];
+		map_raw_data[type] = NULL;
+	}
+
+	for (int i = 0; i < COLLISION_STATIC_WALL_NUM; i++)
+	{
+		map_manager_delete_tile_instance_col(&map_wall[i]);
 	}
 
 	for (int i = 0; i < TILE_TEX_NUM; i++)
@@ -237,250 +247,483 @@ shape_data* map_manager_get_col_shape(int x, int y) {
 	return col_shape;
 }
 
+void map_manager_create_stage_map()
+{
+	// set start position
+	int x = STAGE_MAP_WIDTH_NUM / 2; int y = STAGE_MAP_HEIGHT_NUM / 2;
+	g_stage_data->current_stage_map_index = y * STAGE_MAP_WIDTH_NUM + x;
+	g_stage_data->stage_map[y * STAGE_MAP_WIDTH_NUM + x].section_id = 0;
+
+	//
+	// Test map for Debug
+	//
+	//      6
+	//      2
+	// 5 1 [P] 3  7
+	//      4
+	//      8
+	int section_list_size = (int)g_stage_data->section_list.size();
+	if (section_list_size > 1) g_stage_data->stage_map[(y + 0) * STAGE_MAP_WIDTH_NUM + (x - 1)].section_id = 1;
+	if (section_list_size > 2) g_stage_data->stage_map[(y - 1) * STAGE_MAP_WIDTH_NUM + (x + 0)].section_id = 2;
+	if (section_list_size > 3) g_stage_data->stage_map[(y + 0) * STAGE_MAP_WIDTH_NUM + (x + 1)].section_id = 3;
+	if (section_list_size > 4) g_stage_data->stage_map[(y + 1) * STAGE_MAP_WIDTH_NUM + (x + 0)].section_id = 4;
+
+	if (section_list_size > 5) g_stage_data->stage_map[(y + 0) * STAGE_MAP_WIDTH_NUM + (x - 2)].section_id = 5;
+	if (section_list_size > 6) g_stage_data->stage_map[(y - 2) * STAGE_MAP_WIDTH_NUM + (x + 0)].section_id = 6;
+	if (section_list_size > 7) g_stage_data->stage_map[(y + 0) * STAGE_MAP_WIDTH_NUM + (x + 2)].section_id = 7;
+	if (section_list_size > 8) g_stage_data->stage_map[(y + 2) * STAGE_MAP_WIDTH_NUM + (x + 0)].section_id = 8;
+
+	// load basic map settings from section1
+	if (g_stage_data->section_list.size() > 1) {
+		std::string path = g_stage_data->section_list[1]->map_path;
+		map_manager_load(path);
+
+		// load *.tile
+		std::string tile_files = g_base_path + "data/" + game_utils_upper_folder(path) + "/*.tile";
+		WIN32_FIND_DATAA find_file_data;
+		HANDLE h_find = FindFirstFileA(tile_files.c_str(), &find_file_data);
+		if (h_find == INVALID_HANDLE_VALUE) {
+			LOG_ERROR("map_manager_load FindFirstFileA() error\n", path.c_str());
+			return;
+		}
+
+		do {
+			if (!(find_file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+				std::string filename = find_file_data.cFileName;
+				std::string index_str = filename.substr(0, filename.size() - 5);
+				int index = atoi(index_str.c_str());
+				map_manager_load_tile(game_utils_upper_folder(path) + "/" + filename, &tile_tex[index]);
+			}
+		} while (FindNextFile(h_find, &find_file_data) != 0);
+		FindClose(h_find);
+	}
+	else {
+		LOG_ERROR("ERROR: map_manager_create_stage_map invalid g_stage_data->section_list.size \n");
+		return;
+	}
+
+	// load g_stage_data->section_list[section_id]->map_path
+	//  |
+	//  +-> load map_raw_data[] -> g_stage_data->stage_map[g_stage_data->current_stage_map_index].section_map[][]
+	for (int i = 0; i < LENGTH_OF(g_stage_data->stage_map); i++) {
+		int section_id = g_stage_data->stage_map[i].section_id;
+		if (section_id == STAGE_MAP_ID_IGNORE) {
+			continue;
+		}
+
+		// set section type (copy)
+		int section_type = g_stage_data->section_list[section_id]->section_type;
+		g_stage_data->stage_map[i].section_type = section_type;
+
+		// clear stat
+		g_stage_data->stage_map[i].stat = STAGE_MAP_STAT_NONE;
+
+		// set mini_map_icon
+		if (section_type != 0) {
+			g_stage_data->stage_map[i].mini_map_icon = STAGE_MINI_MAP_ICON_FLAG_TYPE << (section_type - 1);
+		}
+
+		// load section map
+		write_section_map_index = i;
+		map_manager_load_data_element(g_stage_data->section_list[section_id]->map_path);
+	}
+}
+
+static void map_manager_create_tile_instance(tile_instance_data_t* tile_inst, int w, int h, bool skip_create_col)
+{
+	SDL_Rect* src_rect;
+	SDL_Rect dst_rect;
+
+	int tile = tile_inst->id;
+	tile_inst->type = UNIT_TYPE_TILE;
+	tile_inst->tile_type = TILE_TYPE_INSTANCE;
+	if (tile) {
+		// basic info
+		tile_inst->breakable = tile_tex[tile].breakable;
+
+		anim_frame_data_t* frame_data = ((tile_base_data_t*)&tile_tex[tile])->anim->anim_stat_base_list[ANIM_STAT_IDLE]->frame_list[0];
+		src_rect = &frame_data->src_rect;
+		dst_rect = { w * src_rect->w, h * src_rect->w, src_rect->w, src_rect->h };
+		tile_inst->obj = (void*)&tile_tex[tile];
+
+		// create collision
+		shape_data* base_shape = ((tile_base_data_t*)&tile_tex[tile])->col_shape;
+		if ((skip_create_col == true) || (base_shape == NULL)) {
+			tile_inst->col_shape = NULL;
+		}
+		else {
+			tile_inst->col_shape = collision_manager_create_static_shape(
+				base_shape, tile_inst, g_tile_width, g_tile_height,
+				&dst_rect.x, &dst_rect.y);
+		}
+	}
+	else {
+		tile_inst->obj = NULL;
+		tile_inst->col_shape = NULL;
+	}
+}
+
+static void map_manager_delete_tile_instance_col(tile_instance_data_t* tile_inst)
+{
+	// delete shape only (don't clear id)
+	if (tile_inst->col_shape) {
+		collision_manager_delete_shape(tile_inst->col_shape);
+		tile_inst->col_shape = NULL;
+	}
+}
+
 void map_manager_create_instance() {
 	if ((map_raw_data[MAP_TYPE_FIELD] == NULL) || (map_raw_data[MAP_TYPE_BLOCK] == NULL)) return;
 
 	int map_index = 0;
-	SDL_Rect* src_rect;
-	SDL_Rect dst_rect;
 	for (int h = 0; h < layer_height; h++) {
+		bool skip_create_col_h = false;
+		if ((h == 0) || (h == (layer_height - 1))) {
+			skip_create_col_h = true;
+		}
+
 		for (int w = 0; w < layer_width; w++) {
+			bool skip_create_col_w = false;
+			if ((w == 0) || (w == (layer_width - 1))) {
+				skip_create_col_w = true;
+			}
+
 			// FIELD
 			tile_instance_data_t* tile_inst = map_raw_data[MAP_TYPE_FIELD] + map_index;
-			int tile = tile_inst->id;
-			tile_inst->type = UNIT_TYPE_TILE;
-			tile_inst->tile_type = TILE_TYPE_INSTANCE;
-			if (tile) {
-				// basic info
-				tile_inst->breakable = tile_tex[tile].breakable;
-
-				anim_frame_data_t* frame_data = ((tile_base_data_t*)&tile_tex[tile])->anim->anim_stat_base_list[ANIM_STAT_IDLE]->frame_list[0];
-				src_rect = &frame_data->src_rect;
-				dst_rect = { w * src_rect->w, h * src_rect->w, src_rect->w, src_rect->h };
-				tile_inst->obj = (void*)&tile_tex[tile];
-
-				// create collision
-				shape_data* base_shape = ((tile_base_data_t*)&tile_tex[tile])->col_shape;
-				if (base_shape) {
-					tile_inst->col_shape = collision_manager_create_static_shape(
-						base_shape, tile_inst, g_tile_width, g_tile_height,
-						&dst_rect.x, &dst_rect.y);
-				}
-				else {
-					tile_inst->col_shape = NULL;
-				}
-			}
-			else {
-				tile_inst->obj = NULL;
-				tile_inst->col_shape = NULL;
-			}
+			map_manager_create_tile_instance(tile_inst, w, h, (skip_create_col_h || skip_create_col_w));
 
 			// BLOCK
 			tile_inst = map_raw_data[MAP_TYPE_BLOCK] + map_index;
-			tile = tile_inst->id;
-			tile_inst->type = UNIT_TYPE_TILE;
-			tile_inst->tile_type = TILE_TYPE_INSTANCE;
-			if (tile) {
-				// basic info
-				tile_inst->breakable = tile_tex[tile].breakable;
-
-				anim_frame_data_t* frame_data = ((tile_base_data_t*)&tile_tex[tile])->anim->anim_stat_base_list[ANIM_STAT_IDLE]->frame_list[0];
-				src_rect = &frame_data->src_rect;
-				dst_rect = { w * src_rect->w, h * src_rect->w, src_rect->w, src_rect->h };
-				tile_inst->obj = (void*)&tile_tex[tile];
-
-				shape_data* base_shape = ((tile_base_data_t*)&tile_tex[tile])->col_shape;
-				if (base_shape) {
-					tile_inst->col_shape = collision_manager_create_static_shape(
-						base_shape, tile_inst, g_tile_width, g_tile_height,
-						&dst_rect.x, &dst_rect.y);
-				}
-				else {
-					tile_inst->col_shape = NULL;
-				}
-			}
-			else {
-				tile_inst->obj = NULL;
-				tile_inst->col_shape = NULL;
-			}
+			map_manager_create_tile_instance(tile_inst, w, h, (skip_create_col_h || skip_create_col_w));
 
 			map_index++;
 		}
 	}
 }
 
-void map_manager_create_wall() {
-	int map_index = 0;
-	int connected_region = 0;
-
-	// top
-	bool top_found = false;
-	int left_pos = layer_width * layer_height;
-	int right_pos = 0;
-	int top_pos = layer_width * layer_height;
-	int bottom_pos = 0;
-	for (int h = 0; h < layer_height; h++) {
-		for (int w = 0; w < layer_width; w++) {
-			tile_instance_data_t* tile_inst = map_raw_data[MAP_TYPE_BLOCK] + map_index;
-			int tile = tile_inst->id;
-			if (tile && tile_inst->col_shape && tile_inst->col_shape->b2body) {
-				if (map_index < left_pos) left_pos = map_index;
-				if (right_pos < map_index) right_pos = map_index;
-				if (map_index < top_pos) top_pos = map_index;
-
-				connected_region += 1;
+void map_manager_clear_all_instance()
+{
+	for (int type = 0; type < MAP_TYPE_END; type++) {
+		for (int i = 0; i < MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX; i++) {
+			if ((map_raw_data[type] + i)) {
+				map_manager_delete_tile_instance_col(map_raw_data[type] + i);
 			}
-			else {
-				if (connected_region >= 3) {
-					top_found = true;
-					break;
-				}
-			}
-			map_index++;
 		}
+	}
 
-		if (top_found) {
-			break;
+	for (int i = 0; i < COLLISION_STATIC_WALL_NUM; i++)	{
+		map_manager_delete_tile_instance_col(&map_wall[i]);
+	}
+}
+
+void map_manager_create_wall()
+{
+	// player margin
+	//
+	// #       player       #
+	// <-  w/2  ->
+	//  
+	//   #       #      door     #       #
+	//   <- w/4 ->
+	//   |       |
+	//   + wall  + door collision (16x16)
+	//  
+	// <-> player_x_space
+	//
+	int player_w_space = 0;
+	int player_h_space = 0;
+	if (g_player.col_shape->type == COLLISION_TYPE_BOX_D) {
+		player_w_space = ((shape_box_data*)g_player.col_shape)->w / 2;
+		player_h_space = ((shape_box_data*)g_player.col_shape)->h / 2;
+	}
+	else if (g_player.col_shape->type == COLLISION_TYPE_ROUND_D) {
+		int r = ((shape_round_data*)g_player.col_shape)->r;
+		player_w_space = r;
+		player_h_space = r;
+	}
+
+	if (player_w_space <= (g_tile_width / 4))player_w_space = 0;
+	else player_w_space = player_w_space - (g_tile_width / 4);
+
+	if (player_h_space <= (g_tile_height / 4))player_h_space = 0;
+	else player_h_space = player_h_space - (g_tile_height / 4);
+
+
+	// TOP, BOTTOM
+	int w = (MAP_WIDTH_NUM_MAX / 2) * g_tile_width - player_w_space;
+	int h = g_tile_height;
+	int x = 0;
+	int y = 0;
+	map_wall[COLLISION_STATIC_WALL_TOP_L].type = UNIT_TYPE_TILE;
+	map_wall[COLLISION_STATIC_WALL_TOP_L].tile_type = TILE_TYPE_INSTANCE;
+	map_wall[COLLISION_STATIC_WALL_TOP_L].col_shape = collision_manager_create_static_wall(COLLISION_STATIC_WALL_TOP_L, &map_wall[COLLISION_STATIC_WALL_TOP_L], x, y, w, h);
+
+	x = (MAP_WIDTH_NUM_MAX / 2) * g_tile_width + g_tile_width + player_w_space;
+	//y = 0;
+	map_wall[COLLISION_STATIC_WALL_TOP_R].type = UNIT_TYPE_TILE;
+	map_wall[COLLISION_STATIC_WALL_TOP_R].tile_type = TILE_TYPE_INSTANCE;
+	map_wall[COLLISION_STATIC_WALL_TOP_R].col_shape = collision_manager_create_static_wall(COLLISION_STATIC_WALL_TOP_R, &map_wall[COLLISION_STATIC_WALL_TOP_R], x, y, w, h);
+
+	x = 0;
+	y = (MAP_HEIGHT_NUM_MAX - 1) * g_tile_height;
+	map_wall[COLLISION_STATIC_WALL_BOTTOM_L].type = UNIT_TYPE_TILE;
+	map_wall[COLLISION_STATIC_WALL_BOTTOM_L].tile_type = TILE_TYPE_INSTANCE;
+	map_wall[COLLISION_STATIC_WALL_BOTTOM_L].col_shape = collision_manager_create_static_wall(COLLISION_STATIC_WALL_BOTTOM_L, &map_wall[COLLISION_STATIC_WALL_BOTTOM_L], x, y, w, h);
+
+	x = (MAP_WIDTH_NUM_MAX / 2) * g_tile_width + g_tile_width + player_w_space;
+	//y = (MAP_HEIGHT_NUM_MAX - 1) * g_tile_height;
+	map_wall[COLLISION_STATIC_WALL_BOTTOM_R].type = UNIT_TYPE_TILE;
+	map_wall[COLLISION_STATIC_WALL_BOTTOM_R].tile_type = TILE_TYPE_INSTANCE;
+	map_wall[COLLISION_STATIC_WALL_BOTTOM_R].col_shape = collision_manager_create_static_wall(COLLISION_STATIC_WALL_BOTTOM_R, &map_wall[COLLISION_STATIC_WALL_BOTTOM_R], x, y, w, h);
+
+	// LEFT, RIGHT
+	w = g_tile_width;
+	h = (MAP_HEIGHT_NUM_MAX / 2) * g_tile_height - player_h_space;
+
+	x = 0;
+	y = 0;
+	map_wall[COLLISION_STATIC_WALL_LEFT_U].type = UNIT_TYPE_TILE;
+	map_wall[COLLISION_STATIC_WALL_LEFT_U].tile_type = TILE_TYPE_INSTANCE;
+	map_wall[COLLISION_STATIC_WALL_LEFT_U].col_shape = collision_manager_create_static_wall(COLLISION_STATIC_WALL_LEFT_U, &map_wall[COLLISION_STATIC_WALL_LEFT_U], x, y, w, h);
+
+	//x = 0;
+	y = (MAP_HEIGHT_NUM_MAX / 2) * g_tile_height + g_tile_height + player_h_space;
+	map_wall[COLLISION_STATIC_WALL_LEFT_D].type = UNIT_TYPE_TILE;
+	map_wall[COLLISION_STATIC_WALL_LEFT_D].tile_type = TILE_TYPE_INSTANCE;
+	map_wall[COLLISION_STATIC_WALL_LEFT_D].col_shape = collision_manager_create_static_wall(COLLISION_STATIC_WALL_LEFT_D, &map_wall[COLLISION_STATIC_WALL_LEFT_D], x, y, w, h);
+
+	x = (MAP_WIDTH_NUM_MAX - 1) * g_tile_width;
+	y = 0;
+	map_wall[COLLISION_STATIC_WALL_RIGHT_U].type = UNIT_TYPE_TILE;
+	map_wall[COLLISION_STATIC_WALL_RIGHT_U].tile_type = TILE_TYPE_INSTANCE;
+	map_wall[COLLISION_STATIC_WALL_RIGHT_U].col_shape = collision_manager_create_static_wall(COLLISION_STATIC_WALL_RIGHT_U, &map_wall[COLLISION_STATIC_WALL_RIGHT_U], x, y, w, h);
+
+	//x = (MAP_WIDTH_NUM_MAX - 1) * g_tile_width;
+	y = (MAP_HEIGHT_NUM_MAX / 2) * g_tile_height + g_tile_height + player_h_space;
+	map_wall[COLLISION_STATIC_WALL_RIGHT_D].type = UNIT_TYPE_TILE;
+	map_wall[COLLISION_STATIC_WALL_RIGHT_D].tile_type = TILE_TYPE_INSTANCE;
+	map_wall[COLLISION_STATIC_WALL_RIGHT_D].col_shape = collision_manager_create_static_wall(COLLISION_STATIC_WALL_RIGHT_D, &map_wall[COLLISION_STATIC_WALL_RIGHT_D], x, y, w, h);
+}
+
+void map_manager_create_door()
+{
+	tile_instance_data_t* tile_inst = NULL;
+
+	// stage info
+	int stage_map_index = g_stage_data->current_stage_map_index;
+	int stage_map_index_x = stage_map_index % STAGE_MAP_WIDTH_NUM;
+	int stage_map_index_y = stage_map_index / STAGE_MAP_WIDTH_NUM;
+
+	// section info
+	int center_x = MAP_WIDTH_NUM_MAX / 2;
+	int center_y = MAP_HEIGHT_NUM_MAX / 2;
+
+	// wall info (TOP, BOTTOM)
+	int w = g_tile_width * MAP_WIDTH_NUM_MAX;
+	int h = g_tile_height;
+
+	// STAGE_MAP_FACE_N
+	int x = 0;
+	int y = 0;
+	int section_map_index_n = /* 0 * MAP_WIDTH_NUM_MAX + */ center_x;
+	if ((0 <= stage_map_index_y - 1) && (g_stage_data->stage_map[stage_map_index - STAGE_MAP_WIDTH_NUM].section_id != STAGE_MAP_ID_IGNORE)) { // exist N side section
+		// setup new door
+		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n)->id != TILE_ID_DOOR) {
+			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n)->id = TILE_ID_DOOR;
+
+			tile_inst = map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n;
+			map_manager_create_tile_instance(tile_inst, center_x, 0, true);
 		}
+		// already set door
 		else {
-			if (connected_region >= 3) {
-				top_found = true;
-				break;
-			}
+			// do nothing
 		}
 	}
 
-	if (connected_region >= 3) {
-		tile_instance_data_t* tile_inst1 = map_raw_data[MAP_TYPE_BLOCK] + top_pos;
-		tile_instance_data_t* tile_inst2 = map_raw_data[MAP_TYPE_BLOCK] + top_pos + (connected_region - 1);
-		map_wall[COLLISION_STATIC_WALL_TOP].type = UNIT_TYPE_TILE;
-		map_wall[COLLISION_STATIC_WALL_TOP].tile_type = TILE_TYPE_INSTANCE;
-		map_wall[COLLISION_STATIC_WALL_TOP].col_shape = NULL; // dummy
-		collision_manager_create_static_wall(COLLISION_STATIC_WALL_TOP, &map_wall[COLLISION_STATIC_WALL_TOP], tile_inst1->col_shape->b2body, tile_inst2->col_shape->b2body);
+	map_wall[COLLISION_STATIC_WALL_TOP_DOOR].type = UNIT_TYPE_TILE;
+	map_wall[COLLISION_STATIC_WALL_TOP_DOOR].tile_type = TILE_TYPE_INSTANCE;
+	map_wall[COLLISION_STATIC_WALL_TOP_DOOR].col_shape = collision_manager_create_static_wall(COLLISION_STATIC_WALL_TOP_DOOR, &map_wall[COLLISION_STATIC_WALL_TOP_DOOR], x, y, w, h);
 
-		for (map_index = top_pos + 1; map_index < top_pos + (connected_region - 1); map_index++) {
-			tile_instance_data_t* tile_inst = map_raw_data[MAP_TYPE_BLOCK] + map_index;
-			if (tile_inst->col_shape->b2body) {
-				g_stage_world->DestroyBody(tile_inst->col_shape->b2body);
-				tile_inst->col_shape->b2body = NULL;
-			}
+	collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_TOP_L].col_shape, (COLLISION_GROUP_U_NONE | COLLISION_GROUP_NONE));
+	collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_TOP_R].col_shape, (COLLISION_GROUP_U_NONE | COLLISION_GROUP_NONE));
+
+	// STAGE_MAP_FACE_S
+	int section_map_index_s = (MAP_HEIGHT_NUM_MAX - 1) * MAP_WIDTH_NUM_MAX + center_x;
+	//x = 0;
+	y = (MAP_HEIGHT_NUM_MAX - 1) * g_tile_height;
+	if ((stage_map_index_y + 1 < STAGE_MAP_HEIGHT_NUM) && (g_stage_data->stage_map[stage_map_index + STAGE_MAP_WIDTH_NUM].section_id != STAGE_MAP_ID_IGNORE)) { // exist S side section
+		// setup new door
+		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s)->id != TILE_ID_DOOR) {
+			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s)->id = TILE_ID_DOOR;
+
+			tile_inst = map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s;
+			map_manager_create_tile_instance(tile_inst, center_x, (MAP_HEIGHT_NUM_MAX - 1), true);
 		}
-	}
-
-	// left
-	bool left_found = false;
-	connected_region = 0;
-	int left_offset = left_pos % layer_width;
-	for (int h = 0; h < layer_height; h++) {
-		map_index = layer_width * h + left_offset;
-		tile_instance_data_t* tile_inst = map_raw_data[MAP_TYPE_BLOCK] + map_index;
-
-		int tile = tile_inst->id;
-		if (tile && tile_inst->col_shape && tile_inst->col_shape->b2body) {
-			if (bottom_pos < map_index) bottom_pos = map_index;
-
-			connected_region += 1;
-		}
+		// already set door
 		else {
-			if (connected_region >= 3) {
-				left_found = true;
-				break;
-			}
+			// do nothing
 		}
 	}
 
-	if (connected_region >= 3) {
-		tile_instance_data_t* tile_inst1 = map_raw_data[MAP_TYPE_BLOCK] + left_pos;
-		tile_instance_data_t* tile_inst2 = map_raw_data[MAP_TYPE_BLOCK] + bottom_pos;
-		map_wall[COLLISION_STATIC_WALL_LEFT].type = UNIT_TYPE_TILE;
-		map_wall[COLLISION_STATIC_WALL_LEFT].tile_type = TILE_TYPE_INSTANCE;
-		map_wall[COLLISION_STATIC_WALL_LEFT].col_shape = NULL; // dummy
-		collision_manager_create_static_wall(COLLISION_STATIC_WALL_LEFT, &map_wall[COLLISION_STATIC_WALL_LEFT], tile_inst1->col_shape->b2body, tile_inst2->col_shape->b2body);
+	map_wall[COLLISION_STATIC_WALL_BOTTOM_DOOR].type = UNIT_TYPE_TILE;
+	map_wall[COLLISION_STATIC_WALL_BOTTOM_DOOR].tile_type = TILE_TYPE_INSTANCE;
+	map_wall[COLLISION_STATIC_WALL_BOTTOM_DOOR].col_shape = collision_manager_create_static_wall(COLLISION_STATIC_WALL_BOTTOM_DOOR, &map_wall[COLLISION_STATIC_WALL_BOTTOM_DOOR], x, y, w, h);
 
-		for (int h = (left_pos / layer_width) + 1; h < (bottom_pos / layer_width); h++) {
-			map_index = layer_width * h + left_offset;
-			tile_instance_data_t* tile_inst = map_raw_data[MAP_TYPE_BLOCK] + map_index;
-			if (tile_inst->col_shape->b2body) {
-				g_stage_world->DestroyBody(tile_inst->col_shape->b2body);
-				tile_inst->col_shape->b2body = NULL;
-			}
+	collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_BOTTOM_L].col_shape, (COLLISION_GROUP_U_NONE | COLLISION_GROUP_NONE));
+	collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_BOTTOM_R].col_shape, (COLLISION_GROUP_U_NONE | COLLISION_GROUP_NONE));
+
+	// wall info (LEFT, RIGHT)
+	w = g_tile_width;
+	h = g_tile_height * MAP_HEIGHT_NUM_MAX;
+
+	// STAGE_MAP_FACE_W
+	int section_map_index_w = center_y * MAP_WIDTH_NUM_MAX /* + 0 */;
+	x = 0;
+	y = 0;
+	if ((0 <= stage_map_index_x - 1) && (g_stage_data->stage_map[stage_map_index - 1].section_id != STAGE_MAP_ID_IGNORE)) { // exist W side section
+		// setup new door
+		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w)->id != TILE_ID_DOOR) {
+			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w)->id = TILE_ID_DOOR;
+
+			tile_inst = map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w;
+			map_manager_create_tile_instance(tile_inst, 0, center_y, true);
 		}
-	}
-
-	// right
-	bool right_found = false;
-	connected_region = 0;
-	int right_offset = right_pos % layer_width;
-	for (int h = 0; h < layer_height; h++) {
-		map_index = layer_width * h + right_offset;
-		tile_instance_data_t* tile_inst = map_raw_data[MAP_TYPE_BLOCK] + map_index;
-
-		int tile = tile_inst->id;
-		if (tile && tile_inst->col_shape && tile_inst->col_shape->b2body) {
-			connected_region += 1;
-		}
+		// already set door
 		else {
-			if (connected_region >= 3) {
-				right_found = true;
-				break;
-			}
+			// do nothing
 		}
 	}
 
-	if (connected_region >= 3) {
-		tile_instance_data_t* tile_inst1 = map_raw_data[MAP_TYPE_BLOCK] + right_pos;
-		tile_instance_data_t* tile_inst2 = map_raw_data[MAP_TYPE_BLOCK] + right_pos + (connected_region - 1) * layer_width;
-		map_wall[COLLISION_STATIC_WALL_RIGHT].type = UNIT_TYPE_TILE;
-		map_wall[COLLISION_STATIC_WALL_RIGHT].tile_type = TILE_TYPE_INSTANCE;
-		map_wall[COLLISION_STATIC_WALL_RIGHT].col_shape = NULL; // dummy
-		collision_manager_create_static_wall(COLLISION_STATIC_WALL_RIGHT, &map_wall[COLLISION_STATIC_WALL_RIGHT], tile_inst1->col_shape->b2body, tile_inst2->col_shape->b2body);
+	map_wall[COLLISION_STATIC_WALL_LEFT_DOOR].type = UNIT_TYPE_TILE;
+	map_wall[COLLISION_STATIC_WALL_LEFT_DOOR].tile_type = TILE_TYPE_INSTANCE;
+	map_wall[COLLISION_STATIC_WALL_LEFT_DOOR].col_shape = collision_manager_create_static_wall(COLLISION_STATIC_WALL_LEFT_DOOR, &map_wall[COLLISION_STATIC_WALL_LEFT_DOOR], x, y, w, h);
 
-		for (int h = (right_pos / layer_width) + 1; h < (right_pos / layer_width) + connected_region - 1; h++) {
-			map_index = layer_width * h + right_offset;
-			tile_instance_data_t* tile_inst = map_raw_data[MAP_TYPE_BLOCK] + map_index;
-			if (tile_inst->col_shape->b2body) {
-				g_stage_world->DestroyBody(tile_inst->col_shape->b2body);
-				tile_inst->col_shape->b2body = NULL;
-			}
+	collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_LEFT_U].col_shape, (COLLISION_GROUP_U_NONE | COLLISION_GROUP_NONE));
+	collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_LEFT_D].col_shape, (COLLISION_GROUP_U_NONE | COLLISION_GROUP_NONE));
+
+	// STAGE_MAP_FACE_E
+	int section_map_index_e = center_y * MAP_WIDTH_NUM_MAX + (MAP_WIDTH_NUM_MAX - 1);
+	x = (MAP_WIDTH_NUM_MAX - 1) * g_tile_width;
+	//y = 0;
+	if ((stage_map_index_x + 1 < STAGE_MAP_WIDTH_NUM) && (g_stage_data->stage_map[stage_map_index + 1].section_id != STAGE_MAP_ID_IGNORE)) { // exist E side section
+		// setup new door
+		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e)->id != TILE_ID_DOOR) {
+			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e)->id = TILE_ID_DOOR;
+
+			tile_inst = map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e;
+			map_manager_create_tile_instance(tile_inst, (MAP_WIDTH_NUM_MAX - 1), center_y, true);
 		}
-	}
-
-	// bottom
-	bool bottom_found = false;
-	connected_region = 0;
-	map_index = bottom_pos;
-	for (int w = 0; w < layer_width; w++) {
-		tile_instance_data_t* tile_inst = map_raw_data[MAP_TYPE_BLOCK] + map_index;
-
-		int tile = tile_inst->id;
-		if (tile && tile_inst->col_shape && tile_inst->col_shape->b2body) {
-			connected_region += 1;
-		}
+		// already set door
 		else {
-			if (connected_region >= 3) {
-				bottom_found = true;
-				break;
-			}
-		}
-		map_index++;
-	}
-
-	if (connected_region >= 3) {
-		tile_instance_data_t* tile_inst1 = map_raw_data[MAP_TYPE_BLOCK] + bottom_pos;
-		tile_instance_data_t* tile_inst2 = map_raw_data[MAP_TYPE_BLOCK] + bottom_pos + (connected_region - 1);
-		map_wall[COLLISION_STATIC_WALL_BOTTOM].type = UNIT_TYPE_TILE;
-		map_wall[COLLISION_STATIC_WALL_BOTTOM].tile_type = TILE_TYPE_INSTANCE;
-		map_wall[COLLISION_STATIC_WALL_BOTTOM].col_shape = NULL; // dummy
-		collision_manager_create_static_wall(COLLISION_STATIC_WALL_BOTTOM, &map_wall[COLLISION_STATIC_WALL_BOTTOM], tile_inst1->col_shape->b2body, tile_inst2->col_shape->b2body);
-
-		for (map_index = bottom_pos + 1; map_index < bottom_pos + (connected_region - 1); map_index++) {
-			tile_instance_data_t* tile_inst = map_raw_data[MAP_TYPE_BLOCK] + map_index;
-			if (tile_inst->col_shape->b2body) {
-				g_stage_world->DestroyBody(tile_inst->col_shape->b2body);
-				tile_inst->col_shape->b2body = NULL;
-			}
+			// do nothing
 		}
 	}
+
+	map_wall[COLLISION_STATIC_WALL_RIGHT_DOOR].type = UNIT_TYPE_TILE;
+	map_wall[COLLISION_STATIC_WALL_RIGHT_DOOR].tile_type = TILE_TYPE_INSTANCE;
+	map_wall[COLLISION_STATIC_WALL_RIGHT_DOOR].col_shape = collision_manager_create_static_wall(COLLISION_STATIC_WALL_RIGHT_DOOR, &map_wall[COLLISION_STATIC_WALL_RIGHT_DOOR], x, y, w, h);
+
+	collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_RIGHT_U].col_shape, (COLLISION_GROUP_U_NONE | COLLISION_GROUP_NONE));
+	collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_RIGHT_D].col_shape, (COLLISION_GROUP_U_NONE | COLLISION_GROUP_NONE));
+}
+
+static std::string go_next_path = "units/trap/go_next/go_next.unit";
+void map_manager_open_door()
+{
+	// enable wall
+	int map_maskBits = COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_ENEMY | COLLISION_GROUP_MASK_ITEMS | COLLISION_GROUP_MASK_PLAYER_BULLET | COLLISION_GROUP_MASK_ENEMY_BULLET;
+
+	// section info
+	int center_x = MAP_WIDTH_NUM_MAX / 2;
+	int center_y = MAP_HEIGHT_NUM_MAX / 2;
+
+	// clear door
+	int section_map_index_n = /* 0 * MAP_WIDTH_NUM_MAX + */ center_x;
+	int x = center_x * g_tile_width;
+	int y = 0;
+	if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n)->id == TILE_ID_DOOR) {
+		(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n)->id = TILE_ID_NONE;
+		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n);
+
+		collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_TOP_L].col_shape, map_maskBits);
+		collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_TOP_R].col_shape, map_maskBits);
+		collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_TOP_DOOR].col_shape, (COLLISION_GROUP_U_NONE | COLLISION_GROUP_NONE));
+
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
+		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_N;
+	}
+
+	int section_map_index_s = (MAP_HEIGHT_NUM_MAX - 1) * MAP_WIDTH_NUM_MAX + center_x;
+	//x = center_x * g_tile_width;
+	y = (MAP_HEIGHT_NUM_MAX - 1) * g_tile_height;
+	if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s)->id == TILE_ID_DOOR) {
+		(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s)->id = TILE_ID_NONE;
+		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s);
+
+		collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_BOTTOM_L].col_shape, map_maskBits);
+		collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_BOTTOM_R].col_shape, map_maskBits);
+		collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_BOTTOM_DOOR].col_shape, (COLLISION_GROUP_U_NONE | COLLISION_GROUP_NONE));
+
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
+		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_S;
+	}
+
+	int section_map_index_w = center_y * MAP_WIDTH_NUM_MAX /* + 0 */;
+	x = 0;
+	y = center_y * g_tile_height;
+	if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w)->id == TILE_ID_DOOR) {
+		(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w)->id = TILE_ID_NONE;
+		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w);
+
+		collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_LEFT_U].col_shape, map_maskBits);
+		collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_LEFT_D].col_shape, map_maskBits);
+		collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_LEFT_DOOR].col_shape, (COLLISION_GROUP_U_NONE | COLLISION_GROUP_NONE));
+
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
+		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_W;
+	}
+
+	int section_map_index_e = center_y * MAP_WIDTH_NUM_MAX + (MAP_WIDTH_NUM_MAX - 1);
+	x = (MAP_WIDTH_NUM_MAX - 1) * g_tile_width;
+	//y = center_y * g_tile_height;
+	if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e)->id == TILE_ID_DOOR) {
+		(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e)->id = TILE_ID_NONE;
+		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e);
+
+		collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_RIGHT_U].col_shape, map_maskBits);
+		collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_RIGHT_D].col_shape, map_maskBits);
+		collision_manager_set_filter(map_wall[COLLISION_STATIC_WALL_RIGHT_DOOR].col_shape, (COLLISION_GROUP_U_NONE | COLLISION_GROUP_NONE));
+
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
+		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_E;
+	}
+}
+
+void map_manager_backup_to_section_map()
+{
+	int stage_map_index = g_stage_data->current_stage_map_index;
+	for (int tile_type = 0; tile_type < MAP_TYPE_END; tile_type++) {
+		for (int i = 0; i < (MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX); i++) {
+			g_stage_data->stage_map[stage_map_index].section_map[tile_type][i] = (map_raw_data[tile_type] + i)->id;
+		}
+	}
+}
+
+void map_manager_load_section_map()
+{
+	int stage_map_index = g_stage_data->current_stage_map_index;
+	for (int tile_type = 0; tile_type < MAP_TYPE_END; tile_type++) {
+		for (int i = 0; i < (MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX); i++) {
+			(map_raw_data[tile_type] + i)->id = g_stage_data->stage_map[stage_map_index].section_map[tile_type][i];
+		}
+	}
+
+	// create map_raw_data[]->* from tile_tex[map_raw_data[]->id]
+	map_manager_create_instance();
 }
 
 void map_manager_break_block(int x, int y, int w /* block */, int h /* block */) {
@@ -519,10 +762,9 @@ void map_manager_break_block(int x, int y, int w /* block */, int h /* block */)
 			map_index++;
 		}
 	}
-
 }
 
-int map_manager_load_tile(std::string path, tile_data_t* tile)
+static int map_manager_load_tile(std::string path, tile_data_t* tile)
 {
 	bool read_flg[TILE_TAG_END] = { false };
 
@@ -774,6 +1016,9 @@ int map_manager_load(std::string path)
 				read_flg[MAP_TAG_LAYER] = true;
 				std::string layer_element = line.substr(seek_index, line.size() - seek_index);
 				load_layer(layer_element, layer_name, &layer_width, &layer_height);
+				if ((layer_width != MAP_WIDTH_NUM_MAX) || (layer_height != MAP_HEIGHT_NUM_MAX)) {
+					LOG_ERROR("ERROR: map_manager_load %d x %d\n", layer_width, layer_height);
+				}
 				g_map_x_max = layer_width;
 				g_map_y_max = layer_height;
 				read_flg[MAP_TAG_LAYER] = false;
@@ -782,7 +1027,7 @@ int map_manager_load(std::string path)
 
 			if (line.substr(seek_index, 6) == "<data ") {
 				read_flg[MAP_TAG_DATA] = true;
-				size_t map_size = (size_t)layer_width * layer_height;
+				size_t map_size = (size_t)(MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX);
 				if (layer_name == "1") {
 					map_raw_data[MAP_TYPE_FIELD] = new tile_instance_data_t[map_size];
 					read_tile_type = MAP_TYPE_FIELD;
@@ -824,25 +1069,66 @@ int map_manager_load(std::string path)
 		return 1;
 	}
 
-	// load *.tile
-	std::string tile_files = g_base_path + "data/" + game_utils_upper_folder(path) + "/*.tile";
-	WIN32_FIND_DATAA find_file_data;
-	HANDLE h_find = FindFirstFileA(tile_files.c_str(), &find_file_data);
-	if (h_find == INVALID_HANDLE_VALUE) {
-		LOG_ERROR("map_manager_load FindFirstFileA() error\n", path.c_str());
+	return 0;
+}
+
+static int map_manager_load_data_element(std::string path)
+{
+	std::string layer_name = "";
+	int read_tile_type_ = -1;
+
+	bool read_flg[MAP_TAG_END] = { false };
+
+	std::ifstream inFile(g_base_path + "data/" + path);
+	if (inFile.is_open()) {
+		std::string line;
+		while (std::getline(inFile, line)) {
+			int seek_index = 0;
+			for (seek_index = 0; seek_index < line.size(); seek_index++) {
+				if (line[seek_index] != ' ') {
+					break;
+				}
+			}
+			if (seek_index == line.size()) continue; // not found string
+
+			if (line.substr(seek_index, 7) == "<layer ") {
+				read_flg[MAP_TAG_LAYER] = true;
+				std::string layer_element = line.substr(seek_index, line.size() - seek_index);
+
+				int dummy_width, dummy_height;
+				load_layer(layer_element, layer_name, &dummy_width, &dummy_height);
+				if ((dummy_width != MAP_WIDTH_NUM_MAX) || (layer_height != MAP_HEIGHT_NUM_MAX)) {
+					LOG_ERROR("ERROR: map_manager_load_data_element %d x %d\n", dummy_width, dummy_height);
+				}
+				read_flg[MAP_TAG_LAYER] = false;
+				continue;
+			}
+
+			if (line.substr(seek_index, 6) == "<data ") {
+				read_flg[MAP_TAG_DATA] = true;
+				if (layer_name == "1") {
+					read_tile_type_ = MAP_TYPE_FIELD;
+				}
+				else if (layer_name == "2") {
+					read_tile_type_ = MAP_TYPE_BLOCK;
+				}
+				read_tile_index = 0;
+				continue;
+			}
+			if (line.substr(seek_index, 7) == "</data>") {
+				read_flg[MAP_TAG_DATA] = false;
+				continue;
+			}
+			if (read_flg[MAP_TAG_DATA]) {
+				load_data_to_stage_data(line, read_tile_type_);
+			}
+		}
+		inFile.close();
+	}
+	else {
+		LOG_ERROR("map_manager_load_data_element %s error\n", path.c_str());
 		return 1;
 	}
-
-	do {
-		if (!(find_file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-			std::string filename = find_file_data.cFileName;
-			std::string index_str = filename.substr(0, filename.size() - 5);
-			int index = atoi(index_str.c_str());
-			map_manager_load_tile(game_utils_upper_folder(path) + "/" + filename, &tile_tex[index]);
-		}
-	} while (FindNextFile(h_find, &find_file_data) != 0);
-	FindClose(h_find);
-
 	return 0;
 }
 
@@ -1013,6 +1299,16 @@ static void load_data(std::string& line) {
 
 	for (int i = 0; i < int_list.size(); i++) {
 		(map_raw_data[read_tile_type] + read_tile_index)->id = int_list[i];
+		read_tile_index++;
+	}
+}
+
+static void load_data_to_stage_data(std::string& line, int tile_type) {
+	std::vector<int> int_list;
+	game_utils_split_conmma(line, int_list);
+
+	for (int i = 0; i < int_list.size(); i++) {
+		g_stage_data->stage_map[write_section_map_index].section_map[tile_type][read_tile_index] = (char)int_list[i];
 		read_tile_index++;
 	}
 }

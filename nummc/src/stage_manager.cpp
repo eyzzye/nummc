@@ -59,6 +59,11 @@ void stage_manager_init()
 	g_stage_data->result = STAGE_RESULT_NONE;
 	g_stage_data->next_load = STAGE_NEXT_LOAD_OFF;
 	g_stage_data->section_stat = SECTION_STAT_NONE;
+
+	memset(g_stage_data->stage_map, 0, sizeof(g_stage_data->stage_map));
+	for (int i = 0; i < LENGTH_OF(g_stage_data->stage_map); i++) {
+		g_stage_data->stage_map[i].section_id = STAGE_MAP_ID_IGNORE;
+	}
 }
 
 void stage_manager_unload()
@@ -143,6 +148,21 @@ int stage_manager_load(std::string path)
 	std::ifstream inFile(g_base_path + "data/" + path);
 	if (inFile.is_open()) {
 		std::string line;
+
+		// init section 0
+		{
+			current_section_data = new section_data_t();
+			current_section_data->id = 0;
+			current_section_data->section_type = SECTION_TYPE_NORMAL;
+			g_stage_data->section_list.push_back(current_section_data);
+			current_section_data->item_drop_rate = 4;
+			current_section_data->map_path = "map/common/n_empty.tmx";
+			current_section_data->bgm_path = "";
+			current_section_data->enemy_path = "";
+			current_section_data->trap_path = "";
+			current_section_data->items_path = "";
+		}
+
 		while (std::getline(inFile, line)) {
 			if (line == "") continue;
 			if (line[0] == '#') continue;
@@ -238,7 +258,13 @@ static void load_section(std::string& line) {
 	if (key == "section") {
 		current_section_data = new section_data_t();
 		current_section_data->id = atoi(value.c_str());
+		current_section_data->section_type = SECTION_TYPE_NORMAL;
 		g_stage_data->section_list.push_back(current_section_data);
+	}
+	if (key == "type") {
+		if (value == "BOSS") current_section_data->section_type = SECTION_TYPE_BOSS;
+		else if (value == "NORMAL") current_section_data->section_type = SECTION_TYPE_NORMAL;
+		else current_section_data->section_type = SECTION_TYPE_NONE;
 	}
 	if (key == "item_drop_rate") current_section_data->item_drop_rate = atoi(value.c_str());
 

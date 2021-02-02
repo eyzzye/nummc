@@ -49,6 +49,7 @@ items_path=scenes/stages/items/item3_3.dat
 
 [section]
 section=4
+type=BOSS
 item_drop_rate=4
 map_path=map/stage3/n_st3.tmx
 bgm_path=music/3.ogg

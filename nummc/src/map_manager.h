@@ -12,6 +12,9 @@
 #define TILE_BREAKABLE_FALSE  0
 #define TILE_BREAKABLE_TRUE   1
 
+#define TILE_ID_NONE  0
+#define TILE_ID_DOOR  5
+
 #define MAP_TYPE_FIELD   0
 #define MAP_TYPE_BLOCK   1
 #define MAP_TYPE_END     2
@@ -26,7 +29,6 @@ typedef struct _tile_instance_data_t tile_instance_data_t;
 typedef struct _map_data_t map_data_t;
 typedef struct _map_field_data_t map_field_data_t;
 typedef struct _map_block_data_t map_block_data_t;
-typedef struct _map_effect_data_t map_effect_data_t;
 
 //
 // Tile
@@ -85,10 +87,10 @@ struct _tile_instance_data_t {
 };
 
 //
-// Map
+// Map (section)
 //
 struct _map_data_t {
-	int type;        // NONE:0, FIELD:1, BLOCK:2, EFFECT:3
+	int type;        // FIELD:0, BLOCK:1
 	int id;          // map_id_end
 	void* obj;       // object address
 	int reserve0;
@@ -102,7 +104,7 @@ struct _map_data_t {
 };
 
 struct _map_field_data_t {
-	int type;        // FIELD:1
+	int type;        // FIELD:0
 	int id;          // map_id_end
 	void* obj;       // object address
 	int reserve0;
@@ -119,24 +121,7 @@ struct _map_field_data_t {
 };
 
 struct _map_block_data_t {
-	int type;        // BLOCK:2
-	int id;          // map_id_end
-	void* obj;       // object address
-	int reserve0;
-
-	map_data_t* prev;
-	map_data_t* next;
-	int reserv1;
-	int reserv2;
-
-	int layer;
-	int x;
-	int y;
-	tile_instance_data_t* map_raw_data;
-};
-
-struct _map_effect_data_t {
-	int type;        // EFFECT:3
+	int type;        // BLOCK:1
 	int id;          // map_id_end
 	void* obj;       // object address
 	int reserve0;
@@ -173,6 +158,12 @@ extern void map_manager_set_offset(int x, int y);
 #endif
 extern int map_manager_load(std::string path);
 extern shape_data* map_manager_get_col_shape(int x, int y);
+extern void map_manager_create_stage_map();
 extern void map_manager_create_instance();
+extern void map_manager_clear_all_instance();
 extern void map_manager_create_wall();
+extern void map_manager_create_door();
+extern void map_manager_open_door();
+extern void map_manager_backup_to_section_map();
+extern void map_manager_load_section_map();
 extern void map_manager_break_block(int x, int y, int w, int h);

@@ -184,6 +184,8 @@ int unit_manager_load_player_effects()
 		}
 		else {
 			player_base_effect[i].id = unit_manager_create_effect(0, 0, unit_manager_search_effect(effect_path[i]));
+			unit_effect_data_t* effect_data = unit_manager_get_effect(player_base_effect[i].id);
+			effect_data->clear_type = UNIT_EFFECT_CLEAR_TYPE_KEEP_ON_STAGE;
 			unit_manager_effect_set_anim_stat(player_base_effect[i].id, ANIM_STAT_FLAG_HIDE);
 		}
 	}
@@ -940,7 +942,12 @@ void unit_manager_player_trap(unit_trap_data_t* trap_data)
 		unit_manager_player_recovery(trap_data->hp);
 	}
 	else if (trap_data->group == UNIT_TRAP_GROUP_GATE) {
-		scene_play_next_stage();
+		if (trap_data->sub_id == UNIT_TRAP_GATE_ID_GOAL) {
+			scene_play_next_stage();
+		}
+		else if (trap_data->sub_id & UNIT_TRAP_GATE_ID_GO_NEXT) {
+			scene_play_next_section(trap_data->sub_id);
+		}
 	}
 	else if (trap_data->group == UNIT_TRAP_GROUP_DAMAGE) {
 		if (unit_manager_player_get_damage(-trap_data->base->hp) == 0) {
@@ -1020,6 +1027,13 @@ void unit_manager_player_move(float vec_x, float vec_y)
 	}
 
 	unit_manager_unit_move((unit_data_t*)&g_player, vec_x, vec_y, player_speed_rank[rank]);
+}
+
+void unit_manager_player_set_position(int x, int y) {
+	b2Vec2 new_pos = { PIX2MET(x), PIX2MET(y) };
+	g_player.col_shape->b2body->SetTransform(new_pos, 0.0f);
+	g_player.col_shape->x = (int)MET2PIX(g_player.col_shape->b2body->GetPosition().x);
+	g_player.col_shape->y = (int)MET2PIX(g_player.col_shape->b2body->GetPosition().y);
 }
 
 void unit_manager_player_update()

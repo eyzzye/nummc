@@ -17,20 +17,79 @@
 #define STAGE_NEXT_LOAD_OFF   0
 #define STAGE_NEXT_LOAD_ON    1
 
-#define SECTION_STAT_NONE       0
-#define SECTION_STAT_IDLE       1
-#define SECTION_STAT_ACTIVE     2
-#define SECTION_STAT_TERMINATE  3
-#define SECTION_STAT_NEXT_WAIT  4
-#define SECTION_STAT_END        5
+#define SECTION_TYPE_NONE       0
+#define SECTION_TYPE_BOSS       1
+#define SECTION_TYPE_NORMAL     2
+#define SECTION_TYPE_END        3
 
+#define SECTION_STAT_NONE              0
+#define SECTION_STAT_IDLE              1
+#define SECTION_STAT_ACTIVE            2
+#define SECTION_STAT_TERMINATE         3
+#define SECTION_STAT_DOOR_SELECT_WAIT  4
+#define SECTION_STAT_NEXT_WAIT         5
+#define SECTION_STAT_END               6
+
+#define SECTION_INDEX_START     0
 #define SECTION_TIMER_NEXT_WAIT_TIME  5000
+
+#define STAGE_MAP_WIDTH_NUM    9
+#define STAGE_MAP_HEIGHT_NUM   5
+#define STAGE_MAP_ID_IGNORE    (-1)
+
+#define STAGE_MAP_STAT_NONE    (0x00000000)
+#define STAGE_MAP_STAT_WIN     (0x00000001)
+#define STAGE_MAP_STAT_GOAL    (0x00000002)
+#define STAGE_MAP_STAT_HINT    (0x00000080)
+
+#define STAGE_MINI_MAP_ICON_NONE     0
+#define STAGE_MINI_MAP_ICON_TBOX     1
+#define STAGE_MINI_MAP_ICON_UNKNOWN  2
+#define STAGE_MINI_MAP_ICON_CHARGE   3
+#define STAGE_MINI_MAP_ICON_STOCK    4
+#define STAGE_MINI_MAP_ICON_HEART    5
+#define STAGE_MINI_MAP_ICON_BOM      6
+#define STAGE_MINI_MAP_ICON_ITEM     7
+#define STAGE_MINI_MAP_ICON_END      8
+
+// STAGE_MINI_MAP_ICON_FLAG
+// 0x 00 00 00 00
+//    |     |
+//    |     +-> section_type flag
+//    +-> item drop flag
+//
+#define STAGE_MINI_MAP_ICON_FLAG_NONE       0
+#define STAGE_MINI_MAP_ICON_FLAG_TYPE       (0x00000001)
+#define STAGE_MINI_MAP_ICON_FLAG_T_BOSS     (STAGE_MINI_MAP_ICON_FLAG_TYPE << (SECTION_TYPE_BOSS   - 1))
+#define STAGE_MINI_MAP_ICON_FLAG_T_NORMAL   (STAGE_MINI_MAP_ICON_FLAG_TYPE << (SECTION_TYPE_NORMAL - 1))
+
+#define STAGE_MINI_MAP_ICON_FLAG_DROP       (0x00010000)
+#define STAGE_MINI_MAP_ICON_FLAG_D_TBOX     (STAGE_MINI_MAP_ICON_FLAG_DROP << (STAGE_MINI_MAP_ICON_TBOX    - 1))
+#define STAGE_MINI_MAP_ICON_FLAG_D_UNKNOWN  (STAGE_MINI_MAP_ICON_FLAG_DROP << (STAGE_MINI_MAP_ICON_UNKNOWN - 1))
+#define STAGE_MINI_MAP_ICON_FLAG_D_CHARGE   (STAGE_MINI_MAP_ICON_FLAG_DROP << (STAGE_MINI_MAP_ICON_CHARGE  - 1))
+#define STAGE_MINI_MAP_ICON_FLAG_D_STOCK    (STAGE_MINI_MAP_ICON_FLAG_DROP << (STAGE_MINI_MAP_ICON_STOCK   - 1))
+#define STAGE_MINI_MAP_ICON_FLAG_D_HEART    (STAGE_MINI_MAP_ICON_FLAG_DROP << (STAGE_MINI_MAP_ICON_HEART   - 1))
+#define STAGE_MINI_MAP_ICON_FLAG_D_BOM      (STAGE_MINI_MAP_ICON_FLAG_DROP << (STAGE_MINI_MAP_ICON_BOM     - 1))
+#define STAGE_MINI_MAP_ICON_FLAG_D_ITEM     (STAGE_MINI_MAP_ICON_FLAG_DROP << (STAGE_MINI_MAP_ICON_ITEM    - 1))
+
+// clock-wise
+#define STAGE_MAP_FACE_W       0
+#define STAGE_MAP_FACE_N       1
+#define STAGE_MAP_FACE_E       2
+#define STAGE_MAP_FACE_S       3
+#define STAGE_MAP_FACE_END     4
+
+#define STAGE_MAP_FLAG_FACE_W  (0x01 << STAGE_MAP_FACE_W)
+#define STAGE_MAP_FLAG_FACE_N  (0x01 << STAGE_MAP_FACE_N)
+#define STAGE_MAP_FLAG_FACE_E  (0x01 << STAGE_MAP_FACE_E)
+#define STAGE_MAP_FLAG_FACE_S  (0x01 << STAGE_MAP_FACE_S)
 
 typedef struct _BGM_data_t BGM_data_t;
 typedef struct _items_data_t items_data_t;
 typedef struct _trap_data_t trap_data_t;
 typedef struct _enemy_data_t enemy_data_t;
 typedef struct _section_data_t section_data_t;
+typedef struct _stage_map_data_t stage_map_data_t;
 typedef struct _stage_data_t stage_data_t;
 
 struct _BGM_data_t {
@@ -63,6 +122,7 @@ struct _enemy_data_t {
 
 struct _section_data_t {
 	int id;
+	int section_type;  // SECTION_TYPE_XXX
 	int item_drop_rate;
 
 	std::string map_path;
@@ -84,6 +144,15 @@ struct _section_data_t {
 	std::vector<int> goal_items_id_list;
 };
 
+struct _stage_map_data_t {
+	int section_id;
+	int section_type;           // copy from section_data_t section_type
+	int stat;                   // none/win/goal/hint
+	int mini_map_icon;          // STAGE_MINI_MAP_ICON_FLAG_D_XXX | STAGE_MINI_MAP_ICON_FLAG_T_XXX
+	//item_stock_t* item_stock;   // node head
+	char section_map[MAP_TYPE_END][MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX];
+};
+
 struct _stage_data_t {
 	std::string id;
 	int stat;
@@ -92,6 +161,8 @@ struct _stage_data_t {
 
 	int start_x;
 	int start_y;
+	int section_start_x;
+	int section_start_y;
 
 	int goal_x;
 	int goal_y;
@@ -112,6 +183,10 @@ struct _stage_data_t {
 	int drop_judge_count;
 	section_data_t* current_section_data;
 	int current_section_index;
+
+	// stage map
+	stage_map_data_t stage_map[STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM];
+	int current_stage_map_index;
 };
 
 extern void stage_manager_init();

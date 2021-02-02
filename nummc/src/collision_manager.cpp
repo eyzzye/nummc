@@ -33,7 +33,7 @@ static shape_data* dynamic_shape_list_rnd_end;
 static Uint32 dynamic_shape_id_end;
 
 // static wall
-static b2Body* static_wall[COLLISION_STATIC_WALL_NUM];
+static b2Body* static_wall_top;
 
 #ifdef _COLLISION_ENABLE_BOX_2D_
 b2World* g_stage_world;
@@ -233,11 +233,7 @@ int collision_manager_init() {
 	g_stage_world = new b2World(gravity);
 	col_listener = new CollisionListener();
 	g_stage_world->SetContactListener(col_listener);
-
-	static_wall[COLLISION_STATIC_WALL_TOP]    = NULL;
-	static_wall[COLLISION_STATIC_WALL_LEFT]   = NULL;
-	static_wall[COLLISION_STATIC_WALL_RIGHT]  = NULL;
-	static_wall[COLLISION_STATIC_WALL_BOTTOM] = NULL;
+	static_wall_top = NULL;
 #endif
 
 	static_shape_id_end = 0;
@@ -702,7 +698,8 @@ static void set_filter(int group, b2Filter& filter)
 	int group_low = LOWER_BIT(group);
 	int group_high = UPPER_BIT(group);
 	if (group_low == COLLISION_GROUP_NONE) {
-		filter.groupIndex = COLLISION_B2GROUP_NEVER_COLLIDE;
+		filter.categoryBits = COLLISION_GROUP_MASK_NONE;
+		filter.maskBits = (COLLISION_GROUP_U_NONE | COLLISION_GROUP_NONE);
 	}
 	else if (group_low == COLLISION_GROUP_PLAYER) {
 		filter.categoryBits = COLLISION_GROUP_MASK_PLAYER;
@@ -891,10 +888,10 @@ shape_data* collision_manager_create_dynamic_shape(
 		}
 
 		if (unit_data_base->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN) {
-			if (static_wall[COLLISION_STATIC_WALL_TOP]) {
+			if (static_wall_top) {
 				b2RevoluteJointDef rjd;
 				b2Vec2 rjd_center(PIX2MET(col_box_shape->x + unit_data_base->col_shape->joint_x), PIX2MET(col_box_shape->y + +unit_data_base->col_shape->joint_y));
-				rjd.Initialize(static_wall[COLLISION_STATIC_WALL_TOP], col_box_shape->b2body, rjd_center);
+				rjd.Initialize(static_wall_top, col_box_shape->b2body, rjd_center);
 				rjd.lowerAngle = 0.0f;
 				rjd.upperAngle = 0.0f;
 				rjd.enableLimit = true;
@@ -905,10 +902,10 @@ shape_data* collision_manager_create_dynamic_shape(
 			}
 		}
 		else if (unit_data_base->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) {
-			if (static_wall[COLLISION_STATIC_WALL_TOP]) {
+			if (static_wall_top) {
 				b2RevoluteJointDef rjd;
 				b2Vec2 rjd_center(PIX2MET(col_box_shape->x + unit_data_base->col_shape->joint_x), PIX2MET(col_box_shape->y + +unit_data_base->col_shape->joint_y));
-				rjd.Initialize(static_wall[COLLISION_STATIC_WALL_TOP], col_box_shape->b2body, rjd_center);
+				rjd.Initialize(static_wall_top, col_box_shape->b2body, rjd_center);
 				rjd.motorSpeed = ((float)unit_data_base->col_shape->joint_val1 /1000.0f) * b2_pi;
 				rjd.maxMotorTorque = 10000.0f;
 				rjd.enableMotor = true;
@@ -990,10 +987,10 @@ shape_data* collision_manager_create_dynamic_shape(
 		}
 
 		if (unit_data_base->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN) {
-			if (static_wall[COLLISION_STATIC_WALL_TOP]) {
+			if (static_wall_top) {
 				b2RevoluteJointDef rjd;
 				b2Vec2 rjd_center(PIX2MET(col_round_shape->x + unit_data_base->col_shape->joint_x), PIX2MET(col_round_shape->y + +unit_data_base->col_shape->joint_y));
-				rjd.Initialize(static_wall[COLLISION_STATIC_WALL_TOP], col_round_shape->b2body, rjd_center);
+				rjd.Initialize(static_wall_top, col_round_shape->b2body, rjd_center);
 				rjd.lowerAngle = 0.0f;
 				rjd.upperAngle = 0.0f;
 				rjd.enableLimit = true;
@@ -1004,10 +1001,10 @@ shape_data* collision_manager_create_dynamic_shape(
 			}
 		}
 		else if (unit_data_base->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) {
-			if (static_wall[COLLISION_STATIC_WALL_TOP]) {
+			if (static_wall_top) {
 				b2RevoluteJointDef rjd;
 				b2Vec2 rjd_center(PIX2MET(col_round_shape->x + unit_data_base->col_shape->joint_x), PIX2MET(col_round_shape->y + +unit_data_base->col_shape->joint_y));
-				rjd.Initialize(static_wall[COLLISION_STATIC_WALL_TOP], col_round_shape->b2body, rjd_center);
+				rjd.Initialize(static_wall_top, col_round_shape->b2body, rjd_center);
 				rjd.motorSpeed = ((float)unit_data_base->col_shape->joint_val1 / 1000.0f) * b2_pi;
 				rjd.maxMotorTorque = 10000.0f;
 				rjd.enableMotor = true;
@@ -1024,64 +1021,40 @@ shape_data* collision_manager_create_dynamic_shape(
 	return NULL;
 }
 
-void collision_manager_create_static_wall(int wall_type, void* unit_data, b2Body* top_left, b2Body* right_bottom)
+shape_data* collision_manager_create_static_wall(int wall_type, void* unit_data, int x, int y, int w, int h)
 {
-#ifdef _COLLISION_ENABLE_BOX_2D_
-	float x = 0.0f, y = 0.0f;
-	b2Fixture* tmp_list = top_left->GetFixtureList();
-	if (tmp_list) {
-		b2Shape* tmp_shape = tmp_list->GetShape();
-		if (tmp_shape) {
-			if (tmp_shape->m_type == b2Shape::e_polygon) {
-				b2PolygonShape* polygon = (b2PolygonShape*)tmp_shape;
-				x = polygon->m_vertices[0].x;
-				y = polygon->m_vertices[0].y;
-				for (int i = 1; i < polygon->m_count; i++) {
-					if (polygon->m_vertices[i].x < x) x = polygon->m_vertices[i].x;
-					if (polygon->m_vertices[i].y < y) y = polygon->m_vertices[i].y;
-				}
-			}
-		}
-		x = top_left->GetPosition().x + x;
-		y = top_left->GetPosition().y + y;
-	}
+	shape_box_data* new_shape = collision_manager_new_shape_box(COLLISION_ID_STATIC_SHAPE);
+	new_shape->group = COLLISION_GROUP_MAP;
+	new_shape->stat = COLLISION_STAT_ENABLE;
+	new_shape->obj = unit_data;
+	new_shape->offset_x = 0;
+	new_shape->offset_y = 0;
+	new_shape->x = x;
+	new_shape->y = y;
+	new_shape->w = w;
+	new_shape->h = h;
 
-	float end_x = 0.0f, end_y = 0.0f;
-	tmp_list = right_bottom->GetFixtureList();
-	if (tmp_list) {
-		b2Shape* tmp_shape = tmp_list->GetShape();
-		if (tmp_shape) {
-			if (tmp_shape->m_type == b2Shape::e_polygon) {
-				b2PolygonShape* polygon = (b2PolygonShape*)tmp_shape;
-				end_x = polygon->m_vertices[0].x;
-				end_y = polygon->m_vertices[0].y;
-				for (int i = 1; i < polygon->m_count; i++) {
-					if (end_x < polygon->m_vertices[i].x) end_x = polygon->m_vertices[i].x;
-					if (end_y < polygon->m_vertices[i].y) end_y = polygon->m_vertices[i].y;
-				}
-			}
-		}
-		end_x = right_bottom->GetPosition().x + end_x;
-		end_y = right_bottom->GetPosition().y + end_y;
-	}
-	float w = end_x - x;
-	float h = end_y - y;
+	float center_x = PIX2MET(new_shape->offset_x + new_shape->w / 2.0f);
+	float center_y = PIX2MET(new_shape->offset_y + new_shape->h / 2.0f);
 
 	b2BodyDef bodyDef;
 	bodyDef.userData = unit_data;
-	bodyDef.position.Set(x + w / 2.0f, y + h / 2.0f);
-	static_wall[wall_type] = g_stage_world->CreateBody(&bodyDef);
+	bodyDef.position.Set(PIX2MET(new_shape->x), PIX2MET(new_shape->y));
+	new_shape->b2body = g_stage_world->CreateBody(&bodyDef);
 
 	b2PolygonShape staticBox;
-	staticBox.SetAsBox(w / 2.0f, h / 2.0f);
+	b2Vec2 center_pos(center_x, center_y);
+	staticBox.SetAsBox(PIX2MET(new_shape->w / 2.0f), PIX2MET(new_shape->h / 2.0f), center_pos, 0.0f);
 
 	b2FixtureDef fixtureDef;
 	fixtureDef.shape = &staticBox;
 	fixtureDef.density = 1.0f;
 	fixtureDef.friction = 0.3f;
-	set_filter(COLLISION_GROUP_MAP, fixtureDef.filter);
-	static_wall[wall_type]->CreateFixture(&fixtureDef);
-#endif
+	set_filter(new_shape->group, fixtureDef.filter);
+	new_shape->b2body->CreateFixture(&fixtureDef);
+	if (wall_type == COLLISION_STATIC_WALL_TOP_L) static_wall_top = new_shape->b2body;
+
+	return (shape_data*)new_shape;
 }
 
 void collision_manager_set_face(shape_data* shape, shape_data* base_shape, int img_w, int img_h, int new_face)
@@ -1240,6 +1213,16 @@ void collision_manager_set_filter(shape_data* shape, const b2Filter& filter) {
 	}
 }
 
+void collision_manager_set_filter(shape_data* shape, int maskBits, int categoryBits, int groupIndex) {
+	b2Filter new_filter;
+	const void* old_filter = collision_manager_get_filter(shape);
+	memcpy(&new_filter, old_filter, sizeof(b2Filter));
+	if (maskBits != COLLISION_B2MASK_IGNORE) new_filter.maskBits = maskBits;
+	if (categoryBits != COLLISION_B2CATEGORY_IGNORE) new_filter.categoryBits = categoryBits;
+	if (groupIndex != COLLISION_B2GROUP_IGNORE) new_filter.groupIndex = groupIndex;
+	collision_manager_set_filter(shape, new_filter);
+}
+
 int collision_manager_set_moter_speed(shape_data* shape, float speed) {
 	int ret = -1;
 
@@ -1264,10 +1247,10 @@ int collision_manager_set_joint(void* unit_data) {
 	unit_data_t* unit_data_base = ((unit_data_t*)unit_data)->base;
 
 	if (shape->joint_type == COLLISION_JOINT_TYPE_PIN) {
-		if (static_wall[COLLISION_STATIC_WALL_TOP]) {
+		if (static_wall_top) {
 			b2RevoluteJointDef rjd;
 			b2Vec2 rjd_center(PIX2MET(shape->x + unit_data_base->col_shape->joint_x), PIX2MET(shape->y + +unit_data_base->col_shape->joint_y));
-			rjd.Initialize(static_wall[COLLISION_STATIC_WALL_TOP], shape->b2body, rjd_center);
+			rjd.Initialize(static_wall_top, shape->b2body, rjd_center);
 			rjd.lowerAngle = 0.0f;
 			rjd.upperAngle = 0.0f;
 			rjd.enableLimit = true;

@@ -184,6 +184,7 @@ static void load_trap_unit(std::string& line)
 
 	if (value == "") value = "0";
 	if (key == "hp") trap_base[trap_base_index_end].hp = atoi(value.c_str());
+	if (key == "sub_id") trap_base[trap_base_index_end].sub_id = atoi(value.c_str());
 	if (key == "group") {
 		if (value == "NONE") {
 			trap_base[trap_base_index_end].group = UNIT_TRAP_GROUP_NONE;

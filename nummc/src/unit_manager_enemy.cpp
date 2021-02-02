@@ -578,6 +578,15 @@ int unit_manager_create_enemy(int x, int y, int face, int base_index)
 	return ret;
 }
 
+void unit_manager_clear_all_enemy()
+{
+	for (int i = 0; i < UNIT_ENEMY_LIST_SIZE; i++) {
+		if (enemy[i].type != UNIT_TYPE_ENEMY) continue;
+		unit_manager_clear_enemy(&enemy[i]);
+	}
+	enemy_index_end = 0;
+}
+
 void unit_manager_clear_enemy(unit_enemy_data_t* enemy)
 {
 	enemy->type = UNIT_TYPE_NONE;
@@ -607,7 +616,7 @@ int unit_manager_load_enemy_effects(int unit_id, int base_w)
 {
 	int base_size_index = animation_manager_get_base_size_index(base_w);
 
-	for (int i = 0; i <= UNIT_EFFECT_ID_E_END; i++) {
+	for (int i = 0; i < UNIT_EFFECT_ID_E_END; i++) {
 		memcpy(&enemy_effect[unit_id][i], &enemy_effect_default[i], sizeof(unit_effect_stat_data_t));
 		if (enemy_effect_path[base_size_index][i] == "") {
 			enemy_effect[unit_id][i].id = UNIT_EFFECT_ID_IGNORE;

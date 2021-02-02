@@ -7,7 +7,7 @@
 #include "Box2D/Box2d.h"
 
 #define PIX2MET(x)  ((x)/20.0f)
-#define MET2PIX(x)  ((x)*20.0f)
+#define MET2PIX(x)  ((x)*20.0f + 0.5f)
 #endif
 
 #define COLLISION_ID_STATIC_SHAPE      (0x01000000)
@@ -34,10 +34,11 @@
 #define COLLISION_GROUP_END            8
 
 // GROUP UPPER_BIT
-#define COLLISION_GROUP_U_NONE         (0x00000000)
-#define COLLISION_GROUP_U_THROUGH_MAP  (0x00010000)
+#define COLLISION_GROUP_U_NONE              (0x00000000)
+#define COLLISION_GROUP_U_THROUGH_MAP       (0x00010000)
 
 // GROUP MASK (box2d)
+#define COLLISION_GROUP_MASK_NONE           (0x00000001 << COLLISION_GROUP_NONE)
 #define COLLISION_GROUP_MASK_PLAYER         (0x00000001 << COLLISION_GROUP_PLAYER)
 #define COLLISION_GROUP_MASK_ENEMY          (0x00000001 << COLLISION_GROUP_ENEMY)
 #define COLLISION_GROUP_MASK_ITEMS          (0x00000001 << COLLISION_GROUP_ITEMS)
@@ -46,8 +47,9 @@
 #define COLLISION_GROUP_MASK_MAP            (0x00000001 << COLLISION_GROUP_MAP)
 #define COLLISION_GROUP_MASK_TRAP           (0x00000001 << COLLISION_GROUP_TRAP)
 
-#define COLLISION_B2GROUP_DEFAULT        (0)
-#define COLLISION_B2GROUP_NEVER_COLLIDE  (-1)
+#define COLLISION_B2CATEGORY_IGNORE         (0xFFFF8000)  // unsigned
+#define COLLISION_B2MASK_IGNORE             (0xFFFF8000)  // unsigned
+#define COLLISION_B2GROUP_IGNORE            (0xFFFF8000)  // signed
 
 #define COLLISION_JOINT_TYPE_NONE            0
 #define COLLISION_JOINT_TYPE_PIN             1
@@ -57,11 +59,21 @@
 #define COLLISION_STAT_DISABLE         0
 #define COLLISION_STAT_ENABLE          1
 
-#define COLLISION_STATIC_WALL_TOP     (0)
-#define COLLISION_STATIC_WALL_LEFT    (1)
-#define COLLISION_STATIC_WALL_RIGHT   (2)
-#define COLLISION_STATIC_WALL_BOTTOM  (3)
-#define COLLISION_STATIC_WALL_NUM     (4)
+// WALL
+#define COLLISION_STATIC_WALL_TOP_L         0
+#define COLLISION_STATIC_WALL_TOP_R         1
+#define COLLISION_STATIC_WALL_BOTTOM_L      2
+#define COLLISION_STATIC_WALL_BOTTOM_R      3
+#define COLLISION_STATIC_WALL_LEFT_U        4
+#define COLLISION_STATIC_WALL_LEFT_D        5
+#define COLLISION_STATIC_WALL_RIGHT_U       6
+#define COLLISION_STATIC_WALL_RIGHT_D       7
+// DOOR
+#define COLLISION_STATIC_WALL_TOP_DOOR      8
+#define COLLISION_STATIC_WALL_BOTTOM_DOOR   9
+#define COLLISION_STATIC_WALL_LEFT_DOOR    10
+#define COLLISION_STATIC_WALL_RIGHT_DOOR   11
+#define COLLISION_STATIC_WALL_NUM          12
 
 typedef struct _shape_data shape_data;
 typedef struct _shape_box_data shape_box_data;
@@ -220,7 +232,7 @@ extern shape_data* collision_manager_create_static_shape(shape_data* base_shape,
 	int* x = NULL, int* y = NULL, float* vec_x = NULL, float* vec_y = NULL, int* face = NULL);
 extern shape_data* collision_manager_create_dynamic_shape(shape_data* base_shape, void* unit_data, int img_w, int img_h,
 	int* x = NULL, int* y = NULL, float* vec_x = NULL, float* vec_y = NULL, int* face = NULL);
-extern void collision_manager_create_static_wall(int wall_type, void* unit_data, b2Body* top_left, b2Body* right_bottom);
+extern shape_data* collision_manager_create_static_wall(int wall_type, void* unit_data, int x, int y, int w, int h);
 
 extern int collision_manager_set_group(shape_data* shape, std::string& group);
 extern int collision_manager_set_group_option(shape_data* shape, std::string& group_option);
@@ -229,6 +241,7 @@ extern int collision_manager_set_mass(shape_data* shape, float weight);
 extern void collision_manager_set_angle(shape_data* shape, float angle /* rad */);
 extern const void* collision_manager_get_filter(shape_data* shape);
 extern void collision_manager_set_filter(shape_data* shape, const b2Filter& filter);
+extern void collision_manager_set_filter(shape_data* shape, int maskBits = COLLISION_B2MASK_IGNORE, int categoryBits = COLLISION_B2CATEGORY_IGNORE, int groupIndex = COLLISION_B2GROUP_IGNORE);
 extern int collision_manager_set_moter_speed(shape_data* shape, float speed);
 extern int collision_manager_set_joint(void* unit_data);
 extern int collision_manager_delete_joint(shape_data* shape);

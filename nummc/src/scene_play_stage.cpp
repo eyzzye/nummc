@@ -38,7 +38,7 @@ static void main_event_next_load();
 static void main_event_gameover();
 static void dialog_message_ok();
 static void section_init();
-static void clear_section_unit();
+static void clear_section();
 static void play_current_bgm(bool on_off);
 static void drop_goal_items();
 #ifdef _MAP_OFFSET_ENABLE_
@@ -67,6 +67,7 @@ static bool reload_player;
 
 // goal info
 static std::string goal_path = "units/trap/goal/goal.unit";
+static std::string go_next_path = "units/trap/go_next/go_next.unit";
 static std::string smoke_effect_path = "units/effect/smoke/smoke.unit";
 static int game_next_stage_dark_alpha;
 
@@ -83,11 +84,110 @@ static void key_event(SDL_Event* e) {
 	game_key_event_set(e);
 	game_mouse_event_set(e);
 }
+
+static void main_event_section_boss() {
+	if (g_stage_data->section_stat == SECTION_STAT_ACTIVE) {
+		// create trap (already have get goal)
+		if (g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_GOAL) {
+			// unset SPAWN stat
+			int unit_id = unit_manager_create_trap(g_stage_data->goal_x, g_stage_data->goal_y, unit_manager_search_trap(goal_path));
+			unit_manager_trap_set_anim_stat(unit_id, ANIM_STAT_FLAG_IDLE);
+		}
+		// create trap (goal)
+		else {
+			// play win bgm
+			play_current_bgm(false);
+			sound_manager_play(resource_manager_getChunkFromPath("music/win.ogg"), SOUND_MANAGER_CH_MUSIC);
+
+			// give bonus exp
+			unit_manager_player_get_exp(g_stage_data->bonus_exp);
+
+			drop_goal_items();
+			unit_manager_create_trap(g_stage_data->goal_x, g_stage_data->goal_y, unit_manager_search_trap(goal_path));
+
+			// create smoke effect
+			unit_manager_create_effect(g_stage_data->goal_x - g_tile_width / 2, g_stage_data->goal_y - g_tile_height / 2, unit_manager_search_effect(smoke_effect_path));
+
+			stage_manager_set_result(STAGE_RESULT_WIN);
+			g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat |= STAGE_MAP_STAT_GOAL;
+		}
+
+		// open door
+		map_manager_open_door();
+
+		g_stage_data->section_stat = SECTION_STAT_DOOR_SELECT_WAIT;
+	}
+	// wait select door
+	else if (g_stage_data->section_stat == SECTION_STAT_DOOR_SELECT_WAIT) {
+		// do nothing
+
+		// select door -> scene_play_next_section() update
+		//  g_stage_data->current_stage_map_index
+		//  g_stage_data->current_section_index
+		//  g_stage_data->current_section_data
+	}
+	else if (g_stage_data->section_stat == SECTION_STAT_NEXT_WAIT) {
+		clear_section();
+		section_init();
+
+		// re-place player
+		unit_manager_player_set_position(g_stage_data->section_start_x, g_stage_data->section_start_y);
+
+		// stop player move
+		b2Vec2 new_vec(0.0f, 0.0f);
+		g_player.col_shape->b2body->SetLinearVelocity(new_vec);
+
+		// play bgm
+		if (!(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_GOAL)) {
+			play_current_bgm(true);
+		}
+	}
+}
+static void main_event_section_normal() {
+	// drop goal items
+	if (g_stage_data->section_stat == SECTION_STAT_ACTIVE) {
+		if (g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_WIN) {
+
+		}
+		else {
+			drop_goal_items();
+			g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat |= STAGE_MAP_STAT_WIN;
+		}
+
+		//
+		// save item id & position
+		//
+
+		// open door
+		map_manager_open_door();
+
+		g_stage_data->section_stat = SECTION_STAT_DOOR_SELECT_WAIT;
+	}
+	// wait select door
+	else if (g_stage_data->section_stat == SECTION_STAT_DOOR_SELECT_WAIT) {
+		// do nothing
+
+		// select door -> scene_play_next_section() update
+		//  g_stage_data->current_stage_map_index
+		//  g_stage_data->current_section_index
+		//  g_stage_data->current_section_data
+	}
+	// load next section
+	else if (g_stage_data->section_stat == SECTION_STAT_NEXT_WAIT) {
+		clear_section();
+		section_init();
+
+		// re-place player
+		unit_manager_player_set_position(g_stage_data->section_start_x, g_stage_data->section_start_y);
+
+		play_current_bgm(true);
+	}
+}
 static void main_event() {
 	if (scene_stat != SCENE_STAT_ACTIVE) return;
 
 	// next load process
-	if ((g_stage_data->next_load == STAGE_NEXT_LOAD_ON) && (g_stage_data->result == STAGE_RESULT_WIN)) {
+	if (g_stage_data->next_load == STAGE_NEXT_LOAD_ON) {
 		main_event_next_load();
 		return;
 	}
@@ -103,45 +203,15 @@ static void main_event() {
 	}
 
 	// disappear all enemies
-	if ((g_stage_data->result != STAGE_RESULT_WIN) && !unit_manager_enemy_exist()) {
-		// go to next section
-		if (g_stage_data->current_section_index < g_stage_data->section_list.size() - 1) {
-			// drop goal items
-			if (g_stage_data->section_stat == SECTION_STAT_ACTIVE) {
-				play_current_bgm(false);
-				sound_manager_play(resource_manager_getChunkFromPath("music/win.ogg"), SOUND_MANAGER_CH_MUSIC);
-				clear_section_unit();
+	if (!unit_manager_enemy_exist()) {
+		int section_id = g_stage_data->stage_map[g_stage_data->current_stage_map_index].section_id;
 
-				drop_goal_items();
-				g_stage_data->section_timer = SECTION_TIMER_NEXT_WAIT_TIME;
-				g_stage_data->section_stat = SECTION_STAT_NEXT_WAIT;
-			}
-			// wait 5 sec
-			else if (g_stage_data->section_stat == SECTION_STAT_NEXT_WAIT) {
-				g_stage_data->section_timer -= g_delta_time;
-
-				// load next section
-				if (g_stage_data->section_timer < 0) {
-					g_stage_data->current_section_index += 1;
-					g_stage_data->current_section_data = g_stage_data->section_list[g_stage_data->current_section_index];
-					section_init();
-					play_current_bgm(true);
-				}
-			}
-		}
 		// final section (gate open)
-		else {
-			stage_manager_set_result(STAGE_RESULT_WIN);
-
-			// give bonus exp
-			unit_manager_player_get_exp(g_stage_data->bonus_exp);
-
-			// create trap(goal)
-			drop_goal_items();
-			unit_manager_create_trap(g_stage_data->goal_x, g_stage_data->goal_y, unit_manager_search_trap(goal_path));
-
-			// create smoke effect
-			unit_manager_create_effect(g_stage_data->goal_x - g_tile_width / 2, g_stage_data->goal_y - g_tile_height / 2, unit_manager_search_effect(smoke_effect_path));
+		if (g_stage_data->section_list[section_id]->section_type == SECTION_TYPE_BOSS) {
+			main_event_section_boss();
+		}
+		else if (g_stage_data->section_list[section_id]->section_type == SECTION_TYPE_NORMAL) {
+			main_event_section_normal();
 		}
 	}
 
@@ -424,11 +494,7 @@ static void pre_load_event(void* null) {
 
 	// load goal (trap)
 	unit_manager_load_trap(goal_path);
-
-	// first section
-	g_stage_data->current_section_index = 0;
-	g_stage_data->current_section_data = g_stage_data->section_list[0];
-	section_init();
+	unit_manager_load_trap(go_next_path);
 
 	// load player unit
 	unit_manager_load_player_effects();
@@ -451,6 +517,11 @@ static void pre_load_event(void* null) {
 			game_save_config_save();
 		}
 	}
+
+	// first section
+	g_stage_data->current_section_index = SECTION_INDEX_START;
+	g_stage_data->current_section_data = g_stage_data->section_list[g_stage_data->current_section_index];
+	section_init();
 
 	scene_manager_set_pre_load_stat(true);
 }
@@ -608,19 +679,15 @@ static void dialog_message_ok()
 
 static void section_init()
 {
-	section_data_t* p_section = g_stage_data->current_section_data;
-
 	// clear tmp region
 	g_stage_data->section_timer = 0;
 
 	// first section
-	if (g_stage_data->current_section_index == 0) {
+	if ((g_stage_data->current_section_index == SECTION_INDEX_START) && !(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_WIN)) {
 		g_stage_data->drop_judge_count = 0;
 
-		// load map
-		map_manager_load(p_section->map_path);
-		map_manager_create_instance();
-		map_manager_create_wall();
+		// generate stage map
+		map_manager_create_stage_map();
 
 		// load enemy bullet
 		unit_manager_load_enemy_bullet("units/bullet/point/enemy/point.unit");
@@ -654,45 +721,88 @@ static void section_init()
 		unit_manager_load_effect("units/effect/shadow/64x64/shadow_drop.unit");
 	}
 
-	// load items
-	for (int i = 0; i < p_section->items_list.size(); i++) {
-		unit_manager_load_items(p_section->items_list[i]->type);
-		if ((p_section->items_list[i]->x >= 0) && (p_section->items_list[i]->y >= 0)) {
-			unit_manager_create_items(p_section->items_list[i]->x, p_section->items_list[i]->y, unit_manager_search_items(p_section->items_list[i]->type));
+	// load section map
+	map_manager_load_section_map();
+
+	// set wall & door (arrange size by g_player.col_shape)
+	map_manager_create_wall();
+	map_manager_create_door();
+
+	section_data_t* p_section = g_stage_data->current_section_data;
+
+	// 
+	// restore from item_stocker
+	//     ||||
+	//     vvvv
+
+	if (g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_WIN) {
+		// load items
+		// load drop items
+		// load goal items
+
+		// load trap
+		for (int i = 0; i < p_section->trap_list.size(); i++) {
+			unit_manager_load_trap(p_section->trap_list[i]->type);
+			if ((p_section->trap_list[i]->x >= 0) && (p_section->trap_list[i]->y >= 0)) {
+				unit_manager_create_trap(p_section->trap_list[i]->x, p_section->trap_list[i]->y, unit_manager_search_trap(p_section->trap_list[i]->type));
+			}
 		}
 	}
+	else if (g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_GOAL) {
+		// load items
+		// load drop items
+		// load goal items
 
-	// load drop items
-	for (int i = 0; i < p_section->drop_items_list.size(); i++) {
-		int drop_item_id = unit_manager_search_items(p_section->drop_items_list[i]);
-		p_section->drop_items_id_list.push_back(drop_item_id);
-	}
-
-	// load goal items
-	for (int i = 0; i < p_section->goal_items_list.size(); i++) {
-		int goal_item_id = unit_manager_search_items(p_section->goal_items_list[i]);
-		p_section->goal_items_id_list.push_back(goal_item_id);
-	}
-
-	// load trap
-	for (int i = 0; i < p_section->trap_list.size(); i++) {
-		unit_manager_load_trap(p_section->trap_list[i]->type);
-		if ((p_section->trap_list[i]->x >= 0) && (p_section->trap_list[i]->y >= 0)) {
-			unit_manager_create_trap(p_section->trap_list[i]->x, p_section->trap_list[i]->y, unit_manager_search_trap(p_section->trap_list[i]->type));
+		// load trap
+		for (int i = 0; i < p_section->trap_list.size(); i++) {
+			unit_manager_load_trap(p_section->trap_list[i]->type);
+			if ((p_section->trap_list[i]->x >= 0) && (p_section->trap_list[i]->y >= 0)) {
+				unit_manager_create_trap(p_section->trap_list[i]->x, p_section->trap_list[i]->y, unit_manager_search_trap(p_section->trap_list[i]->type));
+			}
 		}
 	}
-
-	// load enemy unit
-	for (int i = 0; i < p_section->enemy_list.size(); i++) {
-		unit_manager_load_enemy(p_section->enemy_list[i]->type);
-		int enemy_id = unit_manager_create_enemy(p_section->enemy_list[i]->x, p_section->enemy_list[i]->y, p_section->enemy_list[i]->face, unit_manager_search_enemy(p_section->enemy_list[i]->type));
-		if (p_section->enemy_list[i]->ai_step != 0) {
-			unit_manager_set_ai_step(enemy_id, p_section->enemy_list[i]->ai_step);
+	// STAGE_MAP_STAT_NONE
+	else {
+		// load items
+		for (int i = 0; i < p_section->items_list.size(); i++) {
+			unit_manager_load_items(p_section->items_list[i]->type);
+			if ((p_section->items_list[i]->x >= 0) && (p_section->items_list[i]->y >= 0)) {
+				unit_manager_create_items(p_section->items_list[i]->x, p_section->items_list[i]->y, unit_manager_search_items(p_section->items_list[i]->type));
+			}
 		}
 
-		if (g_stage_data->current_section_index != 0) {
-			// create smoke effect
-			unit_manager_create_effect(p_section->enemy_list[i]->x - g_tile_width / 2, p_section->enemy_list[i]->y - g_tile_height / 2, unit_manager_search_effect(smoke_effect_path));
+		// load drop items
+		for (int i = 0; i < p_section->drop_items_list.size(); i++) {
+			int drop_item_id = unit_manager_search_items(p_section->drop_items_list[i]);
+			p_section->drop_items_id_list.push_back(drop_item_id);
+		}
+
+		// load goal items
+		for (int i = 0; i < p_section->goal_items_list.size(); i++) {
+			int goal_item_id = unit_manager_search_items(p_section->goal_items_list[i]);
+			p_section->goal_items_id_list.push_back(goal_item_id);
+		}
+
+		// load trap
+		for (int i = 0; i < p_section->trap_list.size(); i++) {
+			unit_manager_load_trap(p_section->trap_list[i]->type);
+			if ((p_section->trap_list[i]->x >= 0) && (p_section->trap_list[i]->y >= 0)) {
+				unit_manager_create_trap(p_section->trap_list[i]->x, p_section->trap_list[i]->y, unit_manager_search_trap(p_section->trap_list[i]->type));
+			}
+		}
+
+		// load enemy unit
+		for (int i = 0; i < p_section->enemy_list.size(); i++) {
+			unit_manager_load_enemy(p_section->enemy_list[i]->type);
+			int enemy_id = unit_manager_create_enemy(p_section->enemy_list[i]->x, p_section->enemy_list[i]->y, p_section->enemy_list[i]->face, unit_manager_search_enemy(p_section->enemy_list[i]->type));
+			if (p_section->enemy_list[i]->ai_step != 0) {
+				unit_manager_set_ai_step(enemy_id, p_section->enemy_list[i]->ai_step);
+			}
+
+			if (g_stage_data->current_section_index != 0) {
+				// create smoke effect
+				unit_manager_create_effect(p_section->enemy_list[i]->x - g_tile_width / 2, p_section->enemy_list[i]->y - g_tile_height / 2, unit_manager_search_effect(smoke_effect_path));
+			}
 		}
 	}
 
@@ -704,9 +814,16 @@ static void section_init()
 	g_stage_data->section_stat = SECTION_STAT_ACTIVE;
 }
 
-static void clear_section_unit()
+static void clear_section()
 {
+	// unit(enemy,items,trap,player_bullet,enemy_bullet)/map unload
+	unit_manager_clear_all_enemy();
 	unit_manager_clear_all_trap();
+	unit_manager_clear_all_items();
+	unit_manager_clear_all_player_bullet();
+	unit_manager_clear_all_enemy_bullet();
+	unit_manager_clear_all_effect(UNIT_EFFECT_CLEAR_TYPE_NONE);
+	map_manager_clear_all_instance();
 }
 
 static void play_current_bgm(bool on_off)
@@ -1021,6 +1138,74 @@ void scene_play_next_stage() {
 	sound_manager_stop(SOUND_MANAGER_CH_MUSIC);
 	sound_manager_play(resource_manager_getChunkFromPath("music/win.ogg"), SOUND_MANAGER_CH_MUSIC);
 	stage_manager_set_next_load(STAGE_NEXT_LOAD_ON);
+}
+
+void scene_play_next_section(int go_next_id) {
+	if (g_stage_data->section_stat == SECTION_STAT_NEXT_WAIT) return;
+
+	// backup current section
+	map_manager_backup_to_section_map();
+
+	// set next stage_map_index (g_stage_data->current_stage_map_index)
+	int stage_map_index = g_stage_data->current_stage_map_index;
+	int stage_map_index_x = stage_map_index % STAGE_MAP_WIDTH_NUM;
+	int stage_map_index_y = stage_map_index / STAGE_MAP_WIDTH_NUM;
+	int section_id = STAGE_MAP_ID_IGNORE;
+	if (go_next_id == UNIT_TRAP_GATE_ID_GO_NEXT_N) {
+		if ((0 <= stage_map_index_y - 1) && (g_stage_data->stage_map[stage_map_index - STAGE_MAP_WIDTH_NUM].section_id != STAGE_MAP_ID_IGNORE)) {
+			g_stage_data->current_stage_map_index = stage_map_index - STAGE_MAP_WIDTH_NUM;
+
+			// set South side
+			g_stage_data->section_start_x = (MAP_WIDTH_NUM_MAX / 2) * g_tile_width;
+			g_stage_data->section_start_y = (MAP_HEIGHT_NUM_MAX - 1) * g_tile_height - g_tile_height;
+		}
+		else {
+			LOG_ERROR("ERROR: scene_play_next_section(N) not found next section.");
+		}
+	}
+	else if (go_next_id == UNIT_TRAP_GATE_ID_GO_NEXT_S) {
+		if ((stage_map_index_y + 1 < STAGE_MAP_HEIGHT_NUM) && (g_stage_data->stage_map[stage_map_index + STAGE_MAP_WIDTH_NUM].section_id != STAGE_MAP_ID_IGNORE)) {
+			g_stage_data->current_stage_map_index = stage_map_index + STAGE_MAP_WIDTH_NUM;
+
+			// set North side
+			g_stage_data->section_start_x = (MAP_WIDTH_NUM_MAX / 2) * g_tile_width;
+			g_stage_data->section_start_y = g_tile_height;
+		}
+		else {
+			LOG_ERROR("ERROR: scene_play_next_section(S) not found next section.");
+		}
+	}
+	else if (go_next_id == UNIT_TRAP_GATE_ID_GO_NEXT_W) {
+		if ((0 <= stage_map_index_x - 1) && (g_stage_data->stage_map[stage_map_index - 1].section_id != STAGE_MAP_ID_IGNORE)) {
+			g_stage_data->current_stage_map_index = stage_map_index - 1;
+
+			// set East side
+			g_stage_data->section_start_x = (MAP_WIDTH_NUM_MAX - 1) * g_tile_width - g_tile_width;
+			g_stage_data->section_start_y = (MAP_HEIGHT_NUM_MAX / 2) * g_tile_height;
+		}
+		else {
+			LOG_ERROR("ERROR: scene_play_next_section(W) not found next section.");
+		}
+	}
+	else if (go_next_id == UNIT_TRAP_GATE_ID_GO_NEXT_E) {
+		if ((stage_map_index_x + 1 < STAGE_MAP_WIDTH_NUM) && (g_stage_data->stage_map[stage_map_index + 1].section_id != STAGE_MAP_ID_IGNORE)) {
+			g_stage_data->current_stage_map_index = stage_map_index + 1;
+
+			// set West side
+			g_stage_data->section_start_x = g_tile_width;
+			g_stage_data->section_start_y = (MAP_HEIGHT_NUM_MAX / 2) * g_tile_height;
+		}
+		else {
+			LOG_ERROR("ERROR: scene_play_next_section(E) not found next section.");
+		}
+	}
+
+	// set next section_index
+	section_id = g_stage_data->stage_map[g_stage_data->current_stage_map_index].section_id;
+	g_stage_data->current_section_data = g_stage_data->section_list[section_id];
+	g_stage_data->current_section_index = section_id;
+
+	g_stage_data->section_stat = SECTION_STAT_NEXT_WAIT;
 }
 
 void scene_play_stage_set_lose() {

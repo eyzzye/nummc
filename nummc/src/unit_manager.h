@@ -223,10 +223,10 @@ struct _unit_trap_data_t {
 	int stat;
 	int reserve0;
 
+	int sub_id;
 	int hp;
 	int reserve1;
 	int reserve2;
-	int reserve3;
 };
 
 struct _unit_effect_data_t {
@@ -247,7 +247,7 @@ struct _unit_effect_data_t {
 
 	int life_timer;
 	unit_data_t* trace_unit;
-	int reserve2;
+	int clear_type;  // NONE, KEEP_ON_STAGE
 	int reserve3;
 };
 
@@ -339,6 +339,13 @@ extern void unit_manager_unload_effect();
 extern void unit_manager_unload_player_bullet();
 extern void unit_manager_unload_enemy_bullet();
 
+extern void unit_manager_clear_all_enemy();
+extern void unit_manager_clear_all_trap();
+extern void unit_manager_clear_all_items();
+extern void unit_manager_clear_all_effect(int clear_type);
+extern void unit_manager_clear_all_player_bullet();
+extern void unit_manager_clear_all_enemy_bullet();
+
 extern int unit_manager_unit_get_anim_stat(unit_data_t* unit_data);
 extern void unit_manager_unit_set_anim_stat(unit_data_t* unit_data, int stat);
 extern void unit_manager_player_set_anim_stat(int stat);
@@ -401,6 +408,7 @@ extern void unit_manager_player_use_special_item();
 extern void unit_manager_player_trap(unit_trap_data_t* trap_data);
 extern void unit_manager_player_gameover();
 extern void unit_manager_player_move(float vec_x, float vec_y);
+extern void unit_manager_player_set_position(int x, int y);
 extern void unit_manager_player_update();
 extern void unit_manager_player_display(int layer);
 
@@ -452,7 +460,6 @@ extern int unit_manager_search_trap(std::string& path);
 extern unit_trap_data_t* unit_manager_get_trap(int index);
 extern bool unit_manager_trap_within(int x, int y);
 extern int unit_manager_load_trap(std::string path);
-extern void unit_manager_clear_all_trap();
 extern int unit_manager_create_trap(int x, int y, int base_index = -1);
 extern void unit_manager_clear_trap(unit_trap_data_t* trap);
 extern void unit_manager_trap_update();

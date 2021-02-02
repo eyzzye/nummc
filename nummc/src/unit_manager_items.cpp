@@ -492,6 +492,15 @@ int unit_manager_create_items_by_sid(int sid, int x, int y)
 	return ret;
 }
 
+void unit_manager_clear_all_items()
+{
+	for (int i = 0; i < UNIT_ITEMS_LIST_SIZE; i++) {
+		if (items[i].type != UNIT_TYPE_ITEMS) continue;
+		unit_manager_clear_items(&items[i]);
+	}
+	items_index_end = 0;
+}
+
 void unit_manager_clear_items(unit_items_data_t* item)
 {
 	item->type = UNIT_TYPE_NONE;

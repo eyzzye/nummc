@@ -250,6 +250,15 @@ int unit_manager_create_player_bullet(int x, int y, float vec_x, float vec_y, in
 	return ret;
 }
 
+void unit_manager_clear_all_player_bullet()
+{
+	for (int i = 0; i < UNIT_PLAYER_BULLET_LIST_SIZE; i++) {
+		if (player_bullet[i].type != UNIT_TYPE_PLAYER_BULLET) continue;
+		unit_manager_clear_player_bullet(&player_bullet[i]);
+	}
+	player_bullet_index_end = 0;
+}
+
 void unit_manager_clear_player_bullet(unit_player_bullet_data_t* bullet)
 {
 	bullet->type = UNIT_TYPE_NONE;

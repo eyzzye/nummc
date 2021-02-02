@@ -274,6 +274,15 @@ int unit_manager_create_enemy_bullet(int x, int y, float vec_x, float vec_y, int
 	return ret;
 }
 
+void unit_manager_clear_all_enemy_bullet()
+{
+	for (int i = 0; i < UNIT_ENEMY_BULLET_LIST_SIZE; i++) {
+		if (enemy_bullet[i].type != UNIT_TYPE_ENEMY_BULLET) continue;
+		unit_manager_clear_enemy_bullet(&enemy_bullet[i]);
+	}
+	enemy_bullet_index_end = 0;
+}
+
 void unit_manager_clear_enemy_bullet(unit_enemy_bullet_data_t* bullet)
 {
 	bullet->type = UNIT_TYPE_NONE;

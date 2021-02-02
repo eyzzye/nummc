@@ -52,6 +52,7 @@ trap_path=scenes/stages/trap/trap9_3.dat
 
 [section]
 section=4
+type=BOSS
 item_drop_rate=8
 map_path=map/stage9/n_st9.tmx
 bgm_path=music/9.ogg

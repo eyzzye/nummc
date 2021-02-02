@@ -4,6 +4,7 @@
 
 [unit]
 group=GATE
+sub_id=1
 [/unit]
 
 [collision]

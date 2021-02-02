@@ -7,6 +7,10 @@
 #define UNIT_EFFECT_GROUP_DIE_AUTO  3
 #define UNIT_EFFECT_GROUP_END       4
 
+#define UNIT_EFFECT_CLEAR_TYPE_NONE           0
+#define UNIT_EFFECT_CLEAR_TYPE_KEEP_ON_STAGE  1
+#define UNIT_EFFECT_CLEAR_TYPE_END            2
+
 #define UNIT_EFFECT_ID_NONE             0
 #define UNIT_EFFECT_ID_FIRE_UP          1
 #define UNIT_EFFECT_ID_FREEZE_UP        2

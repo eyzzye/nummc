@@ -598,7 +598,7 @@ void hud_manager_display()
 		// boss icon
 		SDL_RenderCopy(g_ren, tex_e_boss_icon_info.tex, &tex_e_boss_icon_info.src_rect, &tex_e_boss_icon_info.dst_rect);
 		// hp max
-		SDL_SetRenderDrawColor(g_ren, 255, 255, 255, 192);
+		SDL_SetRenderDrawColor(g_ren, 192, 192, 192, 255);
 		SDL_RenderFillRect(g_ren, &boss_hp_val_rect[HUD_E_BOSS_ID_HP_MAX].dst_rect);
 		// hp
 		SDL_SetRenderDrawColor(g_ren, 224, 0, 0, 255);

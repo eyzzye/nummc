@@ -299,21 +299,13 @@ void ai_manager_boss_update_three(ai_data_t* ai_data)
 		// move (open)
 		collision_manager_delete_joint(unit_data->col_shape);
 		unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_MOVE);
-
-		b2Filter new_filter;
-		const void* old_filter = collision_manager_get_filter(unit_data->col_shape);
-		memcpy(&new_filter, old_filter, sizeof(b2Filter));
-		new_filter.maskBits = COLLISION_GROUP_MASK_PLAYER_BULLET;
-		collision_manager_set_filter(unit_data->col_shape, new_filter);
+		collision_manager_set_filter(unit_data->col_shape, COLLISION_GROUP_MASK_PLAYER_BULLET);
 
 		// create trap (enemy ghost)
 		((unit_enemy_data_t*)unit_data)->resistance_stat |= UNIT_EFFECT_FLAG_E_NO_TRAP_DAMAGE;
 		ai_stat->ghost_id = unit_manager_create_trap(unit_data->col_shape->x, unit_data->col_shape->y, unit_manager_search_trap(ghost_trap_three_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(ai_stat->ghost_id);
-		old_filter = collision_manager_get_filter(trap_data->col_shape);
-		memcpy(&new_filter, old_filter, sizeof(b2Filter));
-		new_filter.maskBits = COLLISION_GROUP_MASK_PLAYER_BULLET;
-		collision_manager_set_filter(trap_data->col_shape, new_filter);
+		collision_manager_set_filter(trap_data->col_shape, COLLISION_GROUP_MASK_PLAYER_BULLET);
 
 		// set move_to point
 		if (ai_stat->val3 == 0) { // W
@@ -378,12 +370,7 @@ void ai_manager_boss_update_three(ai_data_t* ai_data)
 	else if (ai_stat->step[AI_STAT_STEP_W] > 7) {
 		// stay (fix)
 		collision_manager_set_joint((void*)unit_data);
-
-		b2Filter new_filter;
-		const void* old_filter = collision_manager_get_filter(unit_data->col_shape);
-		memcpy(&new_filter, old_filter, sizeof(b2Filter));
-		new_filter.maskBits = COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_ITEMS | COLLISION_GROUP_MASK_PLAYER_BULLET | COLLISION_GROUP_MASK_MAP;
-		collision_manager_set_filter(unit_data->col_shape, new_filter);
+		collision_manager_set_filter(unit_data->col_shape, (COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_ITEMS | COLLISION_GROUP_MASK_PLAYER_BULLET | COLLISION_GROUP_MASK_MAP));
 
 		// delete trap (enemy ghost)
 		ai_manager_delete_ghost(ai_data);
@@ -483,21 +470,13 @@ void ai_manager_boss_update_four(ai_data_t* ai_data)
 	else if (ai_stat->step[AI_STAT_STEP_W] == 4) {
 		// move (open)
 		unit_manager_enemy_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_MOVE);
-
-		b2Filter new_filter;
-		const void* old_filter = collision_manager_get_filter(unit_data->col_shape);
-		memcpy(&new_filter, old_filter, sizeof(b2Filter));
-		new_filter.maskBits = COLLISION_GROUP_MASK_PLAYER_BULLET;
-		collision_manager_set_filter(unit_data->col_shape, new_filter);
+		collision_manager_set_filter(unit_data->col_shape, COLLISION_GROUP_MASK_PLAYER_BULLET);
 
 		// create trap (enemy ghost)
 		((unit_enemy_data_t*)unit_data)->resistance_stat |= UNIT_EFFECT_FLAG_E_NO_TRAP_DAMAGE;
 		ai_stat->ghost_id = unit_manager_create_trap(unit_data->col_shape->x, unit_data->col_shape->y, unit_manager_search_trap(ghost_trap_four_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(ai_stat->ghost_id);
-		old_filter = collision_manager_get_filter(trap_data->col_shape);
-		memcpy(&new_filter, old_filter, sizeof(b2Filter));
-		new_filter.maskBits = COLLISION_GROUP_MASK_PLAYER_BULLET;
-		collision_manager_set_filter(trap_data->col_shape, new_filter);
+		collision_manager_set_filter(trap_data->col_shape, COLLISION_GROUP_MASK_PLAYER_BULLET);
 
 		// set move_to point
 		int new_step = ai_manager_get_player_direction(unit_data);
@@ -539,11 +518,7 @@ void ai_manager_boss_update_four(ai_data_t* ai_data)
 		return;
 	}
 	else if (ai_stat->step[AI_STAT_STEP_W] >= 6) {
-		b2Filter new_filter;
-		const void* old_filter = collision_manager_get_filter(unit_data->col_shape);
-		memcpy(&new_filter, old_filter, sizeof(b2Filter));
-		new_filter.maskBits = COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_ITEMS | COLLISION_GROUP_MASK_PLAYER_BULLET | COLLISION_GROUP_MASK_MAP;
-		collision_manager_set_filter(unit_data->col_shape, new_filter);
+		collision_manager_set_filter(unit_data->col_shape, (COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_ITEMS | COLLISION_GROUP_MASK_PLAYER_BULLET | COLLISION_GROUP_MASK_MAP));
 
 		// delete trap (enemy ghost)
 		ai_manager_delete_ghost(ai_data);

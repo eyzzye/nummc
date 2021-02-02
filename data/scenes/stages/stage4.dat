@@ -53,6 +53,7 @@ trap_path=scenes/stages/trap/trap4_3.dat
 
 [section]
 section=4
+type=BOSS
 item_drop_rate=4
 map_path=map/stage4/n_st4.tmx
 bgm_path=music/4.ogg

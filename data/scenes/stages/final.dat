@@ -32,6 +32,7 @@ items_path=scenes/stages/items/item_fin_1.dat
 [section]
 section=2
 item_drop_rate=4
+map_path=map/final/n_fin.tmx
 bgm_path=music/a.ogg
 enemy_path=scenes/stages/enemy/enemy_fin_2.dat
 items_path=scenes/stages/items/item_fin_2.dat
@@ -41,6 +42,7 @@ trap_path=scenes/stages/trap/trap_fin_2.dat
 [section]
 section=3
 item_drop_rate=4
+map_path=map/final/n_fin.tmx
 bgm_path=music/a.ogg
 enemy_path=scenes/stages/enemy/enemy_fin_3.dat
 items_path=scenes/stages/items/item_fin_3.dat
@@ -50,6 +52,7 @@ trap_path=scenes/stages/trap/trap_fin_3.dat
 [section]
 section=4
 item_drop_rate=4
+map_path=map/final/n_fin.tmx
 bgm_path=music/a.ogg
 enemy_path=scenes/stages/enemy/enemy_fin_4.dat
 items_path=scenes/stages/items/item_fin_4.dat
@@ -59,6 +62,7 @@ trap_path=scenes/stages/trap/trap_fin_4.dat
 [section]
 section=5
 item_drop_rate=4
+map_path=map/final/n_fin.tmx
 bgm_path=music/a.ogg
 enemy_path=scenes/stages/enemy/enemy_fin_5.dat
 items_path=scenes/stages/items/item_fin_5.dat
@@ -67,6 +71,7 @@ trap_path=scenes/stages/trap/trap_fin_5.dat
 
 [section]
 section=6
+type=BOSS
 item_drop_rate=8
 map_path=map/final/n_fin.tmx
 bgm_path=music/boss.ogg
