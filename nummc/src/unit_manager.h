@@ -452,6 +452,7 @@ extern int unit_manager_load_items(std::string path);
 extern int unit_manager_create_items(int x, int y, int base_index = -1);
 extern int unit_manager_create_items_by_sid(int sid, int x, int y);
 extern void unit_manager_clear_items(unit_items_data_t* item);
+extern void unit_manager_items_register_item_stock();
 extern void unit_manager_items_update();
 extern void unit_manager_items_display(int layer);
 

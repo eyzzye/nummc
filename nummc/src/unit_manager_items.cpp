@@ -511,6 +511,16 @@ void unit_manager_clear_items(unit_items_data_t* item)
 	item->anim = NULL;
 }
 
+void unit_manager_items_register_item_stock()
+{
+	for (int i = 0; i < UNIT_ITEMS_LIST_SIZE; i++) {
+		if (items[i].type != UNIT_TYPE_ITEMS) continue;
+		if ((items[i].group == UNIT_ITEM_GROUP_TBOX) && (items[i].anim->stat == ANIM_STAT_FLAG_DIE)) continue;
+
+		stage_manager_register_stock_item((void*)&items[i]);
+	}
+}
+
 void unit_manager_items_update()
 {
 	for (int i = 0; i < UNIT_ITEMS_LIST_SIZE; i++) {

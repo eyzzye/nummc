@@ -89,6 +89,7 @@ typedef struct _items_data_t items_data_t;
 typedef struct _trap_data_t trap_data_t;
 typedef struct _enemy_data_t enemy_data_t;
 typedef struct _section_data_t section_data_t;
+typedef struct _section_stock_item_t section_stock_item_t;
 typedef struct _stage_map_data_t stage_map_data_t;
 typedef struct _stage_data_t stage_data_t;
 
@@ -144,12 +145,27 @@ struct _section_data_t {
 	std::vector<int> goal_items_id_list;
 };
 
+struct _section_stock_item_t {
+	int type;
+	int id;
+	int x;
+	int y;
+	int val1;
+	int val2;
+
+	section_stock_item_t* prev;
+	section_stock_item_t* next;
+};
+
 struct _stage_map_data_t {
 	int section_id;
 	int section_type;           // copy from section_data_t section_type
 	int stat;                   // none/win/goal/hint
 	int mini_map_icon;          // STAGE_MINI_MAP_ICON_FLAG_D_XXX | STAGE_MINI_MAP_ICON_FLAG_T_XXX
-	//item_stock_t* item_stock;   // node head
+
+	section_stock_item_t* stock_item;   // node head
+	int stock_item_count;
+
 	char section_map[MAP_TYPE_END][MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX];
 };
 
@@ -191,6 +207,10 @@ struct _stage_data_t {
 
 extern void stage_manager_init();
 extern void stage_manager_unload();
+extern section_stock_item_t* stage_manager_register_stock_item(void* unit_data);
+extern void stage_manager_create_all_stock_item();
+extern void stage_manager_delete_all_stock_item();
+extern void stage_manager_delete_stock_item(section_stock_item_t* stock_item);
 extern void stage_manager_set_stat(int stat);
 extern void stage_manager_set_result(int result);
 extern void stage_manager_set_next_load(int stat);

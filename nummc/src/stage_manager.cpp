@@ -7,6 +7,7 @@
 #include "resource_manager.h"
 #include "game_utils.h"
 #include "game_log.h"
+#include "unit_manager.h"
 
 // stage
 #define STAGE_ID_BASIC_INFO   0
@@ -32,6 +33,10 @@
 stage_data_t* g_stage_data;
 static section_data_t* current_section_data;
 static int tmp_start_index;
+
+#define SECTION_STOCK_ITEM_SIZE  (UNIT_ITEMS_LIST_SIZE * STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM)
+static section_stock_item_t section_stock_item[SECTION_STOCK_ITEM_SIZE];
+static int section_stock_item_index;
 
 // stage
 static void load_basic_info(std::string& line);
@@ -59,6 +64,9 @@ void stage_manager_init()
 	g_stage_data->result = STAGE_RESULT_NONE;
 	g_stage_data->next_load = STAGE_NEXT_LOAD_OFF;
 	g_stage_data->section_stat = SECTION_STAT_NONE;
+
+	memset(section_stock_item, 0, sizeof(section_stock_item));
+	section_stock_item_index = 0;
 
 	memset(g_stage_data->stage_map, 0, sizeof(g_stage_data->stage_map));
 	for (int i = 0; i < LENGTH_OF(g_stage_data->stage_map); i++) {
@@ -126,6 +134,122 @@ void stage_manager_unload()
 		delete g_stage_data;
 		g_stage_data = NULL;
 	}
+}
+
+static section_stock_item_t* get_stock_item_end(section_stock_item_t* stock_item)
+{
+	if (stock_item == NULL) return NULL;
+
+	int max_count = 0;
+	section_stock_item_t* end_node = stock_item;
+	while ((max_count < SECTION_STOCK_ITEM_SIZE) && (end_node->next != NULL)) {
+		end_node = end_node->next;
+		max_count++;
+	}
+
+	if (max_count >= SECTION_STOCK_ITEM_SIZE) {
+		LOG_ERROR("ERROR: get_stock_item_end() not found end_node\n");
+	}
+	return end_node;
+}
+
+section_stock_item_t* stage_manager_register_stock_item(void* unit_data)
+{
+	// search empty node
+	int new_index = -1;
+	for (int i = 0; i < SECTION_STOCK_ITEM_SIZE; i++) {
+		int index = section_stock_item_index + i;
+		if (index >= SECTION_STOCK_ITEM_SIZE) index -= SECTION_STOCK_ITEM_SIZE;
+		if (section_stock_item[index].type == COLLISION_TYPE_NONE) {
+			new_index = index;
+			section_stock_item_index = index;
+			break;
+		}
+	}
+	if (new_index == -1) {
+		LOG_ERROR("ERROR: stage_manager_register_stock_item overflow\n");
+		return NULL;
+	}
+
+	unit_items_data_t* items_data = (unit_items_data_t*)unit_data;
+	section_stock_item[new_index].type = items_data->base->type;
+	section_stock_item[new_index].id = items_data->base->id;
+	section_stock_item[new_index].x = items_data->col_shape->x;
+	section_stock_item[new_index].y = items_data->col_shape->y;
+
+	if ((items_data->group == UNIT_ITEM_GROUP_STOCK) && (items_data->sub_id == UNIT_STOCK_SUB_ID_CHARGE)) {
+		section_stock_item[new_index].val1 = items_data->val1;
+		section_stock_item[new_index].val2 = items_data->val2;
+	}
+
+	if (g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item == NULL) {
+		section_stock_item[new_index].prev = NULL;
+		section_stock_item[new_index].next = NULL;
+		g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item = &section_stock_item[new_index];
+	}
+	else {
+		section_stock_item_t* end_node = get_stock_item_end(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item);
+		end_node->next = &section_stock_item[new_index];
+		section_stock_item[new_index].prev = end_node;
+		section_stock_item[new_index].next = NULL;
+	}
+	return &section_stock_item[new_index];
+}
+
+void stage_manager_create_all_stock_item()
+{
+	int max_count = 0;
+	section_stock_item_t* node = g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item;
+	while ((max_count < SECTION_STOCK_ITEM_SIZE) && (node != NULL)) {
+		section_stock_item_t* ref_node = node;
+		node = ref_node->next;
+
+		int item_id = unit_manager_create_items(ref_node->x, ref_node->y, ref_node->id);
+		unit_items_data_t* items_data = unit_manager_get_items(item_id);
+		if ((items_data->group == UNIT_ITEM_GROUP_STOCK) && (items_data->sub_id == UNIT_STOCK_SUB_ID_CHARGE)) {
+			unit_manager_items_set_val(item_id, ref_node->val1, 1);
+			unit_manager_items_set_val(item_id, ref_node->val2, 2);
+		}
+		max_count++;
+	}
+
+	if (max_count >= SECTION_STOCK_ITEM_SIZE) {
+		LOG_ERROR("ERROR: stage_manager_delete_all_stock_item() overflow\n");
+	}
+}
+
+void stage_manager_delete_all_stock_item()
+{
+	int max_count = 0;
+	section_stock_item_t* node = g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item;
+	while ((max_count < SECTION_STOCK_ITEM_SIZE) && (node != NULL)) {
+		section_stock_item_t* del_node = node;
+		node = del_node->next;
+		memset(del_node, 0, sizeof(section_stock_item_t));
+
+		max_count++;
+	}
+
+	if (max_count >= SECTION_STOCK_ITEM_SIZE) {
+		LOG_ERROR("ERROR: stage_manager_delete_all_stock_item() overflow\n");
+	}
+
+	g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item = NULL;
+}
+
+void stage_manager_delete_stock_item(section_stock_item_t* stock_item)
+{
+	section_stock_item_t* tmp1 = stock_item->prev;
+	section_stock_item_t* tmp2 = stock_item->next;
+	if (tmp1) tmp1->next = tmp2;
+	if (tmp2) tmp2->prev = tmp1;
+
+	if (g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item == stock_item) {
+		// replace head node
+		g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item = tmp2;
+	}
+
+	memset(stock_item, 0, sizeof(section_stock_item_t));
 }
 
 void stage_manager_set_stat(int stat)

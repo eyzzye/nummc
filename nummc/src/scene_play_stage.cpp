@@ -730,15 +730,9 @@ static void section_init()
 
 	section_data_t* p_section = g_stage_data->current_section_data;
 
-	// 
-	// restore from item_stocker
-	//     ||||
-	//     vvvv
-
 	if (g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_WIN) {
-		// load items
-		// load drop items
-		// load goal items
+		// restore from item_stocker (items, drop items, goal items)
+		stage_manager_create_all_stock_item();
 
 		// load trap
 		for (int i = 0; i < p_section->trap_list.size(); i++) {
@@ -749,9 +743,8 @@ static void section_init()
 		}
 	}
 	else if (g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_GOAL) {
-		// load items
-		// load drop items
-		// load goal items
+		// restore from item_stocker (items, drop items, goal items)
+		stage_manager_create_all_stock_item();
 
 		// load trap
 		for (int i = 0; i < p_section->trap_list.size(); i++) {
@@ -1145,6 +1138,10 @@ void scene_play_next_section(int go_next_id) {
 
 	// backup current section
 	map_manager_backup_to_section_map();
+
+	// backup current items
+	stage_manager_delete_all_stock_item();
+	unit_manager_items_register_item_stock();
 
 	// set next stage_map_index (g_stage_data->current_stage_map_index)
 	int stage_map_index = g_stage_data->current_stage_map_index;
