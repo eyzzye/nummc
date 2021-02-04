@@ -49,6 +49,53 @@ static SDL_Rect hud_background;
 static SDL_Rect horizontal_lines[HORIZONTAL_LINES_SIZE];
 static SDL_Rect vertical_lines[VERTICAL_LINES_SIZE];
 
+#define MINI_MAP_HORIZONTAL_LINES_SIZE  6
+static int mini_map_horizontal_points[MINI_MAP_HORIZONTAL_LINES_SIZE][4] = {
+	{ 23,   7, 149,    7},
+
+	{ 23,  18, 149,   18},
+	{ 23,  29, 149,   29},
+	{ 23,  40, 149,   40},
+	{ 23,  51, 149,   51},
+
+	{ 23,  62, 149,   62},
+};
+
+#define MINI_MAP_VERTICAL_LINES_SIZE  10
+static int mini_map_vertical_points[MINI_MAP_VERTICAL_LINES_SIZE][4] = {
+	{ 23,   7,  23,  62},
+
+	{ 37,   7,  37,  62},
+	{ 51,   7,  51,  62},
+	{ 65,   7,  65,  62},
+	{ 79,   7,  79,  62},
+	{ 93,   7,  93,  62},
+	{107,   7, 107,  62},
+	{121,   7, 121,  62},
+	{135,   7, 135,  62},
+
+	{149,   7, 149,  62},
+};
+
+static SDL_Rect mini_map_background;
+static SDL_Rect mini_map_horizontal_lines[MINI_MAP_HORIZONTAL_LINES_SIZE];
+static SDL_Rect mini_map_vertical_lines[MINI_MAP_VERTICAL_LINES_SIZE];
+
+static std::string mini_map_icon_path[STAGE_MINI_MAP_ICON_END] = {
+	"images/map/common/none_icon.png",
+	"images/map/common/tresure_icon.png",
+	"images/map/common/unknown_icon.png",
+	"images/map/common/charge_icon.png",
+	"images/map/common/stock_icon.png",
+	"images/map/common/heart_icon.png",
+	"images/map/common/bom_icon.png",
+	"images/map/common/item_icon.png",
+};
+static tex_info_t mini_map_icon[STAGE_MINI_MAP_ICON_END];
+static tex_info_t mini_map_boss_icon;
+static tex_info_t mini_map_player_icon;
+static tex_info_t tex_progress_info;
+
 #define HP_GAGE_BASE   5
 #define HP_GAGE_SIZE  12
 #define HP_HORIZONTAL_LINES_SIZE  (2 * HP_GAGE_SIZE)
@@ -77,9 +124,6 @@ static tex_info_t tex_info[HUD_LABEL_ID_END];
 
 static tex_info_t tex_icon_info[HUD_ICON_ID_END];
 static int current_stocker_version;
-
-#define HUD_PROGRESS_SIZE   20
-static tex_info_t tex_progress_info[HUD_PROGRESS_SIZE];
 
 #define HUD_Q_VAL_START_INDEX  0	// horizontal_points[0][1]  = 2
 #define HUD_Q_VAL_END_INDEX   10	// horizontal_points[10][1] = 68
@@ -139,6 +183,34 @@ void hud_manager_reset()
 			VIEW_STAGE_HUD_Y(vertical_points[i][3]) - VIEW_STAGE_HUD_Y(vertical_points[i][1]) + line_size
 		};
 	}
+
+	// mini_map
+	line_size = VIEW_STAGE(2);
+
+	for (int i = 0; i < MINI_MAP_HORIZONTAL_LINES_SIZE; i++) {
+		mini_map_horizontal_lines[i] = {
+			VIEW_STAGE_HUD_X(mini_map_horizontal_points[i][0]),
+			VIEW_STAGE_HUD_Y(mini_map_horizontal_points[i][1]),
+			VIEW_STAGE_HUD_X(mini_map_horizontal_points[i][2]) - VIEW_STAGE_HUD_X(mini_map_horizontal_points[i][0]) + line_size,
+			VIEW_STAGE_HUD_Y(mini_map_horizontal_points[i][3]) - VIEW_STAGE_HUD_Y(mini_map_horizontal_points[i][1]) + line_size
+		};
+	}
+
+	for (int i = 0; i < MINI_MAP_VERTICAL_LINES_SIZE; i++) {
+		mini_map_vertical_lines[i] = {
+			VIEW_STAGE_HUD_X(mini_map_vertical_points[i][0]),
+			VIEW_STAGE_HUD_Y(mini_map_vertical_points[i][1]),
+			VIEW_STAGE_HUD_X(mini_map_vertical_points[i][2]) - VIEW_STAGE_HUD_X(mini_map_vertical_points[i][0]) + line_size,
+			VIEW_STAGE_HUD_Y(mini_map_vertical_points[i][3]) - VIEW_STAGE_HUD_Y(mini_map_vertical_points[i][1]) + line_size
+		};
+	}
+
+	mini_map_background = {
+		mini_map_vertical_lines[0].x,
+		mini_map_horizontal_lines[0].y,
+		mini_map_vertical_lines[MINI_MAP_VERTICAL_LINES_SIZE - 1].x - mini_map_vertical_lines[0].x,
+		mini_map_horizontal_lines[MINI_MAP_HORIZONTAL_LINES_SIZE - 1].y - mini_map_horizontal_lines[0].y
+	};
 
 	// HP Gage
 	int hp_line_width = VIEW_STAGE(8);
@@ -216,16 +288,24 @@ void hud_manager_reset()
 	// background
 	hud_background = { VIEW_STAGE_HUD_X(2), VIEW_STAGE_HUD_Y(2), VIEW_STAGE(476 - 2 + 1), VIEW_STAGE(68 - 2 + 1) };
 
+	// mini_map
+	hud_tex_info_reset(mini_map_icon, STAGE_MINI_MAP_ICON_END);
+	SDL_Rect* tmp_rect = &mini_map_boss_icon.dst_rect_base;
+	mini_map_boss_icon.dst_rect = VIEW_STAGE_HUD_RECT(tmp_rect->x, tmp_rect->y, tmp_rect->w, tmp_rect->h);
+	tmp_rect = &mini_map_player_icon.dst_rect_base;
+	mini_map_player_icon.dst_rect = VIEW_STAGE_HUD_RECT(tmp_rect->x, tmp_rect->y, tmp_rect->w, tmp_rect->h);
+
 	// label
 	hud_tex_info_reset(tex_info, HUD_LABEL_ID_END);
 	hud_tex_info_reset(tex_icon_info, HUD_ICON_ID_END);
-	hud_tex_info_reset(tex_progress_info, HUD_PROGRESS_SIZE);
+	tmp_rect = &tex_progress_info.dst_rect_base;
+	tex_progress_info.dst_rect = VIEW_STAGE_HUD_RECT(tmp_rect->x, tmp_rect->y, tmp_rect->w, tmp_rect->h);
 
 	// player stat icon
 	hud_tex_info_reset(tex_p_stat_icon_info, HUD_P_STAT_ICON_ID_END);
 
 	// enemy boss stat icon
-	SDL_Rect* tmp_rect = &tex_e_boss_icon_info.dst_rect_base;
+	tmp_rect = &tex_e_boss_icon_info.dst_rect_base;
 	tex_e_boss_icon_info.dst_rect = VIEW_STAGE_RECT(tmp_rect->x, tmp_rect->y, tmp_rect->w, tmp_rect->h);
 	tmp_rect = &boss_hp_val_rect[HUD_E_BOSS_ID_HP].dst_rect_base;
 	boss_hp_val_rect[HUD_E_BOSS_ID_HP].dst_rect = VIEW_STAGE_RECT(tmp_rect->x, tmp_rect->y, tmp_rect->w, tmp_rect->h);
@@ -335,86 +415,57 @@ static void hud_tex_info_reset_progress(std::string stage_id)
 {
 	int w, h, w_pos, h_pos;
 
-	// display [final]
 	if (stage_id == "final") {
-		tex_progress_info[0].tex = resource_manager_getTextureFromPath("images/gui/hud/final.png");
-		int ret = SDL_QueryTexture(tex_progress_info[0].tex, NULL, NULL, &w, &h);
-		if (ret == 0) {
-			// progress center pos
-			w_pos = (2) + (158 - 2) / 2  - w / 2;
-			h_pos = (4) + ( 68 - 4) / 2  - h / 2;
-			hud_tex_info_init_rect(&tex_progress_info[0], w, h, w_pos, h_pos);
-		}
+		tex_progress_info.tex = resource_manager_getTextureFromPath("{color:S:0:0:0:D:255:0:0}images/gui/font/question.png");
 
-		// clear old tex
-		for (int i = 1; i < 10; i++) {
-			int index = i * 2 - 1;
-			tex_progress_info[index].tex = NULL;
-			index = i * 2;
-			tex_progress_info[index].tex = NULL;
-		}
-
-		return;
+	} else {
+		// display stage [N]
+		int stage_number = atoi(stage_id.c_str());
+		if (stage_number > 9) stage_number = 9;
+		tex_progress_info.tex = game_utils_render_number_font_tex(stage_number);
 	}
-
-	// display stage [0 -> 1 -> ... -> 9]
-	int stage_number = atoi(stage_id.c_str());
-	if (stage_number > 9) stage_number = 9;
-
-	tex_progress_info[0].tex = game_utils_render_number_font_tex(0);
-	int ret = SDL_QueryTexture(tex_progress_info[0].tex, NULL, NULL, &w, &h);
+	int ret = SDL_QueryTexture(tex_progress_info.tex, NULL, NULL, &w, &h);
 	if (ret == 0) {
-		w_pos = 2 + 8;
-		h_pos = (4) + (68 - (4)) / 2 - h / 2;
-		tex_progress_info[0].src_rect = { 0, 0, w, h };
-		tex_progress_info[0].dst_rect = VIEW_STAGE_HUD_RECT(w_pos, h_pos, w / 2, h / 2);
-		tex_progress_info[0].dst_rect_base = { w_pos, h_pos, w / 2, h / 2 };
-	}
-
-	for (int i = 1; i < stage_number + 1; i++) {
-		if (i == 5) {
-			w_pos = 2 + 8;
-			h_pos += h / 2;
-		}
-
-		int index = i * 2 - 1;
-		tex_progress_info[index].tex = resource_manager_getTextureFromPath("images/gui/font/arrow.png");
-		ret = SDL_QueryTexture(tex_progress_info[index].tex, NULL, NULL, &w, &h);
-		if (ret == 0) {
-			w_pos += 12;
-			tex_progress_info[index].src_rect = { 0, 0, w, h };
-			tex_progress_info[index].dst_rect = VIEW_STAGE_HUD_RECT(w_pos, h_pos, w / 2, h / 2);
-			tex_progress_info[index].dst_rect_base = { w_pos, h_pos, w / 2, h / 2 };
-		}
-
-		index = i * 2;
-		tex_progress_info[index].tex = game_utils_render_number_font_tex(i);
-		int ret = SDL_QueryTexture(tex_progress_info[index].tex, NULL, NULL, &w, &h);
-		if (ret == 0) {
-			w_pos += 12;
-			tex_progress_info[index].src_rect = { 0, 0, w, h };
-			tex_progress_info[index].dst_rect = VIEW_STAGE_HUD_RECT(w_pos, h_pos, w / 2, h / 2);
-			tex_progress_info[index].dst_rect_base = { w_pos, h_pos, w / 2, h / 2 };
-		}
-	}
-
-	// clear old tex
-	for (int i = stage_number + 1; i < 10; i++) {
-		int index = i * 2 - 1;
-		tex_progress_info[index].tex = NULL;
-		index = i * 2;
-		tex_progress_info[index].tex = NULL;
+		w_pos = 2 + 4;
+		h_pos = 7 + 4;
+		tex_progress_info.src_rect = { 0, 0, w, h };
+		tex_progress_info.dst_rect = VIEW_STAGE_HUD_RECT(w_pos, h_pos, w / 2, h / 2);
+		tex_progress_info.dst_rect_base = { w_pos, h_pos, w / 2, h / 2 };
 	}
 }
 
 static void tex_info_init()
 {
+	int ret = -1;
 	int w, h;
 	int w_pos = 0, h_pos = 0;
 
+	// mini_map (items)
+	for (int i = 0; i < STAGE_MINI_MAP_ICON_END; i++) {
+		mini_map_icon[i].tex = resource_manager_getTextureFromPath(mini_map_icon_path[i]);
+		ret = SDL_QueryTexture(mini_map_icon[i].tex, NULL, NULL, &w, &h);
+		if (ret == 0) {
+			hud_tex_info_init_rect(&mini_map_icon[i], w, h, 0, 0);
+		}
+	}
+
+	// mini_map (boss)
+	mini_map_boss_icon.tex = resource_manager_getTextureFromPath("images/map/common/boss_icon.png");
+	ret = SDL_QueryTexture(mini_map_boss_icon.tex, NULL, NULL, &w, &h);
+	if (ret == 0) {
+		hud_tex_info_init_rect(&mini_map_boss_icon, w, h, 0, 0);
+	}
+
+	// mini_map (player)
+	mini_map_player_icon.tex = resource_manager_getTextureFromPath("images/map/common/player_icon.png");
+	ret = SDL_QueryTexture(mini_map_player_icon.tex, NULL, NULL, &w, &h);
+	if (ret == 0) {
+		hud_tex_info_init_rect(&mini_map_player_icon, w, h, 0, 0);
+	}
+
 	// label
 	tex_info[HUD_LABEL_ID_E].tex = resource_manager_getTextureFromPath("images/gui/hud/e_label.png");
-	int ret = SDL_QueryTexture(tex_info[HUD_LABEL_ID_E].tex, NULL, NULL, &w, &h);
+	ret = SDL_QueryTexture(tex_info[HUD_LABEL_ID_E].tex, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = 182;
 		h_pos = 4;
@@ -546,6 +597,65 @@ void hud_manager_update_e_boss_stat(int hp_max, int hp)
 	boss_hp_val_rect[HUD_E_BOSS_ID_HP].dst_rect.w = VIEW_STAGE(hp_val);
 }
 
+static void mini_map_draw()
+{
+	// draw stage num
+	SDL_RenderCopy(g_ren, tex_progress_info.tex, &tex_progress_info.src_rect, &tex_progress_info.dst_rect);
+
+	// draw background
+	SDL_SetRenderDrawColor(g_ren, 192, 192, 192, 255);
+	SDL_RenderFillRect(g_ren, &mini_map_background);
+
+	// common size
+	int cell_width = mini_map_vertical_lines[1].x - mini_map_vertical_lines[0].x;
+	int cell_height = mini_map_horizontal_lines[1].y - mini_map_horizontal_lines[0].y;
+	int offset_x[2] = { VIEW_STAGE(2), VIEW_STAGE(2 + 6) };
+	int offset_y = VIEW_STAGE(2 + 3);
+
+	// draw open section
+	for (int h = 0; h < STAGE_MAP_HEIGHT_NUM; h++) {
+		for (int w = 0; w < STAGE_MAP_WIDTH_NUM; w++) {
+			int index = h * STAGE_MAP_WIDTH_NUM + w;
+			if (g_stage_data->stage_map[index].stat & STAGE_MAP_STAT_HINT) {
+				SDL_SetRenderDrawColor(g_ren, 255, 255, 255, 255);
+				SDL_Rect open_section_rect = { mini_map_vertical_lines[w].x, mini_map_horizontal_lines[h].y, cell_width, cell_height };
+				SDL_RenderFillRect(g_ren, &open_section_rect);
+
+				int icon_count = 0;
+				// draw player icon
+				if ((icon_count < 2) && (index == g_stage_data->current_stage_map_index)) {
+					SDL_Rect player_section_rect = { mini_map_vertical_lines[w].x + offset_x[icon_count], mini_map_horizontal_lines[h].y + offset_y,
+						mini_map_player_icon.dst_rect.w, mini_map_player_icon.dst_rect.h };
+					SDL_RenderCopy(g_ren, mini_map_player_icon.tex, &mini_map_player_icon.src_rect, &player_section_rect);
+					icon_count++;
+				}
+
+				// draw boss icon
+				if ((icon_count < 2) && (g_stage_data->stage_map[index].section_type == SECTION_TYPE_BOSS)) {
+					SDL_Rect boss_section_rect = { mini_map_vertical_lines[w].x + offset_x[icon_count], mini_map_horizontal_lines[h].y + offset_y,
+						mini_map_boss_icon.dst_rect.w, mini_map_boss_icon.dst_rect.h };
+					SDL_RenderCopy(g_ren, mini_map_boss_icon.tex, &mini_map_boss_icon.src_rect, &boss_section_rect);
+					icon_count++;
+				}
+
+				// draw item icon
+				int mini_map_icon_index = g_stage_data->stage_map[index].mini_map_icon;
+				if ((icon_count < 2) && (mini_map_icon_index != STAGE_MINI_MAP_ICON_NONE)) {
+					SDL_Rect item_section_rect = { mini_map_vertical_lines[w].x + offset_x[icon_count], mini_map_horizontal_lines[h].y + offset_y,
+						mini_map_icon[mini_map_icon_index].dst_rect.w, mini_map_icon[mini_map_icon_index].dst_rect.h };
+					SDL_RenderCopy(g_ren, mini_map_icon[mini_map_icon_index].tex, &mini_map_icon[mini_map_icon_index].src_rect, &item_section_rect);
+					icon_count++;
+				}
+			}
+		}
+	}
+
+	// draw lines
+	SDL_SetRenderDrawColor(g_ren, 0, 0, 0, 255);
+	SDL_RenderFillRects(g_ren, mini_map_horizontal_lines, (int)LENGTH_OF(mini_map_horizontal_lines));
+	SDL_RenderFillRects(g_ren, mini_map_vertical_lines, (int)LENGTH_OF(mini_map_vertical_lines));
+}
+
 void hud_manager_display()
 {
 	// clear background
@@ -577,8 +687,8 @@ void hud_manager_display()
 	SDL_SetRenderDrawColor(g_ren, 255, 0, 0, 255);
 	SDL_RenderFillRects(g_ren, hp_vertical_fill, hp_current);
 
-	// progress
-	hud_tex_info_draw(tex_progress_info, HUD_PROGRESS_SIZE);
+	// mini map
+	mini_map_draw();
 
 	// icon
 	hud_tex_info_draw(tex_icon_info, HUD_ICON_ID_END);

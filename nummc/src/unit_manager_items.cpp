@@ -513,12 +513,44 @@ void unit_manager_clear_items(unit_items_data_t* item)
 
 void unit_manager_items_register_item_stock()
 {
+	int mini_map_icon = STAGE_MINI_MAP_ICON_NONE;
 	for (int i = 0; i < UNIT_ITEMS_LIST_SIZE; i++) {
 		if (items[i].type != UNIT_TYPE_ITEMS) continue;
 		if ((items[i].group == UNIT_ITEM_GROUP_TBOX) && (items[i].anim->stat == ANIM_STAT_FLAG_DIE)) continue;
 
 		stage_manager_register_stock_item((void*)&items[i]);
+
+		if ((items[i].group == UNIT_ITEM_GROUP_TBOX)
+			&& ((mini_map_icon == STAGE_MINI_MAP_ICON_NONE) || (mini_map_icon > STAGE_MINI_MAP_ICON_TBOX))) {
+			mini_map_icon = STAGE_MINI_MAP_ICON_TBOX;
+		}
+		else if ((items[i].group == UNIT_ITEM_GROUP_SPECIAL) && (items[i].item_id == UNIT_SPECIAL_ID_UNKNOWN)
+			&& ((mini_map_icon == STAGE_MINI_MAP_ICON_NONE) || (mini_map_icon > STAGE_MINI_MAP_ICON_UNKNOWN))) {
+			mini_map_icon = STAGE_MINI_MAP_ICON_UNKNOWN;
+		}
+		else if ((items[i].group == UNIT_ITEM_GROUP_STOCK) && (items[i].sub_id == UNIT_STOCK_SUB_ID_CHARGE)
+			&& ((mini_map_icon == STAGE_MINI_MAP_ICON_NONE) || (mini_map_icon > STAGE_MINI_MAP_ICON_CHARGE))) {
+			mini_map_icon = STAGE_MINI_MAP_ICON_CHARGE;
+		}
+		else if ((items[i].group == UNIT_ITEM_GROUP_STOCK) && (items[i].sub_id == UNIT_STOCK_SUB_ID_SPECIAL)
+			&& ((mini_map_icon == STAGE_MINI_MAP_ICON_NONE) || (mini_map_icon > STAGE_MINI_MAP_ICON_STOCK))) {
+			mini_map_icon = STAGE_MINI_MAP_ICON_STOCK;
+		}
+		else if ((items[i].group == UNIT_ITEM_GROUP_RECOVERY)
+			&& ((mini_map_icon == STAGE_MINI_MAP_ICON_NONE) || (mini_map_icon > STAGE_MINI_MAP_ICON_HEART))) {
+			mini_map_icon = STAGE_MINI_MAP_ICON_HEART;
+		}
+		else if ((items[i].group == UNIT_ITEM_GROUP_STOCK) && (items[i].sub_id == UNIT_STOCK_SUB_ID_WEAPON) && (items[i].item_id == UNIT_WEAPON_ID_BOM)
+			&& ((mini_map_icon == STAGE_MINI_MAP_ICON_NONE) || (mini_map_icon > STAGE_MINI_MAP_ICON_BOM))) {
+			mini_map_icon = STAGE_MINI_MAP_ICON_BOM;
+		}
+		else if (mini_map_icon == STAGE_MINI_MAP_ICON_NONE) {
+			mini_map_icon = STAGE_MINI_MAP_ICON_ITEM;
+		}
 	}
+
+	// set icon stat
+	g_stage_data->stage_map[g_stage_data->current_stage_map_index].mini_map_icon = mini_map_icon;
 }
 
 void unit_manager_items_update()

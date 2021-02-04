@@ -52,26 +52,6 @@
 #define STAGE_MINI_MAP_ICON_ITEM     7
 #define STAGE_MINI_MAP_ICON_END      8
 
-// STAGE_MINI_MAP_ICON_FLAG
-// 0x 00 00 00 00
-//    |     |
-//    |     +-> section_type flag
-//    +-> item drop flag
-//
-#define STAGE_MINI_MAP_ICON_FLAG_NONE       0
-#define STAGE_MINI_MAP_ICON_FLAG_TYPE       (0x00000001)
-#define STAGE_MINI_MAP_ICON_FLAG_T_BOSS     (STAGE_MINI_MAP_ICON_FLAG_TYPE << (SECTION_TYPE_BOSS   - 1))
-#define STAGE_MINI_MAP_ICON_FLAG_T_NORMAL   (STAGE_MINI_MAP_ICON_FLAG_TYPE << (SECTION_TYPE_NORMAL - 1))
-
-#define STAGE_MINI_MAP_ICON_FLAG_DROP       (0x00010000)
-#define STAGE_MINI_MAP_ICON_FLAG_D_TBOX     (STAGE_MINI_MAP_ICON_FLAG_DROP << (STAGE_MINI_MAP_ICON_TBOX    - 1))
-#define STAGE_MINI_MAP_ICON_FLAG_D_UNKNOWN  (STAGE_MINI_MAP_ICON_FLAG_DROP << (STAGE_MINI_MAP_ICON_UNKNOWN - 1))
-#define STAGE_MINI_MAP_ICON_FLAG_D_CHARGE   (STAGE_MINI_MAP_ICON_FLAG_DROP << (STAGE_MINI_MAP_ICON_CHARGE  - 1))
-#define STAGE_MINI_MAP_ICON_FLAG_D_STOCK    (STAGE_MINI_MAP_ICON_FLAG_DROP << (STAGE_MINI_MAP_ICON_STOCK   - 1))
-#define STAGE_MINI_MAP_ICON_FLAG_D_HEART    (STAGE_MINI_MAP_ICON_FLAG_DROP << (STAGE_MINI_MAP_ICON_HEART   - 1))
-#define STAGE_MINI_MAP_ICON_FLAG_D_BOM      (STAGE_MINI_MAP_ICON_FLAG_DROP << (STAGE_MINI_MAP_ICON_BOM     - 1))
-#define STAGE_MINI_MAP_ICON_FLAG_D_ITEM     (STAGE_MINI_MAP_ICON_FLAG_DROP << (STAGE_MINI_MAP_ICON_ITEM    - 1))
-
 // clock-wise
 #define STAGE_MAP_FACE_W       0
 #define STAGE_MAP_FACE_N       1
@@ -161,7 +141,7 @@ struct _stage_map_data_t {
 	int section_id;
 	int section_type;           // copy from section_data_t section_type
 	int stat;                   // none/win/goal/hint
-	int mini_map_icon;          // STAGE_MINI_MAP_ICON_FLAG_D_XXX | STAGE_MINI_MAP_ICON_FLAG_T_XXX
+	int mini_map_icon;          // STAGE_MINI_MAP_ICON_XXX
 
 	section_stock_item_t* stock_item;   // node head
 	int stock_item_count;

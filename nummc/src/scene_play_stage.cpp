@@ -28,9 +28,9 @@
 
 #define GAME_START_WAIT_TIMER         1500
 #define GAME_NEXT_STAGE_WAIT_TIMER    4000
-#define KEY_SYNC_ITEM_USE_WAIT_TIMER    300
-#define KEY_SYNC_WAIT_TIMER           150
-#define SHOT_BULLET_WAIT_TIMER        200
+#define KEY_SYNC_ITEM_USE_WAIT_TIMER   300
+#define KEY_SYNC_WAIT_TIMER            150
+#define SHOT_BULLET_WAIT_TIMER         200
 
 static void tex_info_init();
 static void set_stat_event(int stat);
@@ -138,9 +138,7 @@ static void main_event_section_boss() {
 		g_player.col_shape->b2body->SetLinearVelocity(new_vec);
 
 		// play bgm
-		if (!(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_GOAL)) {
-			play_current_bgm(true);
-		}
+		play_current_bgm(true);
 	}
 }
 static void main_event_section_normal() {
@@ -153,10 +151,6 @@ static void main_event_section_normal() {
 			drop_goal_items();
 			g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat |= STAGE_MAP_STAT_WIN;
 		}
-
-		//
-		// save item id & position
-		//
 
 		// open door
 		map_manager_open_door();
@@ -821,12 +815,18 @@ static void clear_section()
 
 static void play_current_bgm(bool on_off)
 {
+	bool played = false;
 	if (on_off) {
 		if (g_stage_data->current_section_data->bgm_list.size() > 0) {
-			sound_manager_play(g_stage_data->current_section_data->bgm_list[0]->chunk, SOUND_MANAGER_CH_MUSIC, -1);
+			if (!(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_GOAL)
+				&& !(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_WIN)) {
+				sound_manager_play(g_stage_data->current_section_data->bgm_list[0]->chunk, SOUND_MANAGER_CH_MUSIC, -1);
+				played = true;
+			}
 		}
 	}
-	else {
+
+	if (played == false) {
 		sound_manager_stop(SOUND_MANAGER_CH_MUSIC);
 	}
 }
@@ -1074,6 +1074,14 @@ static void event_msg_handler()
 			unit_items_data_t* unit_data = (unit_items_data_t*)msg_param->obj1;
 			if (unit_data->group == UNIT_ITEM_GROUP_BOM) {
 				unit_manager_items_fire_bom(unit_data);
+			}
+		}
+
+		if (msg.id == EVENT_MSG_UNIT_TRAP_SPAWN_CMD) {
+			game_event_unit_t* msg_param = (game_event_unit_t*)msg.param;
+			unit_trap_data_t* unit_data = (unit_trap_data_t*)msg_param->obj1;
+			if ((unit_data->group == UNIT_TRAP_GROUP_GATE) && (unit_data->sub_id & UNIT_TRAP_GATE_ID_GO_NEXT)) {
+				map_manager_set_door_filter(unit_data->sub_id);
 			}
 		}
 

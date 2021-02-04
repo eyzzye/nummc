@@ -345,7 +345,9 @@ void unit_manager_trap_update()
 					if (trap[i].anim->anim_stat_list[stat]->current_frame != fi) {
 						// send command
 						if (trap[i].anim->anim_stat_base_list[stat]->frame_list[fi]->command == ANIM_FRAME_COMMAND_ON) {
-							game_event_t msg = { (EVENT_MSG_UNIT_TRAP | (0x00000001 << stat)), NULL };
+							game_event_unit_t* msg_param = new game_event_unit_t;
+							msg_param->obj1 = (unit_data_t*)(&trap[i]);
+							game_event_t msg = { (EVENT_MSG_UNIT_TRAP | (0x00000001 << stat)), (void*)msg_param };
 							game_event_push(&msg);
 							trap[i].anim->anim_stat_list[stat]->command_frame = fi;
 						}
