@@ -204,7 +204,7 @@ static void main_event() {
 		if (g_stage_data->section_list[section_id]->section_type == SECTION_TYPE_BOSS) {
 			main_event_section_boss();
 		}
-		else if (g_stage_data->section_list[section_id]->section_type == SECTION_TYPE_NORMAL) {
+		else {
 			main_event_section_normal();
 		}
 	}

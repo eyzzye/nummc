@@ -387,6 +387,7 @@ static void load_section(std::string& line) {
 	}
 	if (key == "type") {
 		if (value == "BOSS") current_section_data->section_type = SECTION_TYPE_BOSS;
+		else if (value == "ITEM") current_section_data->section_type = SECTION_TYPE_ITEM;
 		else if (value == "NORMAL") current_section_data->section_type = SECTION_TYPE_NORMAL;
 		else current_section_data->section_type = SECTION_TYPE_NONE;
 	}

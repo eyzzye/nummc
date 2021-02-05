@@ -19,8 +19,9 @@
 
 #define SECTION_TYPE_NONE       0
 #define SECTION_TYPE_BOSS       1
-#define SECTION_TYPE_NORMAL     2
-#define SECTION_TYPE_END        3
+#define SECTION_TYPE_ITEM       2
+#define SECTION_TYPE_NORMAL     3
+#define SECTION_TYPE_END        4
 
 #define SECTION_STAT_NONE              0
 #define SECTION_STAT_IDLE              1

@@ -60,7 +60,13 @@ public:
 				}
 			}
 			else if ((unit_data->type == UNIT_TYPE_ITEMS) && (unit_data->col_shape->stat == COLLISION_STAT_ENABLE)) {
-				bool overlap = b2TestOverlap(shape, 0, &m_circle, 0, body->GetTransform(), m_transform);
+				bool overlap = false;
+				if (((unit_items_data_t*)unit_data)->group == UNIT_ITEM_GROUP_TBOX) {
+					overlap = false;
+				}
+				else {
+					overlap = b2TestOverlap(shape, 0, &m_circle, 0, body->GetTransform(), m_transform);
+				}
 				if (overlap) {
 					unit_manager_items_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_DIE);
 					unit_manager_create_effect(unit_data->col_shape->x, unit_data->col_shape->y, unit_manager_search_effect(effect_path));
