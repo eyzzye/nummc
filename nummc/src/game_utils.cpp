@@ -19,7 +19,8 @@ int game_utils_random_init(unsigned int seed)
 
 int game_utils_random_gen(int max, int min)
 {
-	int val = rand() % (max + 1 - min) + min;
+	int rand_val = rand();
+	int val = rand_val % (max + 1 - min) + min;
 	return val;
 }
 
