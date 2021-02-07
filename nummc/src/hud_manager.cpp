@@ -92,7 +92,20 @@ static std::string mini_map_icon_path[STAGE_MINI_MAP_ICON_END] = {
 	"images/map/common/item_icon.png",
 };
 static tex_info_t mini_map_icon[STAGE_MINI_MAP_ICON_END];
-static tex_info_t mini_map_boss_icon;
+
+#define MINI_MAP_TYPE_ICON_NONE  0
+#define MINI_MAP_TYPE_ICON_BOSS  1
+#define MINI_MAP_TYPE_ICON_HIDE  2
+#define MINI_MAP_TYPE_ICON_NEST  3
+#define MINI_MAP_TYPE_ICON_END   4
+static std::string mini_map_type_icon_path[MINI_MAP_TYPE_ICON_END] = {
+	"images/map/common/none_icon.png",
+	"images/map/common/boss_icon.png",
+	"images/map/common/hide_icon.png",
+	"images/map/common/nest_icon.png",
+};
+static tex_info_t mini_map_type_icon[MINI_MAP_TYPE_ICON_END];
+
 static tex_info_t mini_map_player_icon;
 static tex_info_t tex_progress_info;
 
@@ -290,9 +303,8 @@ void hud_manager_reset()
 
 	// mini_map
 	hud_tex_info_reset(mini_map_icon, STAGE_MINI_MAP_ICON_END);
-	SDL_Rect* tmp_rect = &mini_map_boss_icon.dst_rect_base;
-	mini_map_boss_icon.dst_rect = VIEW_STAGE_HUD_RECT(tmp_rect->x, tmp_rect->y, tmp_rect->w, tmp_rect->h);
-	tmp_rect = &mini_map_player_icon.dst_rect_base;
+	hud_tex_info_reset(mini_map_type_icon, MINI_MAP_TYPE_ICON_END);
+	SDL_Rect* tmp_rect = &mini_map_player_icon.dst_rect_base;
 	mini_map_player_icon.dst_rect = VIEW_STAGE_HUD_RECT(tmp_rect->x, tmp_rect->y, tmp_rect->w, tmp_rect->h);
 
 	// label
@@ -449,11 +461,13 @@ static void tex_info_init()
 		}
 	}
 
-	// mini_map (boss)
-	mini_map_boss_icon.tex = resource_manager_getTextureFromPath("images/map/common/boss_icon.png");
-	ret = SDL_QueryTexture(mini_map_boss_icon.tex, NULL, NULL, &w, &h);
-	if (ret == 0) {
-		hud_tex_info_init_rect(&mini_map_boss_icon, w, h, 0, 0);
+	// mini_map (type)
+	for (int i = 0; i < MINI_MAP_TYPE_ICON_END; i++) {
+		mini_map_type_icon[i].tex = resource_manager_getTextureFromPath(mini_map_type_icon_path[i]);
+		ret = SDL_QueryTexture(mini_map_type_icon[i].tex, NULL, NULL, &w, &h);
+		if (ret == 0) {
+			hud_tex_info_init_rect(&mini_map_type_icon[i], w, h, 0, 0);
+		}
 	}
 
 	// mini_map (player)
@@ -631,10 +645,22 @@ static void mini_map_draw()
 				}
 
 				// draw boss icon
-				if ((icon_count < 2) && (g_stage_data->stage_map[index].section_type == SECTION_TYPE_BOSS)) {
-					SDL_Rect boss_section_rect = { mini_map_vertical_lines[w].x + offset_x[icon_count], mini_map_horizontal_lines[h].y + offset_y,
-						mini_map_boss_icon.dst_rect.w, mini_map_boss_icon.dst_rect.h };
-					SDL_RenderCopy(g_ren, mini_map_boss_icon.tex, &mini_map_boss_icon.src_rect, &boss_section_rect);
+				int type_icon_index = -1;
+				if (icon_count < 2) {
+					if (g_stage_data->stage_map[index].section_type == SECTION_TYPE_BOSS) {
+						type_icon_index = MINI_MAP_TYPE_ICON_BOSS;
+					}
+					else if (g_stage_data->stage_map[index].section_type == SECTION_TYPE_HIDE) {
+						type_icon_index = MINI_MAP_TYPE_ICON_HIDE;
+					}
+					else if (g_stage_data->stage_map[index].section_type == SECTION_TYPE_NEST) {
+						type_icon_index = MINI_MAP_TYPE_ICON_NEST;
+					}
+				}
+				if (type_icon_index > 0) {
+					SDL_Rect section_type_rect = { mini_map_vertical_lines[w].x + offset_x[icon_count], mini_map_horizontal_lines[h].y + offset_y,
+						mini_map_type_icon[type_icon_index].dst_rect.w, mini_map_type_icon[type_icon_index].dst_rect.h };
+					SDL_RenderCopy(g_ren, mini_map_type_icon[type_icon_index].tex, &mini_map_type_icon[type_icon_index].src_rect, &section_type_rect);
 					icon_count++;
 				}
 

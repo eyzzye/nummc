@@ -1,0 +1,22 @@
+#
+# nest
+#
+
+[unit]
+group=STATIC
+[/unit]
+
+[collision]
+type=BOX_S
+group=NONE
+x=0
+y=0
+w=32
+h=32
+[/collision]
+
+[anim]
+base_w=32
+base_h=32
+units/effect/door/nest.IDLE.anim
+[/anim]

@@ -73,10 +73,12 @@ static tile_instance_data_t map_wall[COLLISION_STATIC_WALL_NUM]; // for invisibl
 static tile_data_t tile_tex[TILE_TEX_NUM];
 
 // unit path
-static std::string trush_effect_path   = "units/effect/trash/trash.unit";
-static std::string smoke_effect_path   = "units/effect/smoke/smoke.unit";
-static std::string bom_event_item_path = "units/items/bom/event/event.unit";
-static std::string go_next_path        = "units/trap/go_next/go_next.unit";
+static std::string trush_effect_path     = "units/effect/trash/trash.unit";
+static std::string door_boss_effect_path = "units/effect/door/boss.unit";
+static std::string door_nest_effect_path = "units/effect/door/nest.unit";
+static std::string smoke_effect_path     = "units/effect/smoke/smoke.unit";
+static std::string bom_event_item_path   = "units/items/bom/event/event.unit";
+static std::string go_next_path          = "units/trap/go_next/go_next.unit";
 
 // tmp variables
 static std::string dir_path;
@@ -601,6 +603,12 @@ void map_manager_create_door()
 		else {
 			// do nothing
 		}
+
+		// door overlay effect
+		std::string* effect_path = NULL;
+		if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_BOSS) effect_path = &door_boss_effect_path;
+		else if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_NEST) effect_path = &door_nest_effect_path;
+		if (effect_path != NULL) unit_manager_create_effect(center_x * g_tile_width, 0, unit_manager_search_effect(*effect_path));
 	}
 
 	map_wall[COLLISION_STATIC_WALL_TOP_DOOR].type = UNIT_TYPE_TILE;
@@ -644,6 +652,12 @@ void map_manager_create_door()
 		else {
 			// do nothing
 		}
+
+		// door overlay effect
+		std::string* effect_path = NULL;
+		if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_BOSS) effect_path = &door_boss_effect_path;
+		else if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_NEST) effect_path = &door_nest_effect_path;
+		if (effect_path != NULL) unit_manager_create_effect(center_x * g_tile_width, (MAP_HEIGHT_NUM_MAX - 1) * g_tile_height, unit_manager_search_effect(*effect_path));
 	}
 
 	map_wall[COLLISION_STATIC_WALL_BOTTOM_DOOR].type = UNIT_TYPE_TILE;
@@ -691,6 +705,12 @@ void map_manager_create_door()
 		else {
 			// do nothing
 		}
+
+		// door overlay effect
+		std::string* effect_path = NULL;
+		if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_BOSS) effect_path = &door_boss_effect_path;
+		else if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_NEST) effect_path = &door_nest_effect_path;
+		if (effect_path != NULL) unit_manager_create_effect(0, center_y * g_tile_height, unit_manager_search_effect(*effect_path));
 	}
 
 	map_wall[COLLISION_STATIC_WALL_LEFT_DOOR].type = UNIT_TYPE_TILE;
@@ -734,6 +754,12 @@ void map_manager_create_door()
 		else {
 			// do nothing
 		}
+
+		// door overlay effect
+		std::string* effect_path = NULL;
+		if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_BOSS) effect_path = &door_boss_effect_path;
+		else if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_NEST) effect_path = &door_nest_effect_path;
+		if (effect_path != NULL) unit_manager_create_effect((MAP_WIDTH_NUM_MAX - 1) * g_tile_width, center_y * g_tile_height, unit_manager_search_effect(*effect_path));
 	}
 
 	map_wall[COLLISION_STATIC_WALL_RIGHT_DOOR].type = UNIT_TYPE_TILE;

@@ -1,0 +1,16 @@
+#
+# nest animation (type=IDLE)
+#
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=3
+dir_path=images/units/effect/door/
+path=nest.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

@@ -766,6 +766,8 @@ static void section_init()
 		// load effect
 		unit_manager_load_effect("units/effect/smoke/smoke.unit");
 		unit_manager_load_effect("units/effect/trash/trash.unit");
+		unit_manager_load_effect("units/effect/door/boss.unit");
+		unit_manager_load_effect("units/effect/door/nest.unit");
 		unit_manager_load_effect("units/effect/star/star.unit");
 		unit_manager_load_effect("units/effect/damage/damage.unit");
 		unit_manager_load_effect("units/effect/damage/48x48/damage.unit");
