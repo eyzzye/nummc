@@ -529,7 +529,7 @@ void unit_manager_items_register_item_stock()
 	for (int i = 0; i < UNIT_ITEMS_LIST_SIZE; i++) {
 		if (items[i].type != UNIT_TYPE_ITEMS) continue;
 		if ((items[i].group == UNIT_ITEM_GROUP_TBOX) && (items[i].anim->stat == ANIM_STAT_FLAG_DIE)) continue;
-		if ((items[i].group == UNIT_ITEM_GROUP_BOM) && (items[i].item_id == UNIT_BOM_ID_EVENT)) continue;
+		if (items[i].group == UNIT_ITEM_GROUP_BOM) continue;
 
 		stage_manager_register_stock_item((void*)&items[i]);
 
