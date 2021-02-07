@@ -85,7 +85,8 @@
 #define UNIT_BOM_ID_NONE         (0)
 #define UNIT_BOM_ID_SIMPLE       (1)
 #define UNIT_BOM_ID_FALL         (2)
-#define UNIT_BOM_ID_END          (3)
+#define UNIT_BOM_ID_EVENT        (3)
+#define UNIT_BOM_ID_END          (4)
 
 //
 // ALL ITEMS (sid)
@@ -151,3 +152,4 @@
 // BOM
 #define UNIT_ITEM_ID_BM_SIMPLE             (UNIT_ITEM_FLAG_BOM        |   UNIT_BOM_ID_SIMPLE)
 #define UNIT_ITEM_ID_BM_FALL               (UNIT_ITEM_FLAG_BOM        |   UNIT_BOM_ID_FALL)
+#define UNIT_ITEM_ID_BM_EVENT              (UNIT_ITEM_FLAG_BOM        |   UNIT_BOM_ID_EVENT)

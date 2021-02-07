@@ -1,0 +1,16 @@
+#
+# event animation (type=IDLE)
+#
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/common/
+path=invisible.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

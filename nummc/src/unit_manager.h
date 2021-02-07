@@ -445,6 +445,7 @@ extern const char* unit_manager_get_special_item(int index);
 extern int unit_manager_items_get_val(int unit_id, int index);
 extern void unit_manager_items_set_val(int unit_id, int val, int index);
 extern void unit_manager_items_fire_bom(unit_items_data_t* item_data);
+extern void unit_manager_items_bom_event(unit_items_data_t* item_data);
 extern unit_items_data_t* unit_manager_get_items_base(int index);
 extern unit_items_data_t* unit_manager_get_items(int index);
 extern int unit_manager_load_items_def(std::string path);

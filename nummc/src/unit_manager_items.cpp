@@ -227,6 +227,12 @@ void unit_manager_items_fire_bom(unit_items_data_t* item_data)
 	map_manager_break_block(item_data->col_shape->x, item_data->col_shape->y, 2/* block */, 2/* block */);
 }
 
+void unit_manager_items_bom_event(unit_items_data_t* item_data)
+{
+	// delete wall tile, set go_next trap, set trush effect (set_door_filter() is called from go_next SPAWN event)
+	map_manager_open_hide_door(item_data->val1);
+}
+
 int unit_manager_load_items_def(std::string path)
 {
 	bool read_flg = false;
@@ -523,6 +529,7 @@ void unit_manager_items_register_item_stock()
 	for (int i = 0; i < UNIT_ITEMS_LIST_SIZE; i++) {
 		if (items[i].type != UNIT_TYPE_ITEMS) continue;
 		if ((items[i].group == UNIT_ITEM_GROUP_TBOX) && (items[i].anim->stat == ANIM_STAT_FLAG_DIE)) continue;
+		if ((items[i].group == UNIT_ITEM_GROUP_BOM) && (items[i].item_id == UNIT_BOM_ID_EVENT)) continue;
 
 		stage_manager_register_stock_item((void*)&items[i]);
 

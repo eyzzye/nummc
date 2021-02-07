@@ -13,6 +13,7 @@
 #define TILE_BREAKABLE_TRUE   1
 
 #define TILE_ID_NONE  0
+#define TILE_ID_WALL  2
 #define TILE_ID_DOOR  5
 
 #define MAP_TYPE_FIELD   0
@@ -164,6 +165,7 @@ extern void map_manager_clear_all_instance();
 extern void map_manager_create_wall();
 extern void map_manager_create_door();
 extern void map_manager_open_door();
+extern void map_manager_open_hide_door(int stage_map_face);
 extern void map_manager_set_door_filter(int go_next_id);
 extern void map_manager_backup_to_section_map();
 extern void map_manager_load_section_map();

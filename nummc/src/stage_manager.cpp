@@ -33,6 +33,7 @@
 stage_data_t* g_stage_data;
 static section_data_t* current_section_data;
 static int tmp_start_index;
+static int tmp_current_enemy_phase;
 
 #define SECTION_STOCK_ITEM_SIZE  (UNIT_ITEMS_LIST_SIZE * STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM)
 static section_stock_item_t section_stock_item[SECTION_STOCK_ITEM_SIZE];
@@ -91,13 +92,15 @@ void stage_manager_unload()
 			p_section->bgm_list.clear();
 
 			// enemy
-			for (int i = 0; i < p_section->enemy_list.size(); i++) {
-				if (p_section->enemy_list[i]) {
-					delete p_section->enemy_list[i];
-					p_section->enemy_list[i] = NULL;
+			for (int phase = 0; phase < SECTION_ENEMY_PHASE_SIZE; phase++) {
+				for (int i = 0; i < p_section->enemy_list[phase].size(); i++) {
+					if (p_section->enemy_list[phase][i]) {
+						delete p_section->enemy_list[phase][i];
+						p_section->enemy_list[phase][i] = NULL;
+					}
 				}
+				p_section->enemy_list[phase].clear();
 			}
-			p_section->enemy_list.clear();
 
 			// trap
 			for (int i = 0; i < p_section->trap_list.size(); i++) {
@@ -282,7 +285,7 @@ int stage_manager_load(std::string path)
 			current_section_data->item_drop_rate = 4;
 			current_section_data->map_path = "map/common/n_empty.tmx";
 			current_section_data->bgm_path = "";
-			current_section_data->enemy_path = "";
+			current_section_data->enemy_path[0] = "";
 			current_section_data->trap_path = "";
 			current_section_data->items_path = "";
 		}
@@ -384,10 +387,13 @@ static void load_section(std::string& line) {
 		current_section_data->id = atoi(value.c_str());
 		current_section_data->section_type = SECTION_TYPE_NORMAL;
 		g_stage_data->section_list.push_back(current_section_data);
+		tmp_current_enemy_phase = -1;
 	}
 	if (key == "type") {
 		if (value == "BOSS") current_section_data->section_type = SECTION_TYPE_BOSS;
+		else if (value == "HIDE") current_section_data->section_type = SECTION_TYPE_HIDE;
 		else if (value == "ITEM") current_section_data->section_type = SECTION_TYPE_ITEM;
+		else if (value == "NEST") current_section_data->section_type = SECTION_TYPE_NEST;
 		else if (value == "NORMAL") current_section_data->section_type = SECTION_TYPE_NORMAL;
 		else current_section_data->section_type = SECTION_TYPE_NONE;
 	}
@@ -401,7 +407,15 @@ static void load_section(std::string& line) {
 		current_section_data->bgm_list.push_back(new_bgm);
 	}
 
-	if (key == "enemy_path")  current_section_data->enemy_path = value;
+	if (key == "enemy_path") {
+		tmp_current_enemy_phase += 1;
+		if (tmp_current_enemy_phase >= SECTION_ENEMY_PHASE_SIZE) {
+			LOG_ERROR("ERROR: section %d enemy_path overflow", current_section_data->id);
+		}
+		else {
+			current_section_data->enemy_path[tmp_current_enemy_phase] = value;
+		}
+	}
 	if (key == "trap_path")  current_section_data->trap_path = value;
 	if (key == "items_path")  current_section_data->items_path = value;
 }
@@ -411,7 +425,10 @@ static int stage_manager_load_section_files()
 	for (int sec_i = 0; sec_i < g_stage_data->section_list.size(); sec_i++) {
 		current_section_data = g_stage_data->section_list[sec_i];
 
-		if (current_section_data->enemy_path.size() > 0) load_section_file(current_section_data->enemy_path);
+		for (int phase = 0; phase < SECTION_ENEMY_PHASE_SIZE; phase++) {
+			tmp_current_enemy_phase = phase;
+			if (current_section_data->enemy_path[phase].size() > 0) load_section_file(current_section_data->enemy_path[phase]);
+		}
 		if (current_section_data->trap_path.size() > 0) load_section_file(current_section_data->trap_path);
 		if (current_section_data->items_path.size() > 0) load_section_file(current_section_data->items_path);
 	}
@@ -571,53 +588,53 @@ static void load_enemy(std::string& line) {
 		clear_enemy(new_enemy);
 
 		new_enemy->type = value;
-		current_section_data->enemy_list.push_back(new_enemy);
+		current_section_data->enemy_list[tmp_current_enemy_phase].push_back(new_enemy);
 
-		tmp_start_index = (int)current_section_data->enemy_list.size() - 1;
+		tmp_start_index = (int)current_section_data->enemy_list[tmp_current_enemy_phase].size() - 1;
 		return;
 	}
 
-	std::string type = current_section_data->enemy_list[tmp_start_index]->type;
+	std::string type = current_section_data->enemy_list[tmp_current_enemy_phase][tmp_start_index]->type;
 	if (key == "x") {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
 
-		current_section_data->enemy_list[tmp_start_index]->x = val_list[0];
+		current_section_data->enemy_list[tmp_current_enemy_phase][tmp_start_index]->x = val_list[0];
 		for (int i = 1; i < val_list.size(); i++) {
 			enemy_data_t* new_enemy = new enemy_data_t();
 			clear_enemy(new_enemy);
 
 			new_enemy->type = type;
-			current_section_data->enemy_list.push_back(new_enemy);
-			current_section_data->enemy_list[(size_t)tmp_start_index + i]->x = val_list[i];
+			current_section_data->enemy_list[tmp_current_enemy_phase].push_back(new_enemy);
+			current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->x = val_list[i];
 		}
 	}
 	if (key == "y") {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
 		for (int i = 0; i < val_list.size(); i++) {
-			current_section_data->enemy_list[(size_t)tmp_start_index + i]->y = val_list[i];
+			current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->y = val_list[i];
 		}
 	}
 	if (key == "vec_x") {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
 		for (int i = 0; i < val_list.size(); i++) {
-			current_section_data->enemy_list[(size_t)tmp_start_index + i]->vec_x = val_list[i];
+			current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->vec_x = val_list[i];
 		}
 	}
 	if (key == "vec_y") {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
 		for (int i = 0; i < val_list.size(); i++) {
-			current_section_data->enemy_list[(size_t)tmp_start_index + i]->vec_y = val_list[i];
+			current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->vec_y = val_list[i];
 		}
 	}
 	if (key == "delay") {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
 		for (int i = 0; i < val_list.size(); i++) {
-			current_section_data->enemy_list[(size_t)tmp_start_index + i]->delay = val_list[i];
+			current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->delay = val_list[i];
 		}
 	}
 	if (key == "face") {
@@ -625,19 +642,19 @@ static void load_enemy(std::string& line) {
 		game_utils_split_conmma(value, val_list);
 		for (int i = 0; i < val_list.size(); i++) {
 			if (val_list[i] == "N") {
-				current_section_data->enemy_list[(size_t)tmp_start_index + i]->face = UNIT_FACE_N;
+				current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->face = UNIT_FACE_N;
 			}
 			else if (val_list[i] == "E") {
-				current_section_data->enemy_list[(size_t)tmp_start_index + i]->face = UNIT_FACE_E;
+				current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->face = UNIT_FACE_E;
 			}
 			else if (val_list[i] == "W") {
-				current_section_data->enemy_list[(size_t)tmp_start_index + i]->face = UNIT_FACE_W;
+				current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->face = UNIT_FACE_W;
 			}
 			else if (val_list[i] == "S") {
-				current_section_data->enemy_list[(size_t)tmp_start_index + i]->face = UNIT_FACE_S;
+				current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->face = UNIT_FACE_S;
 			}
 			else {
-				current_section_data->enemy_list[(size_t)tmp_start_index + i]->face = UNIT_FACE_NONE;
+				current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->face = UNIT_FACE_NONE;
 			}
 		}
 	}
@@ -645,7 +662,7 @@ static void load_enemy(std::string& line) {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
 		for (int i = 0; i < val_list.size(); i++) {
-			current_section_data->enemy_list[(size_t)tmp_start_index + i]->ai_step = val_list[i];
+			current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->ai_step = val_list[i];
 		}
 	}
 }

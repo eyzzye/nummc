@@ -703,7 +703,8 @@ static void set_filter(int group, b2Filter& filter)
 	}
 	else if (group_low == COLLISION_GROUP_PLAYER) {
 		filter.categoryBits = COLLISION_GROUP_MASK_PLAYER;
-		filter.maskBits = COLLISION_GROUP_MASK_ENEMY | COLLISION_GROUP_MASK_ITEMS | COLLISION_GROUP_MASK_ENEMY_BULLET | COLLISION_GROUP_MASK_MAP;
+		if (group_high & COLLISION_GROUP_U_THROUGH_MAP) filter.maskBits = COLLISION_GROUP_MASK_ENEMY | COLLISION_GROUP_MASK_ITEMS | COLLISION_GROUP_MASK_ENEMY_BULLET;
+		else filter.maskBits = COLLISION_GROUP_MASK_ENEMY | COLLISION_GROUP_MASK_ITEMS | COLLISION_GROUP_MASK_ENEMY_BULLET | COLLISION_GROUP_MASK_MAP;
 	}
 	else if (group_low == COLLISION_GROUP_ENEMY) {
 		filter.categoryBits = COLLISION_GROUP_MASK_ENEMY;
@@ -712,7 +713,8 @@ static void set_filter(int group, b2Filter& filter)
 	}
 	else if (group_low == COLLISION_GROUP_ITEMS) {
 		filter.categoryBits = COLLISION_GROUP_MASK_ITEMS;
-		filter.maskBits = COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_ENEMY | COLLISION_GROUP_MASK_MAP;
+		if (group_high & COLLISION_GROUP_U_THROUGH_MAP) filter.maskBits = COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_ENEMY;
+		else filter.maskBits = COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_ENEMY | COLLISION_GROUP_MASK_MAP;
 	}
 	else if (group_low == COLLISION_GROUP_PLAYER_BULLET) {
 		filter.categoryBits = COLLISION_GROUP_MASK_PLAYER_BULLET;
@@ -730,7 +732,8 @@ static void set_filter(int group, b2Filter& filter)
 	}
 	else if (group_low == COLLISION_GROUP_TRAP) {
 		filter.categoryBits = COLLISION_GROUP_MASK_TRAP;
-		filter.maskBits = COLLISION_GROUP_MASK_MAP;
+		if (group_high & COLLISION_GROUP_U_THROUGH_MAP) filter.maskBits = (COLLISION_GROUP_U_NONE | COLLISION_GROUP_NONE);
+		else filter.maskBits = COLLISION_GROUP_MASK_MAP;
 	}
 }
 #endif

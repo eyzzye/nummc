@@ -38,6 +38,7 @@ static void main_event_next_load();
 static void main_event_gameover();
 static void dialog_message_ok();
 static void section_init();
+static void load_next_enemy_phase();
 static void clear_section();
 static void play_current_bgm(bool on_off);
 static void drop_goal_items();
@@ -141,11 +142,70 @@ static void main_event_section_boss() {
 		play_current_bgm(true);
 	}
 }
+static void main_event_section_nest() {
+	// drop goal items
+	if (g_stage_data->section_stat == SECTION_STAT_ACTIVE) {
+		if (g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_WIN) {
+			// if re-enter room, do nothing
+		}
+		else if ((g_stage_data->section_enemy_phase < SECTION_ENEMY_PHASE_SIZE - 1)
+			&& (g_stage_data->current_section_data->enemy_list[g_stage_data->section_enemy_phase + 1].size() > 0)) {
+			// set enemy phase wait
+			g_stage_data->section_timer = SECTION_TIMER_ENEMY_PHASE_WAIT_TIME;
+			g_stage_data->section_stat = SECTION_STAT_ENEMY_PHASE_WAIT;
+			return; // don't open door
+		} else {
+			drop_goal_items();
+			g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat |= STAGE_MAP_STAT_WIN;
+		}
+
+		// open door
+		map_manager_open_door();
+
+		g_stage_data->section_stat = SECTION_STAT_DOOR_SELECT_WAIT;
+	}
+	// wait enemy spawn
+	else if (g_stage_data->section_stat == SECTION_STAT_ENEMY_PHASE_WAIT) {
+		if (g_stage_data->section_timer >= 0) {
+			g_stage_data->section_timer -= g_delta_time;
+		}
+		else {
+			// load next enemy phase
+			g_stage_data->section_enemy_phase += 1;
+			load_next_enemy_phase();
+
+			// spawn sound
+			sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_drop.ogg"));
+
+			g_stage_data->section_timer = 0;
+			g_stage_data->section_stat = SECTION_STAT_ACTIVE;
+		}
+	}
+	// wait select door
+	else if (g_stage_data->section_stat == SECTION_STAT_DOOR_SELECT_WAIT) {
+		// do nothing
+
+		// select door -> scene_play_next_section() update
+		//  g_stage_data->current_stage_map_index
+		//  g_stage_data->current_section_index
+		//  g_stage_data->current_section_data
+	}
+	// load next section
+	else if (g_stage_data->section_stat == SECTION_STAT_NEXT_WAIT) {
+		clear_section();
+		section_init();
+
+		// re-place player
+		unit_manager_player_set_position(g_stage_data->section_start_x, g_stage_data->section_start_y);
+
+		play_current_bgm(true);
+	}
+}
 static void main_event_section_normal() {
 	// drop goal items
 	if (g_stage_data->section_stat == SECTION_STAT_ACTIVE) {
 		if (g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_WIN) {
-
+			// if re-enter room, do nothing
 		}
 		else {
 			drop_goal_items();
@@ -203,6 +263,9 @@ static void main_event() {
 		// final section (gate open)
 		if (g_stage_data->section_list[section_id]->section_type == SECTION_TYPE_BOSS) {
 			main_event_section_boss();
+		}
+		else if (g_stage_data->section_list[section_id]->section_type == SECTION_TYPE_NEST) {
+			main_event_section_nest();
 		}
 		else {
 			main_event_section_normal();
@@ -675,6 +738,7 @@ static void section_init()
 {
 	// clear tmp region
 	g_stage_data->section_timer = 0;
+	g_stage_data->section_enemy_phase = 0;
 
 	// first section
 	if ((g_stage_data->current_section_index == SECTION_INDEX_START) && !(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_WIN)) {
@@ -779,16 +843,17 @@ static void section_init()
 		}
 
 		// load enemy unit
-		for (int i = 0; i < p_section->enemy_list.size(); i++) {
-			unit_manager_load_enemy(p_section->enemy_list[i]->type);
-			int enemy_id = unit_manager_create_enemy(p_section->enemy_list[i]->x, p_section->enemy_list[i]->y, p_section->enemy_list[i]->face, unit_manager_search_enemy(p_section->enemy_list[i]->type));
-			if (p_section->enemy_list[i]->ai_step != 0) {
-				unit_manager_set_ai_step(enemy_id, p_section->enemy_list[i]->ai_step);
+		for (int i = 0; i < p_section->enemy_list[0].size(); i++) {
+			unit_manager_load_enemy(p_section->enemy_list[0][i]->type);
+			int enemy_id = unit_manager_create_enemy(p_section->enemy_list[0][i]->x, p_section->enemy_list[0][i]->y,
+				p_section->enemy_list[0][i]->face, unit_manager_search_enemy(p_section->enemy_list[0][i]->type));
+			if (p_section->enemy_list[0][i]->ai_step != 0) {
+				unit_manager_set_ai_step(enemy_id, p_section->enemy_list[0][i]->ai_step);
 			}
 
 			if (g_stage_data->current_section_index != 0) {
 				// create smoke effect
-				unit_manager_create_effect(p_section->enemy_list[i]->x - g_tile_width / 2, p_section->enemy_list[i]->y - g_tile_height / 2, unit_manager_search_effect(smoke_effect_path));
+				unit_manager_create_effect(p_section->enemy_list[0][i]->x - g_tile_width / 2, p_section->enemy_list[0][i]->y - g_tile_height / 2, unit_manager_search_effect(smoke_effect_path));
 			}
 		}
 	}
@@ -799,6 +864,26 @@ static void section_init()
 
 	// set section_stat active
 	g_stage_data->section_stat = SECTION_STAT_ACTIVE;
+}
+
+static void load_next_enemy_phase()
+{
+	// load enemy unit
+	int phase = g_stage_data->section_enemy_phase;
+	section_data_t* p_section = g_stage_data->current_section_data;
+	for (int i = 0; i < p_section->enemy_list[phase].size(); i++) {
+		unit_manager_load_enemy(p_section->enemy_list[phase][i]->type);
+		int enemy_id = unit_manager_create_enemy(p_section->enemy_list[phase][i]->x, p_section->enemy_list[phase][i]->y,
+			p_section->enemy_list[phase][i]->face, unit_manager_search_enemy(p_section->enemy_list[phase][i]->type));
+		if (p_section->enemy_list[phase][i]->ai_step != 0) {
+			unit_manager_set_ai_step(enemy_id, p_section->enemy_list[phase][i]->ai_step);
+		}
+
+		if (g_stage_data->current_section_index != 0) {
+			// create smoke effect
+			unit_manager_create_effect(p_section->enemy_list[phase][i]->x - g_tile_width / 2, p_section->enemy_list[phase][i]->y - g_tile_height / 2, unit_manager_search_effect(smoke_effect_path));
+		}
+	}
 }
 
 static void clear_section()
@@ -1073,7 +1158,12 @@ static void event_msg_handler()
 			game_event_unit_t* msg_param = (game_event_unit_t*)msg.param;
 			unit_items_data_t* unit_data = (unit_items_data_t*)msg_param->obj1;
 			if (unit_data->group == UNIT_ITEM_GROUP_BOM) {
-				unit_manager_items_fire_bom(unit_data);
+				if (unit_data->item_id == UNIT_BOM_ID_EVENT) {
+					unit_manager_items_bom_event(unit_data);
+				}
+				else {
+					unit_manager_items_fire_bom(unit_data);
+				}
 			}
 		}
 

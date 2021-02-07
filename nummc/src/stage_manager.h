@@ -19,20 +19,25 @@
 
 #define SECTION_TYPE_NONE       0
 #define SECTION_TYPE_BOSS       1
-#define SECTION_TYPE_ITEM       2
-#define SECTION_TYPE_NORMAL     3
-#define SECTION_TYPE_END        4
+#define SECTION_TYPE_HIDE       2
+#define SECTION_TYPE_ITEM       3
+#define SECTION_TYPE_NEST       4
+#define SECTION_TYPE_NORMAL     5
+#define SECTION_TYPE_END        6
 
 #define SECTION_STAT_NONE              0
 #define SECTION_STAT_IDLE              1
 #define SECTION_STAT_ACTIVE            2
 #define SECTION_STAT_TERMINATE         3
 #define SECTION_STAT_DOOR_SELECT_WAIT  4
-#define SECTION_STAT_NEXT_WAIT         5
-#define SECTION_STAT_END               6
+#define SECTION_STAT_ENEMY_PHASE_WAIT  5
+#define SECTION_STAT_NEXT_WAIT         6
+#define SECTION_STAT_END               7
 
 #define SECTION_INDEX_START     0
 #define SECTION_TIMER_NEXT_WAIT_TIME  5000
+#define SECTION_TIMER_ENEMY_PHASE_WAIT_TIME  2000
+#define SECTION_ENEMY_PHASE_SIZE  5
 
 #define STAGE_MAP_WIDTH_NUM    9
 #define STAGE_MAP_HEIGHT_NUM   5
@@ -109,12 +114,12 @@ struct _section_data_t {
 
 	std::string map_path;
 	std::string bgm_path;
-	std::string enemy_path;
+	std::string enemy_path[SECTION_ENEMY_PHASE_SIZE];
 	std::string trap_path;
 	std::string items_path;
 
 	std::vector<BGM_data_t*> bgm_list;
-	std::vector<enemy_data_t*> enemy_list;
+	std::vector<enemy_data_t*> enemy_list[SECTION_ENEMY_PHASE_SIZE];
 	std::vector<trap_data_t*> trap_list;
 
 	std::vector<items_data_t*> items_list;
@@ -174,6 +179,7 @@ struct _stage_data_t {
 
 	int section_stat;
 	int section_timer;
+	int section_enemy_phase;
 	std::vector<section_data_t*> section_list;
 
 	// tmp region

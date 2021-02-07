@@ -1,6 +1,7 @@
 [items]
 units/items/bom/simple/bom.unit
 units/items/bom/fall/fall_bom.unit
+units/items/bom/event/event.unit
 units/items/recovery/heart/heart.unit
 units/items/recovery/heart_up/heart_up.unit
 units/items/tbox/tresure_static/tresure_static.unit

@@ -72,6 +72,12 @@ static tile_instance_data_t map_wall[COLLISION_STATIC_WALL_NUM]; // for invisibl
 #define TILE_TEX_NUM  32
 static tile_data_t tile_tex[TILE_TEX_NUM];
 
+// unit path
+static std::string trush_effect_path   = "units/effect/trash/trash.unit";
+static std::string smoke_effect_path   = "units/effect/smoke/smoke.unit";
+static std::string bom_event_item_path = "units/items/bom/event/event.unit";
+static std::string go_next_path        = "units/trap/go_next/go_next.unit";
+
 // tmp variables
 static std::string dir_path;
 static int read_tile_type;
@@ -300,7 +306,6 @@ void map_manager_create_stage_map()
 	//
 	// Test map for Debug
 	//
-
 	//      6
 	//      2
 	// 5 1 [P] 3  7
@@ -580,7 +585,20 @@ void map_manager_create_door()
 	int next_stage_map_index = stage_map_index - STAGE_MAP_WIDTH_NUM;
 	int x = 0;
 	int y = 0;
-	if ((0 <= stage_map_index_y - 1) && (g_stage_data->stage_map[next_stage_map_index].section_id != STAGE_MAP_ID_IGNORE)) { // exist N side section
+	if ((0 <= stage_map_index_y - 1) && (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_HIDE)) {
+		// reset wall
+		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n)->id != TILE_ID_WALL) {
+			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n)->id = TILE_ID_WALL;
+			tile_inst = map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n;
+			map_manager_create_tile_instance(tile_inst, center_x, 0, false);
+		}
+
+		// create bom_event item
+		int item_id = unit_manager_create_items(center_x * g_tile_width, 0, unit_manager_search_items(bom_event_item_path));
+		unit_items_data_t* items_data = unit_manager_get_items(item_id);
+		items_data->val1 = STAGE_MAP_FACE_N;
+	}
+	else if ((0 <= stage_map_index_y - 1) && (g_stage_data->stage_map[next_stage_map_index].section_id != STAGE_MAP_ID_IGNORE)) { // exist N side section
 		// setup new door
 		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n)->id != TILE_ID_DOOR) {
 			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n)->id = TILE_ID_DOOR;
@@ -610,7 +628,20 @@ void map_manager_create_door()
 	next_stage_map_index = stage_map_index + STAGE_MAP_WIDTH_NUM;
 	//x = 0;
 	y = (MAP_HEIGHT_NUM_MAX - 1) * g_tile_height;
-	if ((stage_map_index_y + 1 < STAGE_MAP_HEIGHT_NUM) && (g_stage_data->stage_map[next_stage_map_index].section_id != STAGE_MAP_ID_IGNORE)) { // exist S side section
+	if ((stage_map_index_y + 1 < STAGE_MAP_HEIGHT_NUM) && (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_HIDE)) {
+		// reset wall
+		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s)->id != TILE_ID_WALL) {
+			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s)->id = TILE_ID_WALL;
+			tile_inst = map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s;
+			map_manager_create_tile_instance(tile_inst, center_x, (MAP_HEIGHT_NUM_MAX - 1), false);
+		}
+
+		// create bom_event item
+		int item_id = unit_manager_create_items(center_x * g_tile_width, (MAP_HEIGHT_NUM_MAX - 1) * g_tile_height, unit_manager_search_items(bom_event_item_path));
+		unit_items_data_t* items_data = unit_manager_get_items(item_id);
+		items_data->val1 = STAGE_MAP_FACE_S;
+	}
+	else if ((stage_map_index_y + 1 < STAGE_MAP_HEIGHT_NUM) && (g_stage_data->stage_map[next_stage_map_index].section_id != STAGE_MAP_ID_IGNORE)) { // exist S side section
 		// setup new door
 		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s)->id != TILE_ID_DOOR) {
 			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s)->id = TILE_ID_DOOR;
@@ -644,7 +675,20 @@ void map_manager_create_door()
 	next_stage_map_index = stage_map_index - 1;
 	x = 0;
 	y = 0;
-	if ((0 <= stage_map_index_x - 1) && (g_stage_data->stage_map[next_stage_map_index].section_id != STAGE_MAP_ID_IGNORE)) { // exist W side section
+	if ((0 <= stage_map_index_x - 1) && (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_HIDE)) {
+		// reset wall
+		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w)->id != TILE_ID_WALL) {
+			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w)->id = TILE_ID_WALL;
+			tile_inst = map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w;
+			map_manager_create_tile_instance(tile_inst, 0, center_y, false);
+		}
+
+		// create bom_event item
+		int item_id = unit_manager_create_items(0, center_y * g_tile_height, unit_manager_search_items(bom_event_item_path));
+		unit_items_data_t* items_data = unit_manager_get_items(item_id);
+		items_data->val1 = STAGE_MAP_FACE_W;
+	}
+	else if ((0 <= stage_map_index_x - 1) && (g_stage_data->stage_map[next_stage_map_index].section_id != STAGE_MAP_ID_IGNORE)) { // exist W side section
 		// setup new door
 		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w)->id != TILE_ID_DOOR) {
 			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w)->id = TILE_ID_DOOR;
@@ -674,7 +718,20 @@ void map_manager_create_door()
 	next_stage_map_index = stage_map_index + 1;
 	x = (MAP_WIDTH_NUM_MAX - 1) * g_tile_width;
 	//y = 0;
-	if ((stage_map_index_x + 1 < STAGE_MAP_WIDTH_NUM) && (g_stage_data->stage_map[next_stage_map_index].section_id != STAGE_MAP_ID_IGNORE)) { // exist E side section
+	if ((stage_map_index_x + 1 < STAGE_MAP_WIDTH_NUM) && (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_HIDE)) {
+		// reset wall
+		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e)->id != TILE_ID_WALL) {
+			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e)->id = TILE_ID_WALL;
+			tile_inst = map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e;
+			map_manager_create_tile_instance(tile_inst, (MAP_WIDTH_NUM_MAX - 1), center_y, false);
+		}
+
+		// create bom_event item
+		int item_id = unit_manager_create_items((MAP_WIDTH_NUM_MAX - 1) * g_tile_width, center_y * g_tile_height, unit_manager_search_items(bom_event_item_path));
+		unit_items_data_t* items_data = unit_manager_get_items(item_id);
+		items_data->val1 = STAGE_MAP_FACE_E;
+	}
+	else if ((stage_map_index_x + 1 < STAGE_MAP_WIDTH_NUM) && (g_stage_data->stage_map[next_stage_map_index].section_id != STAGE_MAP_ID_IGNORE)) { // exist E side section
 		// setup new door
 		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e)->id != TILE_ID_DOOR) {
 			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e)->id = TILE_ID_DOOR;
@@ -703,7 +760,6 @@ void map_manager_create_door()
 //
 // door I/F
 //
-static std::string go_next_path = "units/trap/go_next/go_next.unit";
 void map_manager_open_door()
 {
 	// section info
@@ -757,6 +813,106 @@ void map_manager_open_door()
 		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
 		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_E;
+	}
+}
+
+void map_manager_open_hide_door(int stage_map_face)
+{
+	// section info
+	int center_x = MAP_WIDTH_NUM_MAX / 2;
+	int center_y = MAP_HEIGHT_NUM_MAX / 2;
+
+	// clear door
+	int section_map_index_n = /* 0 * MAP_WIDTH_NUM_MAX + */ center_x;
+	int x = center_x * g_tile_width;
+	int y = 0;
+	if (stage_map_face == STAGE_MAP_FACE_N) {
+		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n)->id != TILE_ID_NONE) {
+			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n)->id = TILE_ID_NONE;
+		}
+		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n);
+
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
+		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_N;
+
+		// create trush item
+		unit_manager_create_effect(x, y, unit_manager_search_effect(trush_effect_path));
+
+		// open mini map
+		int next_stage_map_index = g_stage_data->current_stage_map_index - STAGE_MAP_WIDTH_NUM;
+		if (!(g_stage_data->stage_map[next_stage_map_index].stat & STAGE_MAP_STAT_HINT)) {
+			g_stage_data->stage_map[next_stage_map_index].stat |= STAGE_MAP_STAT_HINT;
+		}
+	}
+
+	int section_map_index_s = (MAP_HEIGHT_NUM_MAX - 1) * MAP_WIDTH_NUM_MAX + center_x;
+	//x = center_x * g_tile_width;
+	y = (MAP_HEIGHT_NUM_MAX - 1) * g_tile_height;
+	if (stage_map_face == STAGE_MAP_FACE_S) {
+		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s)->id != TILE_ID_NONE) {
+			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s)->id = TILE_ID_NONE;
+		}
+		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s);
+
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
+		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_S;
+
+		// create trush item
+		unit_manager_create_effect(x, y, unit_manager_search_effect(trush_effect_path));
+
+		// open mini map
+		int next_stage_map_index = g_stage_data->current_stage_map_index + STAGE_MAP_WIDTH_NUM;
+		if (!(g_stage_data->stage_map[next_stage_map_index].stat & STAGE_MAP_STAT_HINT)) {
+			g_stage_data->stage_map[next_stage_map_index].stat |= STAGE_MAP_STAT_HINT;
+		}
+	}
+
+	int section_map_index_w = center_y * MAP_WIDTH_NUM_MAX /* + 0 */;
+	x = 0;
+	y = center_y * g_tile_height;
+	if (stage_map_face == STAGE_MAP_FACE_W) {
+		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w)->id != TILE_ID_NONE) {
+			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w)->id = TILE_ID_NONE;
+		}
+		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w);
+
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
+		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_W;
+
+		// create trush item
+		unit_manager_create_effect(x, y, unit_manager_search_effect(trush_effect_path));
+
+		// open mini map
+		int next_stage_map_index = g_stage_data->current_stage_map_index - 1;
+		if (!(g_stage_data->stage_map[next_stage_map_index].stat & STAGE_MAP_STAT_HINT)) {
+			g_stage_data->stage_map[next_stage_map_index].stat |= STAGE_MAP_STAT_HINT;
+		}
+	}
+
+	int section_map_index_e = center_y * MAP_WIDTH_NUM_MAX + (MAP_WIDTH_NUM_MAX - 1);
+	x = (MAP_WIDTH_NUM_MAX - 1) * g_tile_width;
+	//y = center_y * g_tile_height;
+	if (stage_map_face == STAGE_MAP_FACE_E) {
+		if ((map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e)->id != TILE_ID_NONE) {
+			(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e)->id = TILE_ID_NONE;
+		}
+		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e);
+
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
+		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_E;
+
+		// create trush item
+		unit_manager_create_effect(x, y, unit_manager_search_effect(trush_effect_path));
+
+		// open mini map
+		int next_stage_map_index = g_stage_data->current_stage_map_index + 1;
+		if (!(g_stage_data->stage_map[next_stage_map_index].stat & STAGE_MAP_STAT_HINT)) {
+			g_stage_data->stage_map[next_stage_map_index].stat |= STAGE_MAP_STAT_HINT;
+		}
 	}
 }
 
@@ -839,12 +995,10 @@ void map_manager_break_block(int x, int y, int w /* block */, int h /* block */)
 				}
 
 				// create trush item
-				std::string effect_path = "units/effect/trash/trash.unit";
-				unit_manager_create_effect(x_pos, y_pos, unit_manager_search_effect(effect_path));
+				unit_manager_create_effect(x_pos, y_pos, unit_manager_search_effect(trush_effect_path));
 
 				// create smoke effect
-				effect_path = "units/effect/smoke/smoke.unit";
-				unit_manager_create_effect(x_pos, y_pos, unit_manager_search_effect(effect_path));
+				unit_manager_create_effect(x_pos, y_pos, unit_manager_search_effect(smoke_effect_path));
 			}
 			map_index++;
 		}
@@ -1636,6 +1790,15 @@ static node_index_t* get_stage_map_index_single_direction(int x, int y)
 	return NULL;
 }
 
+// stageN.dat [section]
+//  (must)
+//   section 1   ... N     => Normal
+//   section N+1           => Boss
+//
+//  (optional)
+//   section N+2           => Hide room
+//   section N+3 ... N + i => Item room
+//   section N+i+1         => Nest room
 static void generate_stage_map()
 {
 	// set start position
@@ -1654,12 +1817,14 @@ static void generate_stage_map()
 
 	int x, y;
 	int normal_section_num = 1;
+	int boss_section_id = -1;
 	game_utils_random_init((unsigned int)time(NULL));
 	for (int i = 1; i < section_list_size; i++) {
 		node_index_t* index_node = NULL;
 
 		// if boss section, set at the terminate point
 		if (g_stage_data->section_list[i]->section_type == SECTION_TYPE_BOSS) {
+			boss_section_id = i;
 			for (int try_time = 0; try_time < 3; try_time++) {
 				// find stage_map index by section_id
 				int base_section_x = -1, base_section_y = -1;
@@ -1667,6 +1832,28 @@ static void generate_stage_map()
 				bool found_flg = get_stage_map_index_by_id((try_id), &base_section_x, &base_section_y);
 				if (found_flg == false) {
 					continue;
+				}
+
+				index_node = get_stage_map_index_single_direction(base_section_x, base_section_y);
+				if (index_node != NULL) {
+					break;
+				}
+			}
+		}
+		// if hide section, set at the fork point
+		else if (g_stage_data->section_list[i]->section_type == SECTION_TYPE_HIDE) {
+			for (int try_time = 0; try_time < 3; try_time++) {
+				int selected_id = game_utils_random_gen(normal_section_num - 1, 1);
+
+				if (g_stage_data->section_list[selected_id]->section_type != SECTION_TYPE_NORMAL) {
+					continue; // not normal section
+				}
+
+				// find stage_map index by section_id
+				int base_section_x = -1, base_section_y = -1;
+				bool found_flg = get_stage_map_index_by_id(selected_id, &base_section_x, &base_section_y);
+				if (found_flg == false) {
+					continue; // not found id
 				}
 
 				index_node = get_stage_map_index_single_direction(base_section_x, base_section_y);
