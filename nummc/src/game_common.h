@@ -44,7 +44,7 @@
 
 #define UNIT_PLAYER_BASE_LIST_SIZE         16
 #define UNIT_ENEMY_BASE_LIST_SIZE          (UNIT_ENEMY_LIST_SIZE)
-#define UNIT_ITEMS_BASE_LIST_SIZE          (UNIT_ITEMS_LIST_SIZE / 2)          // div 2 => rough estimate
+#define UNIT_ITEMS_BASE_LIST_SIZE          (UNIT_ITEMS_LIST_SIZE)
 #define UNIT_EFFECT_BASE_LIST_SIZE         32
 #define UNIT_TRAP_BASE_LIST_SIZE           (UNIT_TRAP_LIST_SIZE / 4)           // div 4 => rough estimate
 #define UNIT_PLAYER_BULLET_BASE_LIST_SIZE  (UNIT_PLAYER_BULLET_LIST_SIZE / 2)  // div 2 => rough estimate
