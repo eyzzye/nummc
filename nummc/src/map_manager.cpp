@@ -87,33 +87,20 @@ static int write_section_map_index;
 //
 // stage map variables
 //
-typedef struct _node_index_t node_index_t;
-struct _node_index_t
+typedef struct _stage_map_index_t stage_map_index_t;
+struct _stage_map_index_t
 {
-	int type;
 	int x;
 	int y;
-	node_index_t* prev;
-	node_index_t* next;
 };
-#define NODE_INDEX_TYPE_NONE             0
-#define NODE_INDEX_TYPE_STAGE_MAP_INDEX  1
-
 #define TMP_STAGE_MAP_INDEX_SIZE  (STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM)
-static node_index_t tmp_stage_map_index[TMP_STAGE_MAP_INDEX_SIZE];
-static node_index_t* tmp_stage_map_index_start = NULL;
+static stage_map_index_t tmp_stage_map_index[TMP_STAGE_MAP_INDEX_SIZE];
 static int tmp_stage_map_index_count = 0;
 
 // stage map functions
-static node_index_t* get_tmp_stage_map_index(node_index_t* index_data, int index_count);
-static node_index_t* get_tmp_stage_map_index_end(node_index_t* index_data);
-static node_index_t* get_tmp_stage_map_index_by_index(int x, int y);
-static node_index_t* register_tmp_stage_map_index(int x, int y);
-static void register_tmp_stage_map_index_4_direction(int x, int y);
-static void delete_tmp_stage_map_index(node_index_t* index_data);
-static int get_stage_map_index_direction_count(int x, int y, int* dst_empty_count = NULL, int* dst_base_count = NULL);
-static bool get_stage_map_index_by_id(int id, int* dst_x, int* dst_y);
-static node_index_t* get_stage_map_index_single_direction(int x, int y);
+#define DIRECTION_NUM_IGNORE  (-1)
+static bool get_stage_map_connected_type(int x, int y, int* dst_connection_count);
+static int set_stage_map_index(int x, int y, stage_map_index_t* dst_stage_map_index, bool normal_flag, int direction_num);
 static void generate_stage_map();
 
 //
@@ -1557,237 +1544,197 @@ static void load_data_to_stage_data(std::string& line, int tile_type) {
 //
 // stage map
 //
-static node_index_t* get_tmp_stage_map_index(node_index_t* index_data, int index_count)
+static bool get_stage_map_connected_type(int x, int y, int* dst_connection_count)
 {
-	if (index_data == NULL) return NULL;
-
-	node_index_t* current_node = index_data; // index==0
-	for (int i = 1; i <= index_count; i++) {
-		current_node = current_node->next;
-		if (current_node == NULL) break;
-	}
-
-	if (current_node == NULL) {
-		LOG_ERROR("ERROR: get_tmp_stage_map_index() not found node\n");
-	}
-	return current_node;
-}
-
-static node_index_t* get_tmp_stage_map_index_end(node_index_t* index_data)
-{
-	if (index_data == NULL) return NULL;
-
-	int max_count = 0;
-	node_index_t* end_node = index_data;
-	while ((max_count < TMP_STAGE_MAP_INDEX_SIZE) && (end_node->next != NULL)) {
-		end_node = end_node->next;
-		max_count++;
-	}
-
-	if (max_count >= TMP_STAGE_MAP_INDEX_SIZE) {
-		LOG_ERROR("ERROR: get_tmp_stage_map_index_end() not found end_node\n");
-	}
-	return end_node;
-}
-
-static node_index_t* get_tmp_stage_map_index_by_index(int x, int y)
-{
-	node_index_t* current_node = tmp_stage_map_index_start; // index==0
-	for (int i = 1; i < tmp_stage_map_index_count; i++) {
-		if ((current_node->x == x) && (current_node->y == y)) {
-			break;
-		}
-		current_node = current_node->next;
-		if (current_node == NULL) break;
-	}
-	return current_node;
-}
-
-static node_index_t* register_tmp_stage_map_index(int x, int y)
-{
-	// search empty node
-	int new_index = -1;
-	for (int i = 0; i < TMP_STAGE_MAP_INDEX_SIZE; i++) {
-		if (tmp_stage_map_index[i].type == NODE_INDEX_TYPE_NONE) {
-			new_index = i;
-			tmp_stage_map_index[i].type = NODE_INDEX_TYPE_STAGE_MAP_INDEX;
-			break;
+	bool not_normal_flag = false;
+	int connection_count = 0;
+	int connected_id, connected_type;
+	if (x - 1 >= 0) { // W
+		connected_id = g_stage_data->stage_map[y * STAGE_MAP_WIDTH_NUM + (x - 1)].section_id;
+		if (connected_id != STAGE_MAP_ID_IGNORE) {
+			connection_count += 1;
+			connected_type = g_stage_data->section_list[connected_id]->section_type;
+			if (connected_type != SECTION_TYPE_NORMAL) not_normal_flag = true;
 		}
 	}
-	if (new_index == -1) {
-		LOG_ERROR("ERROR: register_tmp_stage_map_index overflow\n");
-		return NULL;
+	if (y - 1 >= 0) { // N
+		connected_id = g_stage_data->stage_map[(y - 1) * STAGE_MAP_WIDTH_NUM + x].section_id;
+		if (connected_id != STAGE_MAP_ID_IGNORE) {
+			connection_count += 1;
+			connected_type = g_stage_data->section_list[connected_id]->section_type;
+			if (connected_type != SECTION_TYPE_NORMAL) not_normal_flag = true;
+		}
 	}
-
-	// set data
-	tmp_stage_map_index[new_index].x = x;
-	tmp_stage_map_index[new_index].y = y;
-
-	if (tmp_stage_map_index_start == NULL) {
-		tmp_stage_map_index[new_index].prev = NULL;
-		tmp_stage_map_index[new_index].next = NULL;
-		tmp_stage_map_index_start = &tmp_stage_map_index[new_index];
+	if (x + 1 < STAGE_MAP_WIDTH_NUM) { // E
+		connected_id = g_stage_data->stage_map[y * STAGE_MAP_WIDTH_NUM + (x + 1)].section_id;
+		if (connected_id != STAGE_MAP_ID_IGNORE) {
+			connection_count += 1;
+			connected_type = g_stage_data->section_list[connected_id]->section_type;
+			if (connected_type != SECTION_TYPE_NORMAL) not_normal_flag = true;
+		}
 	}
-	else {
-		node_index_t* end_node = get_tmp_stage_map_index_end(tmp_stage_map_index_start);
-		end_node->next = &tmp_stage_map_index[new_index];
-		tmp_stage_map_index[new_index].prev = end_node;
-		tmp_stage_map_index[new_index].next = NULL;
+	if (y + 1 < STAGE_MAP_HEIGHT_NUM) { // S
+		connected_id = g_stage_data->stage_map[(y + 1) * STAGE_MAP_WIDTH_NUM + x].section_id;
+		if (connected_id != STAGE_MAP_ID_IGNORE) {
+			connection_count += 1;
+			connected_type = g_stage_data->section_list[connected_id]->section_type;
+			if (connected_type != SECTION_TYPE_NORMAL) not_normal_flag = true;
+		}
 	}
-
-	tmp_stage_map_index_count += 1;
-
-	return &tmp_stage_map_index[new_index];
+	*dst_connection_count = connection_count;
+	return not_normal_flag;
 }
 
-static void register_tmp_stage_map_index_4_direction(int x, int y)
+static int set_stage_map_index(int x, int y, stage_map_index_t* dst_stage_map_index, bool normal_flag, int direction_num)
 {
+	// register all empty section
+	int empty_direction[STAGE_MAP_FACE_END];
+	int empty_direction_count = 0;
+
+	// register [x,y]->[empty]->[normal] section
+	typedef struct _empty_normal_t empty_normal_t;
+	struct _empty_normal_t
+	{
+		int face;
+		int count;
+	};
+	empty_normal_t empty_normal_direction[STAGE_MAP_FACE_END];
+	int empty_normal_direction_count = 0;
+	int tmp_connection_count = 0;
+
 	// W
 	int index = y * STAGE_MAP_WIDTH_NUM + (x - 1);
 	if ((x - 1 >= 0) && (g_stage_data->stage_map[index].section_id == STAGE_MAP_ID_IGNORE)) {
-		register_tmp_stage_map_index(x - 1, y);
+		empty_direction[empty_direction_count] = STAGE_MAP_FACE_W;
+		empty_direction_count += 1;
+
+		if (normal_flag && (get_stage_map_connected_type(x - 1, y, &tmp_connection_count) == false)) {
+			empty_normal_direction[empty_normal_direction_count].face = STAGE_MAP_FACE_W;
+			empty_normal_direction[empty_normal_direction_count].count = tmp_connection_count;
+			empty_normal_direction_count += 1;
+		}
 	}
 
 	// N
 	index = (y - 1) * STAGE_MAP_WIDTH_NUM + x;
 	if ((y - 1 >= 0) && (g_stage_data->stage_map[index].section_id == STAGE_MAP_ID_IGNORE)) {
-		register_tmp_stage_map_index(x, y - 1);
+		empty_direction[empty_direction_count] = STAGE_MAP_FACE_N;
+		empty_direction_count += 1;
+
+		if (normal_flag && (get_stage_map_connected_type(x, y - 1, &tmp_connection_count) == false)) {
+			empty_normal_direction[empty_normal_direction_count].face = STAGE_MAP_FACE_N;
+			empty_normal_direction[empty_normal_direction_count].count = tmp_connection_count;
+			empty_normal_direction_count += 1;
+		}
 	}
 
 	// E
 	index = y * STAGE_MAP_WIDTH_NUM + (x + 1);
 	if ((x + 1 < STAGE_MAP_WIDTH_NUM) && (g_stage_data->stage_map[index].section_id == STAGE_MAP_ID_IGNORE)) {
-		register_tmp_stage_map_index(x + 1, y);
+		empty_direction[empty_direction_count] = STAGE_MAP_FACE_E;
+		empty_direction_count += 1;
+
+		if (normal_flag && (get_stage_map_connected_type(x + 1, y, &tmp_connection_count) == false)) {
+			empty_normal_direction[empty_normal_direction_count].face = STAGE_MAP_FACE_E;
+			empty_normal_direction[empty_normal_direction_count].count = tmp_connection_count;
+			empty_normal_direction_count += 1;
+		}
 	}
 
 	// S
 	index = (y + 1) * STAGE_MAP_WIDTH_NUM + x;
 	if ((y + 1 < STAGE_MAP_HEIGHT_NUM) && (g_stage_data->stage_map[index].section_id == STAGE_MAP_ID_IGNORE)) {
-		register_tmp_stage_map_index(x, y + 1);
-	}
-}
+		empty_direction[empty_direction_count] = STAGE_MAP_FACE_S;
+		empty_direction_count += 1;
 
-static void delete_tmp_stage_map_index(node_index_t* index_data)
-{
-	node_index_t* tmp1 = index_data->prev;
-	node_index_t* tmp2 = index_data->next;
-	if (tmp1) tmp1->next = tmp2;
-	if (tmp2) tmp2->prev = tmp1;
-
-	if (tmp_stage_map_index_start == index_data) {
-		// replace head node
-		tmp_stage_map_index_start = tmp2;
-	}
-	memset(index_data, 0, sizeof(node_index_t));
-	tmp_stage_map_index_count -= 1;
-}
-
-static int get_stage_map_index_direction_count(int x, int y, int* dst_empty_count, int* dst_base_count)
-{
-	int base_count = 0;
-	int empty_count = 0;
-
-	// W
-	int index = y * STAGE_MAP_WIDTH_NUM + (x - 1);
-	if (x - 1 >= 0) {
-		base_count++;
-		if (g_stage_data->stage_map[index].section_id == STAGE_MAP_ID_IGNORE) {
-			empty_count++;
+		if (normal_flag && (get_stage_map_connected_type(x, y + 1, &tmp_connection_count) == false)) {
+			empty_normal_direction[empty_normal_direction_count].face = STAGE_MAP_FACE_S;
+			empty_normal_direction[empty_normal_direction_count].count = tmp_connection_count;
+			empty_normal_direction_count += 1;
 		}
 	}
 
-	// N
-	index = (y - 1) * STAGE_MAP_WIDTH_NUM + x;
-	if (y - 1 >= 0) {
-		base_count++;
-		if (g_stage_data->stage_map[index].section_id == STAGE_MAP_ID_IGNORE) {
-			empty_count++;
+	int new_stage_map_face = -1;
+	// set normal section
+	if (normal_flag) {
+		if (empty_normal_direction_count == 0) {
+			// not found empty section
+			return 1;
 		}
-	}
 
-	// E
-	index = y * STAGE_MAP_WIDTH_NUM + (x + 1);
-	if (x + 1 < STAGE_MAP_WIDTH_NUM) {
-		base_count++;
-		if (g_stage_data->stage_map[index].section_id == STAGE_MAP_ID_IGNORE) {
-			empty_count++;
+		// only 1 section
+		if (empty_normal_direction_count == 1) {
+			if ((direction_num >= 0) && (direction_num != empty_normal_direction[0].count)) {
+				return 1;  // invalid direction_num
+			}
+			new_stage_map_face = empty_normal_direction[0].face;
 		}
-	}
+		// select by random
+		else if (empty_normal_direction_count > 1) {
+			int selected_index = game_utils_random_gen(empty_normal_direction_count - 1, 0);
 
-	// S
-	index = (y + 1) * STAGE_MAP_WIDTH_NUM + x;
-	if (y + 1 < STAGE_MAP_HEIGHT_NUM) {
-		base_count++;
-		if (g_stage_data->stage_map[index].section_id == STAGE_MAP_ID_IGNORE) {
-			empty_count++;
-		}
-	}
+			// check direction_num
+			if (direction_num >= 0) {
+				// search 4 direction
+				for (int direction_index = 0; direction_index < empty_normal_direction_count; direction_index++) {
+					if (direction_num != empty_normal_direction[selected_index].count) {
+						selected_index += 1;
+						if (selected_index >= empty_normal_direction_count) selected_index = 0;
+						continue;
+					}
+					else {
+						new_stage_map_face = empty_normal_direction[selected_index].face;
+						break;
+					}
+				}
 
-	// write dest value
-	if (dst_empty_count != NULL) *dst_empty_count = empty_count;
-	if (dst_base_count != NULL) *dst_base_count = base_count;
-
-	return (base_count - empty_count); // conected count
-}
-
-static bool get_stage_map_index_by_id(int id, int* dst_x, int * dst_y)
-{
-	// find stage_map index by section_id
-	int x = -1, y = -1;
-	bool found_flg = false;
-	for (y = 0; y < STAGE_MAP_HEIGHT_NUM; y++) {
-		for (x = 0; x < STAGE_MAP_WIDTH_NUM; x++) {
-			if (g_stage_data->stage_map[y * STAGE_MAP_WIDTH_NUM + x].section_id == id) {
-				found_flg = true;
-				break;
+				if (new_stage_map_face == -1) {
+					return 1;  // not found correct direction_num
+				}
+			}
+			// get normal section
+			else {
+				new_stage_map_face = empty_normal_direction[selected_index].face;
 			}
 		}
-		if (found_flg) break; // found index
 	}
+	// set section (un-supported direction_num checker)
+	else {
+		if (empty_direction_count == 0) {
+			// not found empty section
+			return 1;
+		}
 
-	*dst_x = x;
-	*dst_y = y;
-	return found_flg;
-}
-
-static node_index_t* get_stage_map_index_single_direction(int x, int y)
-{
-	// not found empty section
-	if (get_stage_map_index_direction_count(x, y) == 4) return NULL;
-
-	// W
-	int index = y * STAGE_MAP_WIDTH_NUM + (x - 1);
-	if ((x - 1 >= 0) && (g_stage_data->stage_map[index].section_id == STAGE_MAP_ID_IGNORE)) {
-		if (get_stage_map_index_direction_count(x - 1, y) == 1) {
-			return get_tmp_stage_map_index_by_index(x - 1, y);
+		// only 1 section
+		if (empty_direction_count == 1) {
+			new_stage_map_face = empty_direction[0];
+		}
+		// select by random
+		else if (empty_direction_count > 1) {
+			int selected_index = game_utils_random_gen(empty_direction_count - 1, 0);
+			new_stage_map_face = empty_direction[selected_index];
 		}
 	}
 
-	// N
-	index = (y - 1) * STAGE_MAP_WIDTH_NUM + x;
-	if ((y - 1 >= 0) && (g_stage_data->stage_map[index].section_id == STAGE_MAP_ID_IGNORE)) {
-		if (get_stage_map_index_direction_count(x, y - 1) == 1) {
-			return get_tmp_stage_map_index_by_index(x, y - 1);
-		}
+	// set stage_map_index
+	if (new_stage_map_face == STAGE_MAP_FACE_W) {
+		dst_stage_map_index->x = x - 1;
+		dst_stage_map_index->y = y;
+	}
+	else if (new_stage_map_face == STAGE_MAP_FACE_N) {
+		dst_stage_map_index->x = x;
+		dst_stage_map_index->y = y - 1;
+	}
+	else if (new_stage_map_face == STAGE_MAP_FACE_E) {
+		dst_stage_map_index->x = x + 1;
+		dst_stage_map_index->y = y;
+	}
+	else if (new_stage_map_face == STAGE_MAP_FACE_S) {
+		dst_stage_map_index->x = x;
+		dst_stage_map_index->y = y + 1;
 	}
 
-	// E
-	index = y * STAGE_MAP_WIDTH_NUM + (x + 1);
-	if ((x + 1 < STAGE_MAP_WIDTH_NUM) && (g_stage_data->stage_map[index].section_id == STAGE_MAP_ID_IGNORE)) {
-		if (get_stage_map_index_direction_count(x + 1, y) == 1) {
-			return get_tmp_stage_map_index_by_index(x + 1, y);
-		}
-	}
-
-	// S
-	index = (y + 1) * STAGE_MAP_WIDTH_NUM + x;
-	if ((y + 1 < STAGE_MAP_HEIGHT_NUM) && (g_stage_data->stage_map[index].section_id == STAGE_MAP_ID_IGNORE)) {
-		if (get_stage_map_index_direction_count(x, y + 1) == 1) {
-			return get_tmp_stage_map_index_by_index(x, y + 1);
-		}
-	}
-
-	return NULL;
+	return 0;
 }
 
 // stageN.dat [section]
@@ -1801,109 +1748,99 @@ static node_index_t* get_stage_map_index_single_direction(int x, int y)
 //   section N+i+1         => Nest room
 static void generate_stage_map()
 {
+	int ret = -1;
+
+	// init random generator
+	game_utils_random_init((unsigned int)time(NULL));
+
+	// clear tmp region
+	memset(tmp_stage_map_index, 0, sizeof(tmp_stage_map_index));
+	tmp_stage_map_index_count = 0;
+
 	// set start position
 	int center_x = STAGE_MAP_WIDTH_NUM / 2;
 	int center_y = STAGE_MAP_HEIGHT_NUM / 2;
 	g_stage_data->current_stage_map_index = center_y * STAGE_MAP_WIDTH_NUM + center_x;
 	g_stage_data->stage_map[g_stage_data->current_stage_map_index].section_id = 0;
-
-	int section_list_size = (int)g_stage_data->section_list.size();
-	memset(tmp_stage_map_index, 0, sizeof(tmp_stage_map_index));
-	tmp_stage_map_index_start = NULL;
-	tmp_stage_map_index_count = 0;
-
-	// set section1 position
-	register_tmp_stage_map_index_4_direction(center_x, center_y);
-
-	int x, y;
+	tmp_stage_map_index[0].x = center_x;
+	tmp_stage_map_index[0].y = center_y;
+	tmp_stage_map_index_count += 1;
 	int normal_section_num = 1;
-	int boss_section_id = -1;
-	game_utils_random_init((unsigned int)time(NULL));
-	for (int i = 1; i < section_list_size; i++) {
-		node_index_t* index_node = NULL;
 
-		// if boss section, set at the terminate point
+	int boss_section_id = -1;
+	int section_list_size = (int)g_stage_data->section_list.size();
+	for (int i = 1; i < section_list_size; i++) {
+		bool setup_flg = false;
+
 		if (g_stage_data->section_list[i]->section_type == SECTION_TYPE_BOSS) {
 			boss_section_id = i;
-			for (int try_time = 0; try_time < 3; try_time++) {
-				// find stage_map index by section_id
-				int base_section_x = -1, base_section_y = -1;
-				int try_id = i - (try_time + 1); // BOSS->[N]->[N-1]->[N-2]
-				bool found_flg = get_stage_map_index_by_id((try_id), &base_section_x, &base_section_y);
-				if (found_flg == false) {
-					continue;
-				}
 
-				index_node = get_stage_map_index_single_direction(base_section_x, base_section_y);
-				if (index_node != NULL) {
-					break;
-				}
+			// [Boss]->[N]->[N-1]->[N-2]
+			ret = set_stage_map_index(tmp_stage_map_index[normal_section_num - 1].x, tmp_stage_map_index[normal_section_num - 1].y, &tmp_stage_map_index[i], true, 1);
+			if ((ret != 0) && (normal_section_num - 2 >= 0)) {
+				ret = set_stage_map_index(tmp_stage_map_index[normal_section_num - 2].x, tmp_stage_map_index[normal_section_num - 2].y, &tmp_stage_map_index[i], true, 1);
+			}
+			if ((ret != 0) && (normal_section_num - 3 >= 0)) {
+				ret = set_stage_map_index(tmp_stage_map_index[normal_section_num - 3].x, tmp_stage_map_index[normal_section_num - 3].y, &tmp_stage_map_index[i], true, 1);
+			}
+
+			if (ret == 0) {
+				g_stage_data->stage_map[tmp_stage_map_index[i].y * STAGE_MAP_WIDTH_NUM + tmp_stage_map_index[i].x].section_id = i;
+				tmp_stage_map_index_count += 1;
+				setup_flg = true;
 			}
 		}
-		// if hide section, set at the fork point
 		else if (g_stage_data->section_list[i]->section_type == SECTION_TYPE_HIDE) {
-			for (int try_time = 0; try_time < 3; try_time++) {
-				int selected_id = game_utils_random_gen(normal_section_num - 1, 1);
-
-				if (g_stage_data->section_list[selected_id]->section_type != SECTION_TYPE_NORMAL) {
-					continue; // not normal section
-				}
-
-				// find stage_map index by section_id
-				int base_section_x = -1, base_section_y = -1;
-				bool found_flg = get_stage_map_index_by_id(selected_id, &base_section_x, &base_section_y);
-				if (found_flg == false) {
-					continue; // not found id
-				}
-
-				index_node = get_stage_map_index_single_direction(base_section_x, base_section_y);
-				if (index_node != NULL) {
-					break;
-				}
-			}
+			// default generator
 		}
-		// if item section, set at the fork point
 		else if (g_stage_data->section_list[i]->section_type == SECTION_TYPE_ITEM) {
-			for (int try_time = 0; try_time < 3; try_time++) {
-				int selected_id = game_utils_random_gen(normal_section_num - 1, 1);
-
-				if (g_stage_data->section_list[selected_id]->section_type != SECTION_TYPE_NORMAL) {
-					continue; // not normal section
-				}
-
-				// find stage_map index by section_id
-				int base_section_x = -1, base_section_y = -1;
-				bool found_flg = get_stage_map_index_by_id(selected_id, &base_section_x, &base_section_y);
-				if (found_flg == false) {
-					continue; // not found id
-				}
-
-				index_node = get_stage_map_index_single_direction(base_section_x, base_section_y);
-				if (index_node != NULL) {
-					break;
-				}
-			}
+			// default generator
 		}
-		else if (g_stage_data->section_list[i]->section_type == SECTION_TYPE_NORMAL) {
-			normal_section_num += 1;
+		else if (g_stage_data->section_list[i]->section_type == SECTION_TYPE_NEST) {
+			// default generator
 		}
 
 		// set random point
-		if (index_node == NULL) {
-			if (tmp_stage_map_index_count < 1) {
+		if (setup_flg == false) {
+			int selected_index = 0;
+
+			// set head randomly
+			if (normal_section_num > 1) selected_index = game_utils_random_gen(normal_section_num - 1, 0);
+
+			// try normal_section_num times (normal, 1 direction)
+			for (int try_time = 0; try_time < normal_section_num; try_time++) {
+				ret = set_stage_map_index(tmp_stage_map_index[selected_index].x, tmp_stage_map_index[selected_index].y, &tmp_stage_map_index[i], true, 1);
+				if (ret == 0) break;
+
+				selected_index += 1;
+				if (selected_index >= normal_section_num) {
+					selected_index = 0;
+				}
+			}
+
+			// try normal_section_num times (normal, N direction)
+			if (ret != 0) {
+				for (int try_time = 0; try_time < normal_section_num; try_time++) {
+					ret = set_stage_map_index(tmp_stage_map_index[selected_index].x, tmp_stage_map_index[selected_index].y, &tmp_stage_map_index[i], true, DIRECTION_NUM_IGNORE);
+					if (ret == 0) break;
+
+					selected_index += 1;
+					if (selected_index >= normal_section_num) {
+						selected_index = 0;
+					}
+				}
+			}
+
+			if (ret != 0) {
 				LOG_ERROR("ERROR: generate_stage_map() not found empty section\n");
 				return;
 			}
-			int selected_index = game_utils_random_gen(tmp_stage_map_index_count - 1, 0);
-			index_node = get_tmp_stage_map_index(tmp_stage_map_index_start, selected_index);
+
+			g_stage_data->stage_map[tmp_stage_map_index[i].y * STAGE_MAP_WIDTH_NUM + tmp_stage_map_index[i].x].section_id = i;
+			tmp_stage_map_index_count += 1;
+			if (g_stage_data->section_list[i]->section_type == SECTION_TYPE_NORMAL) {
+				normal_section_num += 1;
+			}
 		}
-
-		// fix new_position
-		x = index_node->x; y = index_node->y;
-		g_stage_data->stage_map[y * STAGE_MAP_WIDTH_NUM + x].section_id = i;
-
-		// set tmp for next loop
-		delete_tmp_stage_map_index(index_node);
-		register_tmp_stage_map_index_4_direction(x, y);
 	}
 }
