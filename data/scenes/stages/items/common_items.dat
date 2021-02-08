@@ -47,4 +47,9 @@ units/items/special/speed_up/speed_up.unit
 units/items/special/strength_up/strength_up.unit
 units/items/special/unknown/unknown.unit
 units/items/special/bullet_double/bullet_double.unit
+units/items/special/bullet_curving_down/curve.unit
+units/items/special/bullet_range_down/range.unit
+units/items/special/bullet_rate_down/rate.unit
+units/items/special/speed_down/speed_down.unit
+units/items/special/strength_down/strength_down.unit
 [/items]

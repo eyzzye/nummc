@@ -1,0 +1,16 @@
+#
+# rate animation (type=IDLE)
+#
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/items/special/bullet_rate_down/
+path=rate.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

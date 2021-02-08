@@ -716,6 +716,16 @@ int unit_manager_player_get_special_item(int item_id)
 			unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&g_player);
 		}
 	}
+	else if (item_id == UNIT_SPECIAL_ID_BULLET_CURVING_DOWN) {
+		if (UNIT_BULLET_SPEC_GET_CURVING(&g_player) <= UNIT_PLAYER_BULLET_CURVING_RANK_MIN) {
+			return 1;
+		}
+		unit_manager_player_change_bullet_curving(-1);
+
+		char buff[32] = { '\0' };
+		sprintf_s(buff, "player bullet_curving %d", UNIT_BULLET_SPEC_GET_CURVING(&g_player));
+		quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+	}
 	else if (item_id == UNIT_SPECIAL_ID_BULLET_CURVING_UP) {
 		if (UNIT_BULLET_SPEC_GET_CURVING(&g_player) >= UNIT_PLAYER_BULLET_CURVING_RANK_MAX) {
 			return 1;
@@ -726,6 +736,18 @@ int unit_manager_player_get_special_item(int item_id)
 		sprintf_s(buff, "player bullet_curving %d", UNIT_BULLET_SPEC_GET_CURVING(&g_player));
 		quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
 	}
+	else if (item_id == UNIT_SPECIAL_ID_BULLET_RANGE_DOWN) {
+		if (g_player.bullet_life_timer <= UNIT_PLAYER_BULLET_LIFE_TIMER_MIN) {
+			return 1;
+		}
+		else {
+			g_player.bullet_life_timer -= 200;
+
+			char buff[32] = { '\0' };
+			sprintf_s(buff, "player bullet_range %d", g_player.bullet_life_timer);
+			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+		}
+	}
 	else if (item_id == UNIT_SPECIAL_ID_BULLET_RANGE_UP) {
 		if (g_player.bullet_life_timer >= UNIT_PLAYER_BULLET_LIFE_TIMER_MAX) {
 			return 1;
@@ -735,6 +757,18 @@ int unit_manager_player_get_special_item(int item_id)
 
 			char buff[32] = { '\0' };
 			sprintf_s(buff, "player bullet_range %d", g_player.bullet_life_timer);
+			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+		}
+	}
+	else if (item_id == UNIT_SPECIAL_ID_BULLET_RATE_DOWN) {
+		if (g_player.attack_wait_timer >= UNIT_PLAYER_ATTACK_WAIT_TIMER_MAX) {
+			return 1;
+		}
+		else {
+			g_player.attack_wait_timer += 100;
+
+			char buff[32] = { '\0' };
+			sprintf_s(buff, "player bullet_rate %d", (UNIT_PLAYER_ATTACK_WAIT_TIMER_MAX + UNIT_PLAYER_ATTACK_WAIT_TIMER_MIN) / 100 - (g_player.attack_wait_timer / 100));
 			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
 		}
 	}
@@ -767,11 +801,23 @@ int unit_manager_player_get_special_item(int item_id)
 			unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&g_player);
 		}
 	}
+	else if (item_id == UNIT_SPECIAL_ID_SPEED_DOWN) {
+		if (g_player.speed <= UNIT_PLAYER_SPEED_RANK_MIN) {
+			return 1;
+		}
+		unit_manager_player_change_speed(-1);
+	}
 	else if (item_id == UNIT_SPECIAL_ID_SPEED_UP) {
 		if (g_player.speed >= UNIT_PLAYER_SPEED_RANK_MAX) {
 			return 1;
 		}
 		unit_manager_player_change_speed(1);
+	}
+	else if (item_id == UNIT_SPECIAL_ID_STRENGTH_DOWN) {
+		if (g_player.strength <= UNIT_PLAYER_STRENGTH_RANK_MIN) {
+			return 1;
+		}
+		unit_manager_player_change_strength(-1);
 	}
 	else if (item_id == UNIT_SPECIAL_ID_STRENGTH_UP) {
 		if (g_player.strength >= UNIT_PLAYER_STRENGTH_RANK_MAX) {
