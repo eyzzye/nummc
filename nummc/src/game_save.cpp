@@ -444,7 +444,7 @@ void game_save_get_config_player(int slot_index, unit_player_data_t* player)
 	player->exp = atoi(game_config_data.player[slot_index]->values["exp"].c_str());
 	player->attack_wait_timer = atoi(game_config_data.player[slot_index]->values["attack_wait_timer"].c_str());
 	player->bullet_life_timer = atoi(game_config_data.player[slot_index]->values["bullet_life_timer"].c_str());
-	player->bullet_curving = atoi(game_config_data.player[slot_index]->values["bullet_curving"].c_str());
+	player->bullet_spec = atoi(game_config_data.player[slot_index]->values["bullet_spec"].c_str());
 
 	player->speed = atoi(game_config_data.player[slot_index]->values["speed"].c_str());
 	player->strength = atoi(game_config_data.player[slot_index]->values["strength"].c_str());
@@ -474,8 +474,8 @@ int game_save_set_config_player(int slot_index, unit_player_data_t* player)
 	game_config_data.player[slot_index]->values["attack_wait_timer"] = new_str;
 	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->bullet_life_timer), c_buff, 10); new_str = c_buff;
 	game_config_data.player[slot_index]->values["bullet_life_timer"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->bullet_curving), c_buff, 10); new_str = c_buff;
-	game_config_data.player[slot_index]->values["bullet_curving"] = new_str;
+	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->bullet_spec), c_buff, 10); new_str = c_buff;
+	game_config_data.player[slot_index]->values["bullet_spec"] = new_str;
 
 	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->speed), c_buff, 10); new_str = c_buff;
 	game_config_data.player[slot_index]->values["speed"] = new_str;

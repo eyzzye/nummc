@@ -29,7 +29,10 @@
 #define UNIT_RECOVERY_ID_NONE              (0)
 #define UNIT_RECOVERY_ID_HEART             (1)
 #define UNIT_RECOVERY_ID_HEART_UP          (2)
-#define UNIT_RECOVERY_ID_END               (3)
+#define UNIT_RECOVERY_ID_HEART_FULL        (3)
+#define UNIT_RECOVERY_ID_HEART_FULL_UP     (4)
+#define UNIT_RECOVERY_ID_HEART_DOWN        (5)
+#define UNIT_RECOVERY_ID_END               (6)
 
 // STOCK_SUB_ID
 #define UNIT_STOCK_SUB_ID_NONE             (0)
@@ -62,7 +65,8 @@
 #define UNIT_SPECIAL_ID_STRENGTH_UP        (7)
 #define UNIT_SPECIAL_ID_HEART              (8)
 #define UNIT_SPECIAL_ID_UNKNOWN            (9)
-#define UNIT_SPECIAL_ID_END               (10)
+#define UNIT_SPECIAL_ID_BULLET_DOUBLE     (10)
+#define UNIT_SPECIAL_ID_END               (11)
 
 // BULLET
 #define UNIT_BULLET_ID_NONE         (0)
@@ -99,6 +103,9 @@
 // RECOVERY
 #define UNIT_ITEM_ID_R_HEART               (UNIT_ITEM_FLAG_RECOVERY   |   UNIT_RECOVERY_ID_HEART           )
 #define UNIT_ITEM_ID_R_HEART_UP            (UNIT_ITEM_FLAG_RECOVERY   |   UNIT_RECOVERY_ID_HEART_UP        )
+#define UNIT_ITEM_ID_R_HEART_FULL          (UNIT_ITEM_FLAG_RECOVERY   |   UNIT_RECOVERY_ID_HEART_FULL      )
+#define UNIT_ITEM_ID_R_HEART_FULL_UP       (UNIT_ITEM_FLAG_RECOVERY   |   UNIT_RECOVERY_ID_HEART_FULL_UP   )
+#define UNIT_ITEM_ID_R_HEART_DOWN          (UNIT_ITEM_FLAG_RECOVERY   |   UNIT_RECOVERY_ID_HEART_DOWN      )
 
 // SPECIAL
 #define UNIT_ITEM_ID_S_BOOSTER             (UNIT_ITEM_FLAG_SPECIAL    |   UNIT_SPECIAL_ID_BOOSTER          )
@@ -110,6 +117,7 @@
 #define UNIT_ITEM_ID_S_STRENGTH_UP         (UNIT_ITEM_FLAG_SPECIAL    |   UNIT_SPECIAL_ID_STRENGTH_UP      )
 #define UNIT_ITEM_ID_S_HEART               (UNIT_ITEM_FLAG_SPECIAL    |   UNIT_SPECIAL_ID_HEART            )
 #define UNIT_ITEM_ID_S_UNKNOWN             (UNIT_ITEM_FLAG_SPECIAL    |   UNIT_SPECIAL_ID_UNKNOWN          )
+#define UNIT_ITEM_ID_S_BULLET_DOUBLE       (UNIT_ITEM_FLAG_SPECIAL    |   UNIT_SPECIAL_ID_BULLET_DOUBLE    )
 
 // INVINCIBLE
 #define UNIT_ITEM_ID_I_STAR                (UNIT_ITEM_FLAG_INVINCIBLE |   1)

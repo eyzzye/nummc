@@ -59,6 +59,11 @@
 #define UNIT_BULLET_NUM_QUADRUPLE  4
 #define UNIT_BULLET_NUM_MAX        5
 
+#define UNIT_BULLET_SPEC_SET_NUM(_X,_VAL)      (_X) ## ->bullet_spec = (((_X) ## ->bullet_spec & 0xFFFFFF00) | _VAL)
+#define UNIT_BULLET_SPEC_GET_NUM(_X)           ((_X) ## ->bullet_spec & 0x000000FF)
+#define UNIT_BULLET_SPEC_SET_CURVING(_X,_VAL)  (_X) ## ->bullet_spec = (((_X) ## ->bullet_spec & 0xFFFF00FF) | ((_VAL << 8) & 0x0000FF00))
+#define UNIT_BULLET_SPEC_GET_CURVING(_X)       (((_X) ## ->bullet_spec & 0x0000FF00) >> 8)
+
 #include "unit_manager_player.h"
 #include "unit_manager_enemy.h"
 #include "unit_manager_items.h"
@@ -121,7 +126,7 @@ struct _unit_player_data_t {
 	int resistance_stat;					// FLAG_P_FIRE_UP,FREEZE_UP
 	int attack_wait_timer;
 	int bullet_life_timer;
-	int bullet_curving;
+	int bullet_spec;                        // | reserve(FFFF) | curving(FF) | num(FF)
 
 	int speed;
 	int strength;

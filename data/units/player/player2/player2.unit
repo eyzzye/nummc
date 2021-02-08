@@ -6,6 +6,7 @@
 hp=20
 attack_wait_timer=700
 bullet_life_timer=600
+bullet_num=1
 bullet_curving=5
 speed=4
 strength=5

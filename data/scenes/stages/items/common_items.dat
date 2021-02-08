@@ -1,20 +1,28 @@
 [items]
+#bom
 units/items/bom/simple/bom.unit
 units/items/bom/fall/fall_bom.unit
 units/items/bom/event/event.unit
+
+#recovery
 units/items/recovery/heart/heart.unit
 units/items/recovery/heart_up/heart_up.unit
+units/items/recovery/heart_full/heart_full.unit
+units/items/recovery/heart_full_up/heart_full_up.unit
+units/items/recovery/heart_down/heart_down.unit
+
+#tbox
 units/items/tbox/tresure_static/tresure_static.unit
 units/items/tbox/tresure_random/tresure_random.unit
 
-#weapon
+#stock weapon
 units/items/stock/simple_bom/simple_bom.unit
-#charge
+#stock charge
 units/items/stock/charge/booster/booster.unit
 units/items/stock/charge/shield/shield.unit
 units/items/stock/charge/heart_bottle/heart_bottle.unit
 units/items/stock/charge/bom_bottle/bom_bottle.unit
-#special
+#stock special
 units/items/stock/booster/booster.unit
 units/items/stock/bullet_curving_up/curve.unit
 units/items/stock/bullet_range_up/range.unit
@@ -24,10 +32,12 @@ units/items/stock/speed_up/speed_up.unit
 units/items/stock/strength_up/strength_up.unit
 units/items/stock/heart/heart.unit
 
+#bullet
 units/items/bullet/fire_bullet/fire_bullet.unit
 units/items/bullet/ice_bullet/ice_bullet.unit
 units/items/bullet/leaser_bullet/leaser_bullet.unit
 
+#special
 units/items/special/booster/booster.unit
 units/items/special/bullet_curving_up/curve.unit
 units/items/special/bullet_range_up/range.unit
@@ -36,4 +46,5 @@ units/items/special/shield/shield.unit
 units/items/special/speed_up/speed_up.unit
 units/items/special/strength_up/strength_up.unit
 units/items/special/unknown/unknown.unit
+units/items/special/bullet_double/bullet_double.unit
 [/items]

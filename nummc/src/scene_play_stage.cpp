@@ -307,8 +307,8 @@ static void main_event() {
 
 	// attack key
 	if (key_sync_attack_timer <= 0) {
-		int x, y, face;
-		float vec_x = 0.0f, vec_y = 0.0f;
+		int x[UNIT_BULLET_NUM_MAX], y[UNIT_BULLET_NUM_MAX], face;
+		float vec_x[UNIT_BULLET_NUM_MAX] = { 0.0f }, vec_y[UNIT_BULLET_NUM_MAX] = { 0.0f };
 		float abs_vec = 1.0f;
 
 		bool attack_dirt = false;
@@ -332,14 +332,18 @@ static void main_event() {
 		if (attack_dirt) {
 			std::string bullet_path = g_player_bullet_path[g_player.weapon];
 			int bullet_base_id = unit_manager_search_player_bullet(bullet_path);
-			unit_manager_get_bullet_start_pos((unit_data_t*)&g_player, (unit_data_t*)unit_manager_get_player_bullet_base(bullet_base_id), UNIT_BULLET_TRACK_LINE, UNIT_BULLET_NUM_SINGLE, face, &x, &y);
-			unit_manager_player_get_face_velocity(&vec_x, &vec_y, face, abs_vec);
+			int bullet_num = UNIT_BULLET_SPEC_GET_NUM(&g_player);
 
-			int unit_id = unit_manager_create_player_bullet(x, y, vec_x, vec_y, face, bullet_base_id);
-			unit_manager_player_bullet_set_anim_stat(unit_id, ANIM_STAT_FLAG_ATTACK);
-			unit_manager_player_bullet_set_effect_stat(unit_id, g_player.effect_stat);
-			unit_manager_player_bullet_set_hp(unit_id, unit_manager_player_get_bullet_strength());
-			unit_manager_player_bullet_set_bullet_life_timer(unit_id, unit_manager_player_get_bullet_life_timer());
+			unit_manager_get_bullet_start_pos((unit_data_t*)&g_player, (unit_data_t*)unit_manager_get_player_bullet_base(bullet_base_id), UNIT_BULLET_TRACK_LINE, bullet_num, face, x, y);
+			unit_manager_player_get_face_velocity(vec_x, vec_y, face, abs_vec, UNIT_BULLET_TRACK_LINE, bullet_num);
+
+			for (int bullet_i = 0; bullet_i < bullet_num; bullet_i++) {
+				int unit_id = unit_manager_create_player_bullet(x[bullet_i], y[bullet_i], vec_x[bullet_i], vec_y[bullet_i], face, bullet_base_id);
+				unit_manager_player_bullet_set_anim_stat(unit_id, ANIM_STAT_FLAG_ATTACK);
+				unit_manager_player_bullet_set_effect_stat(unit_id, g_player.effect_stat);
+				unit_manager_player_bullet_set_hp(unit_id, unit_manager_player_get_bullet_strength());
+				unit_manager_player_bullet_set_bullet_life_timer(unit_id, unit_manager_player_get_bullet_life_timer());
+			}
 
 			key_sync_attack_timer = g_player.attack_wait_timer;
 			unit_manager_player_set_anim_stat(ANIM_STAT_FLAG_ATTACK);
