@@ -63,6 +63,11 @@
 #define UNIT_BULLET_SPEC_GET_NUM(_X)           ((_X) ## ->bullet_spec & 0x000000FF)
 #define UNIT_BULLET_SPEC_SET_CURVING(_X,_VAL)  (_X) ## ->bullet_spec = (((_X) ## ->bullet_spec & 0xFFFF00FF) | ((_VAL << 8) & 0x0000FF00))
 #define UNIT_BULLET_SPEC_GET_CURVING(_X)       (((_X) ## ->bullet_spec & 0x0000FF00) >> 8)
+#define UNIT_BULLET_SPEC_SET_STRENGTH(_X,_VAL) (_X) ## ->bullet_spec = (((_X) ## ->bullet_spec & 0xFF00FFFF) | ((_VAL << 16) & 0x00FF0000))
+#define UNIT_BULLET_SPEC_GET_STRENGTH(_X)      (((_X) ## ->bullet_spec & 0x00FF0000) >> 16)
+
+#define UNIT_SPEC_SET_LUCK(_X,_VAL)            (_X) ## ->spec = (((_X) ## ->spec & 0xFFFFFF00) | _VAL)
+#define UNIT_SPEC_GET_LUCK(_X)                 ((_X) ## ->spec & 0x000000FF)
 
 #include "unit_manager_player.h"
 #include "unit_manager_enemy.h"
@@ -126,12 +131,12 @@ struct _unit_player_data_t {
 	int resistance_stat;					// FLAG_P_FIRE_UP,FREEZE_UP
 	int attack_wait_timer;
 	int bullet_life_timer;
-	int bullet_spec;                        // | reserve(FFFF) | curving(FF) | num(FF)
+	int bullet_spec;                        // | reserve(FF) | strength(FF) | curving(FF) | num(FF)
 
 	int speed;
-	int strength;
 	int weapon;
 	int armor;
+	int spec;                               //  | reserve(FFFFFF) | luck(FF)
 
 	int hp_max;
 	int exp_max;
@@ -230,7 +235,7 @@ struct _unit_trap_data_t {
 
 	int sub_id;
 	int hp;
-	int reserve1;
+	unit_data_t* trace_unit;
 	int reserve2;
 };
 
@@ -354,6 +359,7 @@ extern void unit_manager_clear_all_enemy_bullet();
 extern int unit_manager_unit_get_anim_stat(unit_data_t* unit_data);
 extern void unit_manager_unit_set_anim_stat(unit_data_t* unit_data, int stat);
 extern void unit_manager_player_set_anim_stat(int stat);
+extern void unit_manager_player_set_effect_stat(int stat, bool off_on);
 extern void unit_manager_enemy_set_anim_stat(int unit_id, int stat);
 extern void unit_manager_items_set_anim_stat(int unit_id, int stat);
 extern void unit_manager_trap_set_anim_stat(int unit_id, int stat);
@@ -393,11 +399,13 @@ extern void unit_manager_clear_player_backup();
 extern int unit_manager_load_player_effects();
 extern int unit_manager_load_player(std::string path);
 extern void unit_manager_create_player(int x, int y);
+extern void unit_manager_player_clear_stats();
 extern void unit_manager_player_set_stat(int stat);
 extern void unit_manager_player_get_face_velocity(float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type = UNIT_BULLET_TRACK_LINE, int bullet_num = UNIT_BULLET_NUM_SINGLE);
 extern int unit_manager_player_get_bullet_strength();
 extern int unit_manager_player_get_bullet_life_timer();
 extern float unit_manager_player_get_bullet_curving();
+extern int unit_manager_player_get_luck();
 extern int unit_manager_player_get_damage_force(int hp);
 extern int unit_manager_player_get_damage(int hp);
 extern int unit_manager_player_get_damage_with_bullet(unit_enemy_bullet_data_t* enemy_bullet_data);
@@ -405,7 +413,6 @@ extern int unit_manager_player_recovery(int hp);
 extern int unit_manager_player_set_hp_max(int hp_max);
 extern int unit_manager_player_get_exp(int exp);
 extern int unit_manager_player_charge_val(int exp);
-extern int unit_manager_player_change_bullet(int weapon);
 extern void unit_manager_player_get_item(unit_items_data_t* item_data);
 extern void unit_manager_player_use_weapon_item();
 extern void unit_manager_player_use_charge_item();
@@ -419,10 +426,13 @@ extern void unit_manager_player_display(int layer);
 
 // enemy
 extern int unit_manager_search_enemy(std::string& path);
+extern void unit_manager_set_enemy_slowed(int index);
+extern void unit_manager_set_all_enemy_slowed();
 extern unit_enemy_data_t* unit_manager_get_enemy(int index);
 extern int unit_manager_load_enemy_effects(int unit_id, int base_w = 32);
 extern int unit_manager_load_enemy(std::string path);
 extern int unit_manager_create_enemy(int x, int y, int face, int base_index = -1);
+extern void unit_manager_create_hell();
 extern void unit_manager_clear_enemy(unit_enemy_data_t* enemy);
 extern bool unit_manager_enemy_exist();
 extern int unit_manager_enemy_get_enemy_count();

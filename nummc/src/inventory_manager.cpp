@@ -30,6 +30,8 @@ inventory_item_ref_t charge_list[] = {
 	{"units/items/stock/charge/shield/shield.unit",             UNIT_CHARGE_ID_SHIELD},
 	{"units/items/stock/charge/heart_bottle/heart_bottle.unit", UNIT_CHARGE_ID_HEART},
 	{"units/items/stock/charge/bom_bottle/bom_bottle.unit",     UNIT_CHARGE_ID_BOM},
+	{"units/items/stock/charge/slowed/slowed.unit",             UNIT_CHARGE_ID_SLOWED},
+	{"units/items/stock/charge/rampage/rampage.unit",           UNIT_CHARGE_ID_RAMPAGE},
 };
 
 inventory_item_ref_t special_list[] = {
@@ -40,8 +42,10 @@ inventory_item_ref_t special_list[] = {
 	{"units/items/stock/bullet_rate_up/rate.unit",     UNIT_SPECIAL_ID_BULLET_RATE_UP},
 	{"units/items/stock/shield/shield.unit",           UNIT_SPECIAL_ID_SHIELD},
 	{"units/items/stock/speed_up/speed_up.unit",       UNIT_SPECIAL_ID_SPEED_UP},
-	{"units/items/stock/strength_up/strength_up.unit", UNIT_SPECIAL_ID_STRENGTH_UP},
+	{"units/items/stock/strength_up/strength_up.unit", UNIT_SPECIAL_ID_BULLET_STRENGTH_UP},
 	{"units/items/stock/heart/heart.unit",             UNIT_SPECIAL_ID_HEART},
+	{"units/items/stock/scope/scope.unit",             UNIT_SPECIAL_ID_SCOPE},
+	{"units/items/stock/slowed/slowed.unit",           UNIT_SPECIAL_ID_SLOWED},
 };
 
 static int search_weapon(unit_items_data_t* item_data);

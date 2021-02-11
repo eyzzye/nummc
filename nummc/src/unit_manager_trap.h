@@ -11,7 +11,11 @@
 
 #define UNIT_TRAP_ID_IGNORE         (-1)
 
-// sub_id
+// sub_id (DAMAGE)
+#define UNIT_TRAP_DAMAGE_ID_NONE         0
+#define UNIT_TRAP_DAMAGE_ID_ENEMY_GHOST  1
+
+// sub_id (GATE)
 #define UNIT_TRAP_GATE_ID_NONE       0
 #define UNIT_TRAP_GATE_ID_GOAL       1
 //#define UNIT_TRAP_GATE_ID_MAX       255

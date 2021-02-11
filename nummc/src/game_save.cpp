@@ -447,9 +447,9 @@ void game_save_get_config_player(int slot_index, unit_player_data_t* player)
 	player->bullet_spec = atoi(game_config_data.player[slot_index]->values["bullet_spec"].c_str());
 
 	player->speed = atoi(game_config_data.player[slot_index]->values["speed"].c_str());
-	player->strength = atoi(game_config_data.player[slot_index]->values["strength"].c_str());
 	player->weapon = atoi(game_config_data.player[slot_index]->values["weapon"].c_str());
 	player->armor = atoi(game_config_data.player[slot_index]->values["armor"].c_str());
+	player->spec = atoi(game_config_data.player[slot_index]->values["spec"].c_str());
 
 	player->hp_max = atoi(game_config_data.player[slot_index]->values["hp_max"].c_str());
 	player->exp_max = atoi(game_config_data.player[slot_index]->values["exp_max"].c_str());
@@ -479,12 +479,12 @@ int game_save_set_config_player(int slot_index, unit_player_data_t* player)
 
 	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->speed), c_buff, 10); new_str = c_buff;
 	game_config_data.player[slot_index]->values["speed"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->strength), c_buff, 10); new_str = c_buff;
-	game_config_data.player[slot_index]->values["strength"] = new_str;
 	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->weapon), c_buff, 10); new_str = c_buff;
 	game_config_data.player[slot_index]->values["weapon"] = new_str;
 	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->armor), c_buff, 10); new_str = c_buff;
 	game_config_data.player[slot_index]->values["armor"] = new_str;
+	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->spec), c_buff, 10); new_str = c_buff;
+	game_config_data.player[slot_index]->values["spec"] = new_str;
 
 	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->hp_max), c_buff, 10); new_str = c_buff;
 	game_config_data.player[slot_index]->values["hp_max"] = new_str;

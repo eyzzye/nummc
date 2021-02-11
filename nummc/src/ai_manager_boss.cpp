@@ -305,6 +305,7 @@ void ai_manager_boss_update_three(ai_data_t* ai_data)
 		((unit_enemy_data_t*)unit_data)->resistance_stat |= UNIT_EFFECT_FLAG_E_NO_TRAP_DAMAGE;
 		ai_stat->ghost_id = unit_manager_create_trap(unit_data->col_shape->x, unit_data->col_shape->y, unit_manager_search_trap(ghost_trap_three_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(ai_stat->ghost_id);
+		trap_data->trace_unit = unit_data;
 		collision_manager_set_filter(trap_data->col_shape, COLLISION_GROUP_MASK_PLAYER_BULLET);
 
 		// set move_to point
@@ -476,6 +477,7 @@ void ai_manager_boss_update_four(ai_data_t* ai_data)
 		((unit_enemy_data_t*)unit_data)->resistance_stat |= UNIT_EFFECT_FLAG_E_NO_TRAP_DAMAGE;
 		ai_stat->ghost_id = unit_manager_create_trap(unit_data->col_shape->x, unit_data->col_shape->y, unit_manager_search_trap(ghost_trap_four_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(ai_stat->ghost_id);
+		trap_data->trace_unit = unit_data;
 		collision_manager_set_filter(trap_data->col_shape, COLLISION_GROUP_MASK_PLAYER_BULLET);
 
 		// set move_to point

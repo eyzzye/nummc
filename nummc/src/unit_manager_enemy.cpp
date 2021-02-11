@@ -207,9 +207,12 @@ void unit_manager_enemy_set_effect_stat(int unit_id, int stat, bool off_on)
 			int i = 0; int flg = 0x00000001;
 			while (stat != flg) { i++; flg <<= 1; }
 
-			if ((stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) && (enemy[unit_id].col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND)) {
-				// reset moter speed
-				collision_manager_set_moter_speed(enemy[unit_id].col_shape, ((float)enemy[unit_id].col_shape->joint_val1 / 1000.0f)* b2_pi);
+			// unset slow move
+			if (!(g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) && (stat & UNIT_EFFECT_FLAG_E_FREEZE_UP)) {
+				if (enemy[unit_id].col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) {
+					// reset moter speed
+					collision_manager_set_moter_speed(enemy[unit_id].col_shape, ((float)enemy[unit_id].col_shape->joint_val1 / 1000.0f) * b2_pi);
+				}
 			}
 
 			unit_manager_effect_set_anim_stat(enemy[unit_id].effect_param[i].id, ANIM_STAT_FLAG_HIDE);
@@ -234,18 +237,9 @@ void unit_manager_enemy_set_effect_stat(int unit_id, int stat, bool off_on)
 			int pos_x, pos_y;
 			unit_manager_get_position((unit_data_t*)&enemy[unit_id], &pos_x, &pos_y);
 
-			if (enemy[unit_id].col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) {
-				// set moter speed (1/3)
-				if (stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
-					collision_manager_set_moter_speed(enemy[unit_id].col_shape, ((float)enemy[unit_id].col_shape->joint_val1 / (3 * 1000.0f)) * b2_pi);
-				}
-			}
-			else {
-				if (stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
-					b2Vec2 new_vec = enemy[unit_id].col_shape->b2body->GetLinearVelocity();
-					new_vec *= 0.5f;
-					enemy[unit_id].col_shape->b2body->SetLinearVelocity(new_vec);
-				}
+			// set slow move
+			if (!(g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) && (stat & UNIT_EFFECT_FLAG_E_FREEZE_UP)) {
+				unit_manager_set_enemy_slowed(unit_id);
 			}
 
 			unit_manager_effect_set_b2position(enemy[unit_id].effect_param[i].id, PIX2MET(pos_x), PIX2MET(pos_y));
@@ -253,6 +247,28 @@ void unit_manager_enemy_set_effect_stat(int unit_id, int stat, bool off_on)
 			enemy[unit_id].effect_param[i].timer = enemy_effect_default[i].timer;
 			enemy[unit_id].effect_param[i].counter = enemy_effect_default[i].counter;
 		}
+	}
+}
+
+void unit_manager_set_enemy_slowed(int index)
+{
+	if (enemy[index].col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) {
+		// set moter speed (1/3)
+		collision_manager_set_moter_speed(enemy[index].col_shape, ((float)enemy[index].col_shape->joint_val1 / (3 * 1000.0f)) * b2_pi);
+	}
+	else {
+		b2Vec2 new_vec = enemy[index].col_shape->b2body->GetLinearVelocity();
+		new_vec *= 0.5f;
+		enemy[index].col_shape->b2body->SetLinearVelocity(new_vec);
+	}
+}
+
+void unit_manager_set_all_enemy_slowed()
+{
+	for (int ei = 0; ei < UNIT_ENEMY_LIST_SIZE; ei++) {
+		if (enemy[ei].type != UNIT_TYPE_ENEMY) continue;
+
+		unit_manager_set_enemy_slowed(ei);
 	}
 }
 
@@ -278,7 +294,7 @@ void unit_manager_enemy_get_face_velocity(unit_enemy_data_t* enemy_data, float* 
 	}
 
 	// freeze bullet speed (= 1/2)
-	if (enemy_data->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
+	if ((g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) || (enemy_data->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP)) {
 		for (int i = 0; i < bullet_num; i++) {
 			*(vec_x + i) = *(vec_x + i) * 0.5f;
 			*(vec_y + i) = *(vec_y + i) * 0.5f;
@@ -291,7 +307,7 @@ void unit_manager_enemy_get_target_velocity(unit_enemy_data_t* enemy_data, float
 	unit_manager_get_target_velocity(vec_x, vec_y, (unit_data_t*)enemy_data, target_x, target_y, abs_velocity, bullet_track_type, bullet_num);
 
 	// freeze bullet speed (= 1/2)
-	if (enemy_data->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
+	if ((g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) || (enemy_data->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP)) {
 		for (int i = 0; i < bullet_num; i++) {
 			*(vec_x + i) = *(vec_x + i) * 0.5f;
 			*(vec_y + i) = *(vec_y + i) * 0.5f;
@@ -511,6 +527,11 @@ int unit_manager_create_enemy(int x, int y, int face, int base_index)
 			collision_manager_create_dynamic_shape(enemy_base[base_index].col_shape,
 				(void*)&enemy[enemy_index_end], enemy_base[base_index].anim->base_w, enemy_base[base_index].anim->base_h,
 				&x, &y, NULL, NULL, &face);
+
+		// already slowed
+		if (g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) {
+			unit_manager_set_enemy_slowed(enemy_index_end);
+		}
 	}
 	else {
 		// create at FACE_W
@@ -578,6 +599,38 @@ int unit_manager_create_enemy(int x, int y, int face, int base_index)
 	return ret;
 }
 
+struct _unit_hell_enemy_t {
+	int x;
+	int y;
+	int face;
+	std::string path;
+	std::string trap_path;
+};
+static struct _unit_hell_enemy_t hell_enemy_list[] = {
+	{  48, 112, UNIT_FACE_W, "units/enemy/1/boss/one.unit",   "" },
+	{ 338,  32, UNIT_FACE_W, "units/enemy/2/boss/two.unit",   "" },
+	{  94, 208, UNIT_FACE_E, "units/enemy/2/boss/two.unit",   "" },
+	{ 144, 112, UNIT_FACE_W, "units/enemy/3/boss/three.unit", "units/trap/ghost/3/boss/ghost.unit" },
+	{ 240, 112, UNIT_FACE_W, "units/enemy/4/boss/four.unit",  "units/trap/ghost/4/boss/ghost.unit" },
+	{ 336, 112, UNIT_FACE_W, "units/enemy/5/boss/five.unit",  "" },
+};
+void unit_manager_create_hell()
+{
+	// close door
+	scene_play_stage_close_door();
+
+	for (int i = 0; i < LENGTH_OF(hell_enemy_list); i++) {
+		// load ghost trap
+		if (hell_enemy_list[i].trap_path.size() > 0) unit_manager_load_trap(hell_enemy_list[i].trap_path);
+
+		// create enemy
+		unit_manager_load_enemy(hell_enemy_list[i].path);
+		unit_manager_create_enemy(hell_enemy_list[i].x, hell_enemy_list[i].y, hell_enemy_list[i].face, unit_manager_search_enemy(hell_enemy_list[i].path));
+	}
+
+	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_bom.ogg"));
+}
+
 void unit_manager_clear_all_enemy()
 {
 	for (int i = 0; i < UNIT_ENEMY_LIST_SIZE; i++) {
@@ -643,7 +696,7 @@ int unit_manager_enemy_get_enemy_count()
 int unit_manager_enemy_get_delta_time(unit_enemy_data_t* enemy_data)
 {
 	int enemy_delta_time = g_delta_time;
-	if (enemy_data->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
+	if ((g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) || (enemy_data->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP)) {
 		enemy_delta_time >>= 1; // div 2
 	}
 	return enemy_delta_time;
@@ -750,7 +803,10 @@ void unit_manager_enemy_drop_item(unit_enemy_data_t* unit_data) {
 	else {
 		if (unit_data->level > 0) g_stage_data->drop_judge_count += unit_data->level;
 
-		if (g_stage_data->drop_judge_count >= g_stage_data->current_section_data->item_drop_rate) {
+		int player_luck = unit_manager_player_get_luck();
+		int current_rate = UNIT_PLAYER_LUCK_VAL(g_stage_data->current_section_data->item_drop_rate, player_luck);
+
+		if (g_stage_data->drop_judge_count >= current_rate) {
 			// drop random
 			int max = (int)g_stage_data->current_section_data->drop_items_id_list.size() - 1;
 			int item_id = (max <= 0) ? 0 : game_utils_random_gen(max, 0);
@@ -875,7 +931,12 @@ void unit_manager_enemy_trap(unit_enemy_data_t* enemy_data, unit_trap_data_t* tr
 		//
 	}
 	else if (trap_data->group == UNIT_TRAP_GROUP_DAMAGE) {
-		unit_manager_enemy_get_damage(enemy_data, -trap_data->base->hp);
+		if (trap_data->sub_id == UNIT_TRAP_DAMAGE_ID_ENEMY_GHOST) {
+			// no damage
+		}
+		else {
+			unit_manager_enemy_get_damage(enemy_data, -trap_data->base->hp);
+		}
 	}
 	else if ((trap_data->group == UNIT_TRAP_GROUP_FIRE) && !(enemy_data->resistance_stat & UNIT_EFFECT_FLAG_E_FIRE_UP)) {
 		if (unit_manager_enemy_get_damage(enemy_data, -trap_data->base->hp) == 0) {
@@ -895,7 +956,7 @@ void unit_manager_enemy_move(unit_enemy_data_t* enemy_data, float vec_x, float v
 		speed = enemy_data->speed;
 	}
 
-	if (enemy_data->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
+	if ((g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) || (enemy_data->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP)) {
 		speed = MAX(UNIT_ENEMY_SPEED_RANK_MIN, enemy_data->speed - 3);
 	}
 
@@ -907,12 +968,7 @@ void unit_manager_enemy_update()
 	for (int ei = 0; ei < UNIT_ENEMY_LIST_SIZE; ei++) {
 		if (enemy[ei].type != UNIT_TYPE_ENEMY) continue;
 
-		// enemy delta time
-		int enemy_delta_time = g_delta_time;
-		if (enemy[ei].effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
-			enemy_delta_time >>= 1;  // div 2
-		}
-
+		int enemy_delta_time = unit_manager_enemy_get_delta_time(&enemy[ei]);
 		if (enemy[ei].col_shape->stat == COLLISION_STAT_ENABLE) {
 #ifdef _COLLISION_ENABLE_BOX_2D_
 			enemy[ei].col_shape->x = (int)MET2PIX(enemy[ei].col_shape->b2body->GetPosition().x);

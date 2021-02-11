@@ -263,6 +263,7 @@ void unit_manager_clear_effect(unit_effect_data_t* effect_data)
 {
 	effect_data->type = UNIT_TYPE_NONE;
 	effect_data->base = NULL;
+	effect_data->trace_unit = NULL;
 	collision_manager_delete_shape(effect_data->col_shape);
 	effect_data->col_shape = NULL;
 	animation_manager_delete_anim_stat_data(effect_data->anim);

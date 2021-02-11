@@ -166,6 +166,7 @@ extern void map_manager_create_wall();
 extern void map_manager_create_door();
 extern void map_manager_open_door();
 extern void map_manager_open_hide_door(int stage_map_face);
+extern void map_manager_stage_map_all_open();
 extern void map_manager_set_door_filter(int go_next_id);
 extern void map_manager_backup_to_section_map();
 extern void map_manager_load_section_map();

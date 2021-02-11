@@ -109,7 +109,7 @@ unit_enemy_bullet_data_t* unit_manager_get_enemy_bullet_base(int index) {
 int unit_manager_enemy_bullet_get_delta_time(unit_enemy_bullet_data_t* enemy_bullet_data)
 {
 	int enemy_bullet_delta_time = g_delta_time;
-	if (enemy_bullet_data->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
+	if ((g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) || (enemy_bullet_data->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP)) {
 		enemy_bullet_delta_time >>= 1; // div 2
 	}
 	return enemy_bullet_delta_time;

@@ -33,6 +33,7 @@
 #define SHOT_BULLET_WAIT_TIMER         200
 
 static void tex_info_init();
+static void tex_info_reset();
 static void set_stat_event(int stat);
 static void main_event_next_load();
 static void main_event_gameover();
@@ -40,7 +41,6 @@ static void dialog_message_ok();
 static void section_init();
 static void load_next_enemy_phase();
 static void clear_section();
-static void play_current_bgm(bool on_off);
 static void drop_goal_items();
 #ifdef _MAP_OFFSET_ENABLE_
 static void scroll_view();
@@ -52,6 +52,9 @@ static SceneManagerFunc scene_func;
 static int scene_stat;
 static int return_scene_id;
 static std::string stage_id;
+
+// draw variables
+static rect_region_t tex_veil_region;
 
 // key event variables
 static int key_sync_attack_timer;
@@ -97,7 +100,7 @@ static void main_event_section_boss() {
 		// create trap (goal)
 		else {
 			// play win bgm
-			play_current_bgm(false);
+			scene_play_stage_play_current_bgm(false);
 			sound_manager_play(resource_manager_getChunkFromPath("music/win.ogg"), SOUND_MANAGER_CH_MUSIC);
 
 			// give bonus exp
@@ -133,13 +136,14 @@ static void main_event_section_boss() {
 
 		// re-place player
 		unit_manager_player_set_position(g_stage_data->section_start_x, g_stage_data->section_start_y);
+		unit_manager_player_clear_stats();
 
 		// stop player move
 		b2Vec2 new_vec(0.0f, 0.0f);
 		g_player.col_shape->b2body->SetLinearVelocity(new_vec);
 
 		// play bgm
-		play_current_bgm(true);
+		scene_play_stage_play_current_bgm(true);
 	}
 }
 static void main_event_section_nest() {
@@ -197,8 +201,9 @@ static void main_event_section_nest() {
 
 		// re-place player
 		unit_manager_player_set_position(g_stage_data->section_start_x, g_stage_data->section_start_y);
+		unit_manager_player_clear_stats();
 
-		play_current_bgm(true);
+		scene_play_stage_play_current_bgm(true);
 	}
 }
 static void main_event_section_normal() {
@@ -233,8 +238,9 @@ static void main_event_section_normal() {
 
 		// re-place player
 		unit_manager_player_set_position(g_stage_data->section_start_x, g_stage_data->section_start_y);
+		unit_manager_player_clear_stats();
 
-		play_current_bgm(true);
+		scene_play_stage_play_current_bgm(true);
 	}
 }
 static void main_event() {
@@ -457,9 +463,14 @@ static void draw() {
 	// dark sceen
 	if ((g_dialog_message_enable) || (game_start_wait_timer > 0))
 	{
-		// set background dark
+		// set dark
 		SDL_SetRenderDrawColor(g_ren, 0, 0, 0, 128);
 		SDL_RenderFillRect(g_ren, &g_screen_size);
+	}
+	else if (g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) {
+		// set dark veil
+		SDL_SetRenderDrawColor(g_ren, 0, 0, 0, 204);
+		SDL_RenderFillRect(g_ren, &tex_veil_region.dst_rect);
 	}
 
 	// exit gate effect
@@ -547,6 +558,7 @@ static void pre_load_event(void* null) {
 	unit_manager_load_effect("units/effect/freeze_up/48x48/freeze_up.unit");
 	unit_manager_load_effect("units/effect/freeze_up/64x64/freeze_up.unit");
 	unit_manager_load_effect("units/effect/shield/shield.unit");
+	unit_manager_load_effect("units/effect/rampage/rampage.unit");
 
 	// load common items
 	for (int i = 0; i < g_stage_data->common_items_list.size(); i++) {
@@ -594,9 +606,8 @@ static void load_event() {
 	game_utils_random_init((unsigned int)time(NULL));
 
 	// resize
+	tex_info_reset();
 	quest_log_manager_reset();
-
-	// resize
 	hud_manager_reset();
 
 	// init message event
@@ -638,11 +649,11 @@ static int get_stat_event() {
 }
 static void set_stat_event(int stat) {
 	if (stat == SCENE_STAT_IDLE) {
-		play_current_bgm(false);
+		scene_play_stage_play_current_bgm(false);
 		stage_manager_set_stat(STAGE_STAT_IDLE);
 	}
 	else if (stat == SCENE_STAT_ACTIVE) {
-		play_current_bgm(true);
+		scene_play_stage_play_current_bgm(true);
 		stage_manager_set_stat(STAGE_STAT_ACTIVE);
 	}
 	scene_stat = stat;
@@ -741,6 +752,7 @@ static void dialog_message_ok()
 static void section_init()
 {
 	// clear tmp region
+	g_stage_data->section_circumstance = SECTION_CIRCUMSTANCE_NONE;
 	g_stage_data->section_timer = 0;
 	g_stage_data->section_enemy_phase = 0;
 
@@ -904,24 +916,6 @@ static void clear_section()
 	map_manager_clear_all_instance();
 }
 
-static void play_current_bgm(bool on_off)
-{
-	bool played = false;
-	if (on_off) {
-		if (g_stage_data->current_section_data->bgm_list.size() > 0) {
-			if (!(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_GOAL)
-				&& !(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_WIN)) {
-				sound_manager_play(g_stage_data->current_section_data->bgm_list[0]->chunk, SOUND_MANAGER_CH_MUSIC, -1);
-				played = true;
-			}
-		}
-	}
-
-	if (played == false) {
-		sound_manager_stop(SOUND_MANAGER_CH_MUSIC);
-	}
-}
-
 static void drop_goal_items()
 {
 	// drop items
@@ -1076,11 +1070,21 @@ static void event_msg_handler()
 
 		if (msg.id == EVENT_MSG_COLLISION_DYNAMIC_PvE) {
 			game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)msg.param;
+			bool player_rampage = false;
+			if (g_player.effect_stat & UNIT_EFFECT_FLAG_P_RAMPAGE) {
+				player_rampage = true;
+			}
+
 			if (LOWER_BIT(msg_param->obj2->group) == COLLISION_GROUP_ENEMY) {
 				if (msg_param->obj2->obj) {
 					unit_enemy_data_t* enemy_data = (unit_enemy_data_t*)msg_param->obj2->obj;
 					if ((enemy_data->type == UNIT_TYPE_ENEMY) && (enemy_data->col_shape->stat == COLLISION_STAT_ENABLE)) {
-						unit_manager_player_get_damage(-unit_manager_enemy_get_bullet_strength(enemy_data->base->id));
+						if (player_rampage) {
+							unit_manager_enemy_get_damage(enemy_data, -unit_manager_player_get_bullet_strength());
+						}
+						else {
+							unit_manager_player_get_damage(-unit_manager_enemy_get_bullet_strength(enemy_data->base->id));
+						}
 					}
 				}
 			}
@@ -1197,6 +1201,13 @@ static void tex_info_init()
 {
 }
 
+static void tex_info_reset()
+{
+	// draw dark veil
+	tex_veil_region.dst_rect = VIEW_STAGE_RECT(0, 0, g_tile_width * MAP_WIDTH_NUM_MAX, g_tile_height * MAP_HEIGHT_NUM_MAX);
+	tex_veil_region.dst_rect_base = { 0, 0, g_tile_width * MAP_WIDTH_NUM_MAX, g_tile_height * MAP_HEIGHT_NUM_MAX };
+}
+
 void scene_play_stage_init() {
 	// set stat
 	scene_stat = SCENE_STAT_NONE;
@@ -1228,6 +1239,28 @@ void scene_play_stage_set_stage_id(std::string& id) {
 void scene_play_stage_set_player(std::string& path, bool reload_on) {
 	player_path = path;
 	reload_player = reload_on;
+}
+
+void scene_play_stage_play_current_bgm(bool on_off)
+{
+	bool played = false;
+	if (on_off) {
+		if (g_player.effect_stat & UNIT_EFFECT_FLAG_P_RAMPAGE) {
+			sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_bom_warning.ogg"), SOUND_MANAGER_CH_MUSIC, -1);
+			played = true;
+		}
+		else if (g_stage_data->current_section_data->bgm_list.size() > 0) {
+			if (!(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_GOAL)
+				&& !(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_WIN)) {
+				sound_manager_play(g_stage_data->current_section_data->bgm_list[0]->chunk, SOUND_MANAGER_CH_MUSIC, -1);
+				played = true;
+			}
+		}
+	}
+
+	if (played == false) {
+		sound_manager_stop(SOUND_MANAGER_CH_MUSIC);
+	}
 }
 
 void scene_play_next_stage() {
@@ -1307,6 +1340,11 @@ void scene_play_next_section(int go_next_id) {
 	g_stage_data->current_section_index = section_id;
 
 	g_stage_data->section_stat = SECTION_STAT_NEXT_WAIT;
+}
+
+void scene_play_stage_close_door() {
+	map_manager_create_door();
+	g_stage_data->section_stat = SECTION_STAT_ACTIVE;
 }
 
 void scene_play_stage_set_lose() {

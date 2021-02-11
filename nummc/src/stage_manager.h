@@ -34,6 +34,9 @@
 #define SECTION_STAT_NEXT_WAIT         6
 #define SECTION_STAT_END               7
 
+#define SECTION_CIRCUMSTANCE_NONE                 (0)
+#define SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY    (0x00000001 << 1)
+
 #define SECTION_INDEX_START     0
 #define SECTION_TIMER_NEXT_WAIT_TIME  5000
 #define SECTION_TIMER_ENEMY_PHASE_WAIT_TIME  2000
@@ -177,19 +180,23 @@ struct _stage_data_t {
 	std::string next_stage_id;
 	std::vector<std::string> common_items_list;
 
+	// section values
+	std::vector<section_data_t*> section_list;
+	int current_section_index;
+	section_data_t* current_section_data;
+
 	int section_stat;
+	int section_circumstance;
 	int section_timer;
 	int section_enemy_phase;
-	std::vector<section_data_t*> section_list;
-
-	// tmp region
 	int drop_judge_count;
-	section_data_t* current_section_data;
-	int current_section_index;
 
-	// stage map
+	// stage values
 	stage_map_data_t stage_map[STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM];
 	int current_stage_map_index;
+
+	//int daytime_stat;
+	//int daytime_timer;
 };
 
 extern void stage_manager_init();
@@ -201,6 +208,7 @@ extern void stage_manager_delete_stock_item(section_stock_item_t* stock_item);
 extern void stage_manager_set_stat(int stat);
 extern void stage_manager_set_result(int result);
 extern void stage_manager_set_next_load(int stat);
+extern void stage_manager_set_section_circumstance(int stat);
 extern int stage_manager_load(std::string path);
 
 extern stage_data_t* g_stage_data;

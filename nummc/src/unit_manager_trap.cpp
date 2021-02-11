@@ -86,7 +86,9 @@ bool unit_manager_trap_within(int x, int y)
 				trap_w = trap_h = 2 * r;
 			}
 			else {
-				LOG_ERROR("Error: unit_manager_trap_within() get irregular type.");
+				// becouse ghost trap is Dynamic, skip decision
+				//LOG_ERROR("Error: unit_manager_trap_within() get irregular type.");
+				continue;
 			}
 
 			if ((trap_x <= x) && (x <= trap_x + trap_w) && (trap_y <= y) && (y <= trap_y + trap_h)) {
@@ -132,6 +134,7 @@ int unit_manager_load_trap(std::string path)
 				trap_base[trap_base_index_end].obj = (void*)path_c_str;
 				trap_base[trap_base_index_end].type = UNIT_TYPE_TRAP;
 				trap_base[trap_base_index_end].id = trap_base_index_end;
+				trap_base[trap_base_index_end].sub_id = 0;
 				continue;
 			}
 			if (line == "[/unit]") { read_flg[UNIT_TAG_UNIT] = false; continue; }
@@ -238,6 +241,8 @@ int unit_manager_create_trap(int x, int y, int base_index)
 	trap[trap_index_end].id = trap_index_end;
 	trap[trap_index_end].type = UNIT_TYPE_TRAP;
 	trap[trap_index_end].group = trap_base[base_index].group;
+	trap[trap_index_end].sub_id = trap_base[base_index].sub_id;
+	trap[trap_index_end].trace_unit = NULL;
 
 	// collision
 	if (trap_base[base_index].col_shape->type & COLLISION_ID_STATIC_SHAPE) {
@@ -288,6 +293,7 @@ void unit_manager_clear_trap(unit_trap_data_t* trap_data)
 {
 	trap_data->type = UNIT_TYPE_NONE;
 	trap_data->base = NULL;
+	trap_data->trace_unit = NULL;
 	collision_manager_delete_shape(trap_data->col_shape);
 	trap_data->col_shape = NULL;
 	animation_manager_delete_anim_stat_data(trap_data->anim);

@@ -4,6 +4,9 @@
 
 [unit]
 group=DAMAGE
+
+# UNIT_TRAP_DAMAGE_ID_ENEMY_GHOST
+sub_id=1
 hp=5
 [/unit]
 

@@ -39,8 +39,8 @@
 
 // trash(32) + trash smoke(32) + high_light_line(32) + goal smoke(1) + item star(64) + item smoke(64)
 // + enemy smoke(32) + enemy effect(32*(UNIT_EFFECT_ID_P_END-1) = 32*2) + enemy damage(32*4)
-// + player smoke(1) + player effect(UNIT_EFFECT_ID_P_END-1 = 4) + player star(2) + player damage(1)
-#define UNIT_EFFECT_LIST_SIZE             ((((32*2 + 32 + 1 + UNIT_ITEMS_LIST_SIZE * 2 + UNIT_ENEMY_LIST_SIZE * (1+2+4) + 8) + 64) / 64) * 64)  // 64bit alignment
+// + player smoke(1) + player effect(UNIT_EFFECT_ID_P_END-1 = 5) + player star(2) + player damage(1)
+#define UNIT_EFFECT_LIST_SIZE             ((((32*2 + 32 + 1 + UNIT_ITEMS_LIST_SIZE * 2 + UNIT_ENEMY_LIST_SIZE * (1+2+5) + 8) + 64) / 64) * 64)  // 64bit alignment
 
 #define UNIT_PLAYER_BASE_LIST_SIZE         16
 #define UNIT_ENEMY_BASE_LIST_SIZE          (UNIT_ENEMY_LIST_SIZE)

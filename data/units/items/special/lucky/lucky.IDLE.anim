@@ -1,0 +1,16 @@
+#
+# lucky animation (type=IDLE)
+#
+
+[frame]
+duration=200,100
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/items/special/lucky/
+path=lucky_idle1.png,lucky_idle2.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

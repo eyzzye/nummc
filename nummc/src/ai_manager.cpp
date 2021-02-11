@@ -1298,7 +1298,7 @@ static void update_bullet_wave(ai_stat_bullet_t* ai_bullet) {
 		delta_val = -delta_val / (BULLET_WAVE_TIMER_TERM2 / ONE_FRAME_TIME);
 	}
 
-	if (unit_enemy_bullet->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
+	if ((g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) || (unit_enemy_bullet->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP)) {
 		delta_val >>= 1; // div 2
 	}
 
@@ -1344,7 +1344,7 @@ static void update_bullet_random(ai_stat_bullet_t* ai_bullet) {
 	b2Vec2 new_vec = unit_enemy_bullet->col_shape->b2body->GetLinearVelocity();
 	float fall_vec = (float)ai_bullet->val1 / 1000.0f;
 
-	if (unit_enemy_bullet->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP) {
+	if ((g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) || (unit_enemy_bullet->effect_stat & UNIT_EFFECT_FLAG_E_FREEZE_UP)) {
 		fall_vec *= 0.5f;
 	}
 	new_vec.y += fall_vec;

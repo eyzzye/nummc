@@ -268,6 +268,17 @@ void stage_manager_set_next_load(int stat)
 	g_stage_data->next_load = stat;
 }
 
+void stage_manager_set_section_circumstance(int stat)
+{
+	// already enable
+	if (g_stage_data->section_circumstance & stat) return;
+
+	g_stage_data->section_circumstance |= stat;
+	if (stat & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) {
+		unit_manager_set_all_enemy_slowed();
+	}
+}
+
 int stage_manager_load(std::string path)
 {
 	bool read_flg[STAGE_ID_END] = { false };
