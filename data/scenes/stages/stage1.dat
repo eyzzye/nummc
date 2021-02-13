@@ -34,7 +34,7 @@ section=2
 item_drop_rate=10
 map_path=map/stage1/n_st1.tmx
 bgm_path=music/1.ogg
-enemy_path=scenes/stages/enemy/enemy1_2.dat
+enemy_path=scenes/stages/enemy/enemy1_5.dat
 items_path=scenes/stages/items/item1_common.dat
 [/section]
 
@@ -43,7 +43,7 @@ section=3
 item_drop_rate=10
 map_path=map/stage1/n_st1.tmx
 bgm_path=music/1.ogg
-enemy_path=scenes/stages/enemy/enemy1_3.dat
+enemy_path=scenes/stages/enemy/enemy1_6.dat
 items_path=scenes/stages/items/item1_common.dat
 [/section]
 
@@ -52,39 +52,12 @@ section=4
 item_drop_rate=10
 map_path=map/stage1/n_st1.tmx
 bgm_path=music/1.ogg
-enemy_path=scenes/stages/enemy/enemy1_4.dat
-items_path=scenes/stages/items/item1_common.dat
-[/section]
-
-[section]
-section=5
-item_drop_rate=10
-map_path=map/stage1/n_st1.tmx
-bgm_path=music/1.ogg
-enemy_path=scenes/stages/enemy/enemy1_5.dat
-items_path=scenes/stages/items/item1_common.dat
-[/section]
-
-[section]
-section=6
-item_drop_rate=10
-map_path=map/stage1/n_st1.tmx
-bgm_path=music/1.ogg
-enemy_path=scenes/stages/enemy/enemy1_6.dat
-items_path=scenes/stages/items/item1_common.dat
-[/section]
-
-[section]
-section=7
-item_drop_rate=10
-map_path=map/stage1/n_st1.tmx
-bgm_path=music/1.ogg
 enemy_path=scenes/stages/enemy/enemy1_7.dat
 items_path=scenes/stages/items/item1_common.dat
 [/section]
 
 [section]
-section=8
+section=5
 item_drop_rate=10
 map_path=map/stage1/n_st1.tmx
 bgm_path=music/1.ogg
@@ -94,7 +67,7 @@ items_path=scenes/stages/items/item1_common.dat
 
 #------------------------------------------------------------------------------
 [section]
-section=9
+section=6
 type=BOSS
 item_drop_rate=10
 map_path=map/stage1/n_st1.tmx
@@ -104,28 +77,28 @@ items_path=scenes/stages/items/item1_b.dat
 [/section]
 
 [section]
-section=10
+section=7
 type=HIDE
 map_path=map/common/n_empty.tmx
 items_path=scenes/stages/items/item1_h1.dat
 [/section]
 
 [section]
-section=11
+section=8
 type=ITEM
 map_path=map/common/n_item_room1_1.tmx
 items_path=scenes/stages/items/item1_i1.dat
 [/section]
 
 [section]
-section=12
+section=9
 type=ITEM
 map_path=map/common/n_item_room1_2.tmx
 items_path=scenes/stages/items/item1_i2.dat
 [/section]
 
 [section]
-section=13
+section=10
 type=NEST
 item_drop_rate=10
 map_path=map/stage1/n_st1.tmx

@@ -1,0 +1,22 @@
+#
+# three animation (type=DIE)
+#
+
+[frame]
+duration=300
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/enemy/3/4h/
+path=three_die1.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+dir_path=sounds/
+path=sfx_cancel1.ogg
+volume=*
+[/snd]

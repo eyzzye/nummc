@@ -1,0 +1,23 @@
+#
+# 2-6
+#
+
+[enemy]
+type=units/enemy/1/lv3/one.unit
+x=128,320
+y=128,128
+vec_x=0,0
+vec_y=0,0
+delay=0,0
+face=W,E
+[/enemy]
+
+[enemy]
+type=units/enemy/2/two.unit
+x=128,320,128,320,128,320,128,320
+y=32,32,64,64,192,192,224,224
+vec_x=0,0,0,0,0,0,0,0
+vec_y=0,0,0,0,0,0,0,0
+delay=0,0,0,0,0,0,0,0
+face=W,W,W,W,E,E,E,E
+[/enemy]
