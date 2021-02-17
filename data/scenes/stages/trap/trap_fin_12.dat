@@ -1,0 +1,5 @@
+[trap]
+type=units/trap/spike/spike.unit
+x=320,384,320,384
+y=96,96,160,160
+[/trap]

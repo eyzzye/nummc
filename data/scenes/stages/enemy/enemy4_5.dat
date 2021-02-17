@@ -3,7 +3,7 @@
 #
 
 [enemy]
-type=units/enemy/1/st4/one.unit
+type=units/enemy/1/reg_freeze/one.unit
 x=96,352
 y=128,128
 vec_x=0,0
@@ -13,7 +13,7 @@ face=E,W
 [/enemy]
 
 [enemy]
-type=units/enemy/2/st4/two.unit
+type=units/enemy/2/reg_freeze/two.unit
 x=352,96
 y=32,224
 vec_x=0,0

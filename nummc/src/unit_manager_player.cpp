@@ -288,6 +288,11 @@ int unit_manager_load_player(std::string path)
 	}
 
 	player_base_index_end++;
+
+	if (player_base_index_end >= UNIT_PLAYER_BASE_LIST_SIZE) {
+		LOG_ERROR("ERROR: unit_manager_load_player() player_base overflow\n");
+		return 1;
+	}
 	return 0;
 }
 

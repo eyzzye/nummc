@@ -13,6 +13,8 @@ hp_max=16
 exp_max=0
 level=3
 next_level=null
+
+resistance=FIRE_UP,FREEZE_UP
 [/unit]
 
 [collision]

@@ -1,0 +1,17 @@
+[items]
+type=units/items/bullet/leaser_bullet/leaser_bullet.unit
+x=128
+y=128
+[/items]
+
+[items]
+type=units/items/bullet/ice_bullet/ice_bullet.unit
+x=224
+y=128
+[/items]
+
+[items]
+type=units/items/bullet/fire_bullet/fire_bullet.unit
+x=320
+y=128
+[/items]

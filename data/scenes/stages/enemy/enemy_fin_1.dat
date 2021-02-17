@@ -4,12 +4,12 @@
 
 [enemy]
 type=units/enemy/1/one.unit
-x=128,64,384,320
-y=64,128,128,192
-vec_x=0,0,0,0
-vec_y=0,0,0,0
-delay=0,0,0,0
-face=E,W,E,W
+x=128,320
+y=64,192
+vec_x=0,0
+vec_y=0,0
+delay=0,0
+face=E,W
 [/enemy]
 
 [enemy]

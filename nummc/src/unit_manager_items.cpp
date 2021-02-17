@@ -323,6 +323,11 @@ int unit_manager_load_items(std::string path)
 	}
 
 	items_base_index_end++;
+
+	if (items_base_index_end >= UNIT_ITEMS_BASE_LIST_SIZE) {
+		LOG_ERROR("ERROR: unit_manager_load_items() items_base overflow\n");
+		return 1;
+	}
 	return 0;
 }
 

@@ -431,6 +431,11 @@ int unit_manager_load_enemy(std::string path)
 	}
 
 	enemy_base_index_end++;
+
+	if (enemy_base_index_end >= UNIT_ENEMY_BASE_LIST_SIZE) {
+		LOG_ERROR("ERROR: unit_manager_load_enemy() enemy_base overflow\n");
+		return 1;
+	}
 	return 0;
 }
 

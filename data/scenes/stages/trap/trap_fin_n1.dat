@@ -1,0 +1,7 @@
+[trap]
+type=units/trap/ghost/3/boss/ghost.unit
+[/trap]
+
+[trap]
+type=units/trap/ghost/4/boss/ghost.unit
+[/trap]

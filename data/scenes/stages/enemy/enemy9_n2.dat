@@ -1,0 +1,23 @@
+#
+# 9-n2
+#
+
+[enemy]
+type=units/enemy/9/nine.unit
+x=192,256,64,320,64,320,192,256
+y=64,64,96,96,160,160,192,192
+vec_x=0,0,0,0,0,0,0,0
+vec_y=0,0,0,0,0,0,0,0
+delay=0,0,0,0,0,0,0,0
+face=E,W,E,W,E,W,W,E
+[/enemy]
+
+[enemy]
+type=units/enemy/9/lv2/nine.unit
+x=224,224
+y=64,192
+vec_x=0,0
+vec_y=0,0
+delay=0,0
+face=W,E
+[/enemy]

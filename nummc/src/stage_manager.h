@@ -73,6 +73,30 @@
 #define STAGE_MAP_FLAG_FACE_E  (0x01 << STAGE_MAP_FACE_E)
 #define STAGE_MAP_FLAG_FACE_S  (0x01 << STAGE_MAP_FACE_S)
 
+// daytime
+#define STAGE_DAYTIME_STAT_NONE          0
+#define STAGE_DAYTIME_STAT_MORNING       1
+#define STAGE_DAYTIME_STAT_AFTERNOON     2
+#define STAGE_DAYTIME_STAT_EVENING       3
+#define STAGE_DAYTIME_STAT_LATE_NIGHT    4
+
+#define STAGE_DAYTIME_MIN_VAL        (0)
+#define STAGE_DAYTIME_MAX_VAL        (24 * 60 * 60)  /* 86400 */
+
+#define STAGE_DAYTIME_MORNING_MIN    (6 * 60 * 60)    /* 21600 */
+#define STAGE_DAYTIME_MORNING_MAX    (12 * 60 * 60)   /* 43200 */
+#define STAGE_DAYTIME_AFTERNOON_MIN  (12 * 60 * 60)   /* 43200 */
+#define STAGE_DAYTIME_AFTERNOON_MAX  (18 * 60 * 60)   /* 64800 */
+#define STAGE_DAYTIME_EVENING_MIN    (18 * 60 * 60)   /* 64800 */
+#define STAGE_DAYTIME_EVENING_MAX    (24 * 60 * 60)   /* 86400 == 0 */
+#define STAGE_DAYTIME_LATE_NIGHT_MIN (0)              /* 0 == 86400 */
+#define STAGE_DAYTIME_LATE_NIGHT_MAX (6 * 60 * 60)    /* 21600 */
+
+#define STAGE_DAYTIME_DEFAULT_VAL        STAGE_DAYTIME_MORNING_MIN
+#define STAGE_DAYTIME_FRAME_DEFAULT_VAL  (10)            /* 1min -> about 6h */
+#define STAGE_DAYTIME_LATE_NIGHT_BEFORE  (STAGE_DAYTIME_EVENING_MAX    - 60 * 60)
+#define STAGE_DAYTIME_MORNING_BEFORE     (STAGE_DAYTIME_LATE_NIGHT_MAX - 60 * 60)
+
 typedef struct _BGM_data_t BGM_data_t;
 typedef struct _items_data_t items_data_t;
 typedef struct _trap_data_t trap_data_t;
@@ -195,8 +219,9 @@ struct _stage_data_t {
 	stage_map_data_t stage_map[STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM];
 	int current_stage_map_index;
 
-	//int daytime_stat;
-	//int daytime_timer;
+	int daytime_stat;
+	int daytime_frame_time;
+	int daytime_timer;  // 0 ... 86400 (24h x 60min x 60sec)
 };
 
 extern void stage_manager_init();
@@ -210,5 +235,12 @@ extern void stage_manager_set_result(int result);
 extern void stage_manager_set_next_load(int stat);
 extern void stage_manager_set_section_circumstance(int stat);
 extern int stage_manager_load(std::string path);
+
+// daytime
+extern void stage_manager_daytime_init();
+extern int stage_manager_daytime_get_hour(int daytime_timer);
+extern int stage_manager_daytime_get_minutes(int daytime_timer);
+extern int stage_manager_daytime_get_seconds(int daytime_timer);
+extern void stage_manager_daytime_update();
 
 extern stage_data_t* g_stage_data;

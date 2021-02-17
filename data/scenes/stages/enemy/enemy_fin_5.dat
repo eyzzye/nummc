@@ -63,7 +63,7 @@ face=W
 [/enemy]
 
 [enemy]
-type=units/enemy/7/lv3/seven.unit
+type=units/enemy/7/reg_all/seven.unit
 x=192
 y=160
 vec_x=0
@@ -73,7 +73,7 @@ face=W
 [/enemy]
 
 [enemy]
-type=units/enemy/8/eight.unit
+type=units/enemy/8/reg_all/eight.unit
 x=128
 y=192
 vec_x=0
@@ -84,7 +84,7 @@ face=E
 
 [enemy]
 type=units/enemy/9/nine.unit
-x=64,384
+x=128,320
 y=128,128
 vec_x=0,0
 vec_y=0,0

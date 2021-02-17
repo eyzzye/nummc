@@ -152,6 +152,11 @@ int unit_manager_load_effect(std::string path)
 	}
 
 	effect_base_index_end++;
+
+	if (effect_base_index_end >= UNIT_EFFECT_BASE_LIST_SIZE) {
+		LOG_ERROR("ERROR: unit_manager_load_effect() effect_base overflow\n");
+		return 1;
+	}
 	return 0;
 }
 

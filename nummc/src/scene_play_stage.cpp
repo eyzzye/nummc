@@ -283,6 +283,9 @@ static void main_event() {
 	g_stage_world->Step((g_delta_time / ONE_FRAME_TIME) * 1.0f / 60.0f, 8, 3);
 #endif
 
+	// update daytime
+	stage_manager_daytime_update();
+
 	// unit update (anim timer & frame command)
 	unit_manager_trap_update();
 	unit_manager_items_update();
@@ -460,17 +463,45 @@ static void draw() {
 	// draw ai info
 	ai_manager_display();
 
-	// dark sceen
+	// disable display
 	if ((g_dialog_message_enable) || (game_start_wait_timer > 0))
 	{
 		// set dark
 		SDL_SetRenderDrawColor(g_ren, 0, 0, 0, 128);
 		SDL_RenderFillRect(g_ren, &g_screen_size);
 	}
-	else if (g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) {
-		// set dark veil
-		SDL_SetRenderDrawColor(g_ren, 0, 0, 0, 204);
-		SDL_RenderFillRect(g_ren, &tex_veil_region.dst_rect);
+	else {
+		// dark sceen
+		int alpha_val = -1;
+		if (g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) {
+			alpha_val = 204;
+		}
+
+		// daytime
+		if (g_stage_data->daytime_stat == STAGE_DAYTIME_STAT_EVENING) {
+			int evening_alpha = 74;
+			if (g_stage_data->daytime_timer > STAGE_DAYTIME_LATE_NIGHT_BEFORE) {
+				evening_alpha = 74 + (224 - 74) * ((60 * 60) - (STAGE_DAYTIME_EVENING_MAX - g_stage_data->daytime_timer)) / (60 * 60);
+				evening_alpha = MIN(evening_alpha, 224);
+			}
+
+			if (alpha_val < evening_alpha) alpha_val = evening_alpha;
+		}
+		else if (g_stage_data->daytime_stat == STAGE_DAYTIME_STAT_LATE_NIGHT) {
+			int late_night_alpha = 224;
+			if (g_stage_data->daytime_timer > STAGE_DAYTIME_MORNING_BEFORE) {
+				late_night_alpha = 224 * (STAGE_DAYTIME_LATE_NIGHT_MAX - g_stage_data->daytime_timer) / (60 * 60);
+				late_night_alpha = MAX(0, late_night_alpha);
+			}
+
+			if (alpha_val < late_night_alpha) alpha_val = late_night_alpha;
+		}
+
+		if (alpha_val > 0) {
+			// set dark veil
+			SDL_SetRenderDrawColor(g_ren, 0, 0, 0, alpha_val);
+			SDL_RenderFillRect(g_ren, &tex_veil_region.dst_rect);
+		}
 	}
 
 	// exit gate effect

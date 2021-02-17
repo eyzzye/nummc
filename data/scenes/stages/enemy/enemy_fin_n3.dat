@@ -1,0 +1,23 @@
+#
+# fin-n3
+#
+
+[enemy]
+type=units/enemy/4/boss/four.unit
+x=176
+y=80
+vec_x=0
+vec_y=0
+delay=0
+face=W
+[/enemy]
+
+[enemy]
+type=units/enemy/5/boss/five.unit
+x=272
+y=80
+vec_x=0
+vec_y=0
+delay=0
+face=W
+[/enemy]

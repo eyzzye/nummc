@@ -1,0 +1,23 @@
+#
+# 5-5
+#
+
+[enemy]
+type=units/enemy/4/four.unit
+x=384,352,320
+y=32,64,96
+vec_x=0,0,0
+vec_y=0,0,0
+delay=0,0,0
+face=W,W,W
+[/enemy]
+
+[enemy]
+type=units/enemy/5/five.unit
+x=352,384,416
+y=160,192,224
+vec_x=0,0,0
+vec_y=0,0,0
+delay=0,0,0
+face=W,W,W
+[/enemy]

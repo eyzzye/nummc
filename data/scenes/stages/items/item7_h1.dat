@@ -1,0 +1,15 @@
+[items]
+type=units/items/tbox/tresure_static/7/tresure_static_h1.unit
+x=160
+y=128
+[/items]
+
+[items]
+type=units/items/special/goto_hell/goto_hell.unit
+x=288
+y=128
+[/items]
+
+[drop_items]
+units/items/stock/simple_bom/simple_bom.unit
+[/drop_items]

@@ -180,6 +180,10 @@ int unit_manager_load_enemy_bullet(std::string path)
 
 	enemy_bullet_base_index_end++;
 
+	if (enemy_bullet_base_index_end >= UNIT_ENEMY_BULLET_BASE_LIST_SIZE) {
+		LOG_ERROR("ERROR: unit_manager_load_enemy_bullet() enemy_bullet_base overflow\n");
+		return 1;
+	}
 	return 0;
 }
 

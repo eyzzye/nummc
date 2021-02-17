@@ -12,6 +12,6 @@ y=32,96,160,224
 
 [trap]
 type=units/trap/spike/spike.unit
-x=96,352
+x=192,256
 y=128,128
 [/trap]

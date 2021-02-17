@@ -1,0 +1,23 @@
+#
+# fin-13
+#
+
+[enemy]
+type=units/enemy/1/lv2/one.unit
+x=128
+y=64
+vec_x=0
+vec_y=0
+delay=0
+face=W
+[/enemy]
+
+[enemy]
+type=units/enemy/2/lv2/two.unit
+x=64
+y=64
+vec_x=0
+vec_y=0
+delay=0
+face=W
+[/enemy]

@@ -22,8 +22,8 @@ units/items/stock/charge/booster/booster.unit
 units/items/stock/charge/shield/shield.unit
 units/items/stock/charge/heart_bottle/heart_bottle.unit
 units/items/stock/charge/bom_bottle/bom_bottle.unit
-units/items/stock/charge/rampage/rampage.unit
 units/items/stock/charge/slowed/slowed.unit
+units/items/stock/charge/rampage/rampage.unit
 #stock special
 units/items/stock/booster/booster.unit
 units/items/stock/bullet_curving_up/curve.unit
@@ -35,6 +35,7 @@ units/items/stock/strength_up/strength_up.unit
 units/items/stock/heart/heart.unit
 units/items/stock/scope/scope.unit
 units/items/stock/slowed/slowed.unit
+units/items/stock/rampage/rampage.unit
 
 #bullet
 units/items/bullet/fire_bullet/fire_bullet.unit

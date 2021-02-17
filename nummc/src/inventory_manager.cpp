@@ -46,6 +46,7 @@ inventory_item_ref_t special_list[] = {
 	{"units/items/stock/heart/heart.unit",             UNIT_SPECIAL_ID_HEART},
 	{"units/items/stock/scope/scope.unit",             UNIT_SPECIAL_ID_SCOPE},
 	{"units/items/stock/slowed/slowed.unit",           UNIT_SPECIAL_ID_SLOWED},
+	{"units/items/stock/rampage/rampage.unit",         UNIT_SPECIAL_ID_RAMPAGE},
 };
 
 static int search_weapon(unit_items_data_t* item_data);

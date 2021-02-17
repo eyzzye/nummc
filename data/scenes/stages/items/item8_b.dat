@@ -1,10 +1,7 @@
 [drop_items]
+units/items/special/bullet_rate_up/rate.unit
 units/items/recovery/heart/heart.unit
-units/items/stock/booster/booster.unit
-units/items/special/speed_up/speed_up.unit
 [/drop_items]
 [goal_items]
-units/items/stock/charge/heart_bottle/heart_bottle.unit
-units/items/stock/charge/shield/shield.unit
-units/items/special/unknown/unknown.unit
+units/items/stock/rampage/rampage.unit
 [/goal_items]

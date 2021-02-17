@@ -42,6 +42,7 @@
 #define AI_PARAM_ALWAYS        (0x00000002)
 #define AI_PARAM_IN_REGION     (0x00000004)
 #define AI_PARAM_SLOPE_ATTACK  (0x00000008)
+#define AI_PARAM_NIGHT_MODE    (0x00000010)
 #define AI_PARAM_SPAWNER       (0x00000100)
 
 // ai_stat->val2

@@ -43,7 +43,7 @@
 #define UNIT_EFFECT_LIST_SIZE             ((((32*2 + 32 + 1 + UNIT_ITEMS_LIST_SIZE * 2 + UNIT_ENEMY_LIST_SIZE * (1+2+5) + 8) + 64) / 64) * 64)  // 64bit alignment
 
 #define UNIT_PLAYER_BASE_LIST_SIZE         16
-#define UNIT_ENEMY_BASE_LIST_SIZE          (UNIT_ENEMY_LIST_SIZE)
+#define UNIT_ENEMY_BASE_LIST_SIZE          (UNIT_ENEMY_LIST_SIZE * 2)
 #define UNIT_ITEMS_BASE_LIST_SIZE          (UNIT_ITEMS_LIST_SIZE)
 #define UNIT_EFFECT_BASE_LIST_SIZE         32
 #define UNIT_TRAP_BASE_LIST_SIZE           (UNIT_TRAP_LIST_SIZE / 4)           // div 4 => rough estimate

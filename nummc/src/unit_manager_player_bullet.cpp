@@ -166,6 +166,10 @@ int unit_manager_load_player_bullet(std::string path)
 
 	player_bullet_base_index_end++;
 
+	if (player_bullet_base_index_end >= UNIT_PLAYER_BULLET_BASE_LIST_SIZE) {
+		LOG_ERROR("ERROR: unit_manager_load_player_bullet() player_bullet_base overflow\n");
+		return 1;
+	}
 	return 0;
 }
 

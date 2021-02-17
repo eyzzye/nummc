@@ -5,7 +5,7 @@
 [enemy]
 type=units/enemy/9/boss/nine.unit
 x=208
-y=128
+y=112
 vec_x=0
 vec_y=0
 delay=0

@@ -1,0 +1,13 @@
+#
+# fin-n1
+#
+
+[enemy]
+type=units/enemy/1/boss/one.unit
+x=176,272
+y=80,80
+vec_x=0,0
+vec_y=0,0
+delay=0,0
+face=W,W
+[/enemy]

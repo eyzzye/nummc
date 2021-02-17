@@ -177,6 +177,11 @@ int unit_manager_load_trap(std::string path)
 	}
 
 	trap_base_index_end++;
+
+	if (trap_base_index_end >= UNIT_TRAP_BASE_LIST_SIZE) {
+		LOG_ERROR("ERROR: unit_manager_load_trap() trap_base overflow\n");
+		return 1;
+	}
 	return 0;
 }
 

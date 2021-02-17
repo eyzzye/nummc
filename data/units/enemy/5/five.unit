@@ -61,8 +61,8 @@ units/enemy/5/five.DIE.anim
 [ai]
 type=ROUND
 
-# AI_PARAM_ATTACK | AI_PARAM_ALWAYS
-val1=3
+# AI_PARAM_ATTACK | AI_PARAM_ALWAYS | AI_PARAM_NIGHT_MODE
+val1=19
 # attack count
 val2=1
 [/ai]

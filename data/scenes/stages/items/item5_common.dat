@@ -1,0 +1,4 @@
+[drop_items]
+units/items/stock/simple_bom/simple_bom.unit
+units/items/recovery/heart/heart.unit
+[/drop_items]

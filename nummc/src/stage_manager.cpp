@@ -8,15 +8,17 @@
 #include "game_utils.h"
 #include "game_log.h"
 #include "unit_manager.h"
+#include "quest_log_manager.h"
 
 // stage
 #define STAGE_ID_BASIC_INFO   0
-#define STAGE_ID_PLAYER_START 1
-#define STAGE_ID_GOAL         2
-#define STAGE_ID_NEXT_STAGE   3
-#define STAGE_ID_ITEMS_DEF    4
-#define STAGE_ID_SECTION      5
-#define STAGE_ID_END          6
+#define STAGE_ID_DAYTIME      1
+#define STAGE_ID_PLAYER_START 2
+#define STAGE_ID_GOAL         3
+#define STAGE_ID_NEXT_STAGE   4
+#define STAGE_ID_ITEMS_DEF    5
+#define STAGE_ID_SECTION      6
+#define STAGE_ID_END          7
 
 // section
 #define SECTION_ID_MAP          0  // has no tag
@@ -41,6 +43,7 @@ static int section_stock_item_index;
 
 // stage
 static void load_basic_info(std::string& line);
+static void load_daytime(std::string& line);
 static void load_player_start(std::string& line);
 static void load_goal(std::string& line);
 static void load_next_stage(std::string& line);
@@ -73,6 +76,8 @@ void stage_manager_init()
 	for (int i = 0; i < LENGTH_OF(g_stage_data->stage_map); i++) {
 		g_stage_data->stage_map[i].section_id = STAGE_MAP_ID_IGNORE;
 	}
+
+	stage_manager_daytime_init();
 }
 
 void stage_manager_unload()
@@ -307,6 +312,8 @@ int stage_manager_load(std::string path)
 
 			if (line == "[basic_info]") { read_flg[STAGE_ID_BASIC_INFO] = true;  continue; }
 			if (line == "[/basic_info]") { read_flg[STAGE_ID_BASIC_INFO] = false; continue; }
+			if (line == "[daytime]") { read_flg[STAGE_ID_DAYTIME] = true;  continue; }
+			if (line == "[/daytime]") { read_flg[STAGE_ID_DAYTIME] = false; continue; }
 			if (line == "[player_start]") { read_flg[STAGE_ID_PLAYER_START] = true;  continue; }
 			if (line == "[/player_start]") { read_flg[STAGE_ID_PLAYER_START] = false; continue; }
 			if (line == "[goal]") { read_flg[STAGE_ID_GOAL] = true;  continue; }
@@ -320,6 +327,9 @@ int stage_manager_load(std::string path)
 
 			if (read_flg[STAGE_ID_BASIC_INFO]) {
 				load_basic_info(line);
+			}
+			if (read_flg[STAGE_ID_DAYTIME]) {
+				load_daytime(line);
 			}
 			if (read_flg[STAGE_ID_PLAYER_START]) {
 				load_player_start(line);
@@ -360,6 +370,31 @@ static void load_basic_info(std::string& line) {
 		float denominator = (float)atoi(value.c_str());
 		g_stage_data->friction_coef = 1.0f / denominator;
 	}
+}
+
+static void load_daytime(std::string& line) {
+	std::string key;
+	std::string value;
+	game_utils_split_key_value(line, key, value);
+	if (key == "stat") {
+		if (value == "MORNING") {
+			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_MORNING;
+		}
+		else if (value == "AFTERNOON") {
+			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_AFTERNOON;
+		}
+		else if (value == "EVENING") {
+			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_EVENING;
+		}
+		else if (value == "LATE_NIGHT") {
+			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_LATE_NIGHT;
+		}
+		else {
+			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_NONE;
+		}
+	}
+	if (key == "frame_time") g_stage_data->daytime_frame_time = atoi(value.c_str());
+	if (key == "default_timer") g_stage_data->daytime_timer = atoi(value.c_str());
 }
 
 static void load_player_start(std::string& line) {
@@ -674,6 +709,77 @@ static void load_enemy(std::string& line) {
 		game_utils_split_conmma(value, val_list);
 		for (int i = 0; i < val_list.size(); i++) {
 			current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->ai_step = val_list[i];
+		}
+	}
+}
+
+// daytime I/F
+void stage_manager_daytime_init()
+{
+	g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_NONE;
+	g_stage_data->daytime_frame_time = STAGE_DAYTIME_FRAME_DEFAULT_VAL;
+	g_stage_data->daytime_timer = STAGE_DAYTIME_DEFAULT_VAL;
+}
+
+int stage_manager_daytime_get_hour(int daytime_timer)
+{
+	return daytime_timer / 3600;
+}
+
+int stage_manager_daytime_get_minutes(int daytime_timer)
+{
+	return (daytime_timer % 3600) / 60;
+}
+
+int stage_manager_daytime_get_seconds(int daytime_timer)
+{
+	return daytime_timer % 60;
+}
+
+void stage_manager_daytime_update()
+{
+	// if disable daytime mode
+	if (g_stage_data->daytime_stat == STAGE_DAYTIME_STAT_NONE) return;
+
+	g_stage_data->daytime_timer += g_stage_data->daytime_frame_time;
+
+	if (g_stage_data->daytime_stat == STAGE_DAYTIME_STAT_MORNING) {
+		if (g_stage_data->daytime_timer > STAGE_DAYTIME_MORNING_MAX) {
+			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_AFTERNOON;
+
+			char buff[32] = { '\0' };
+			sprintf_s(buff, "Good AfterNoon!!!");
+			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+		}
+	}
+	else if (g_stage_data->daytime_stat == STAGE_DAYTIME_STAT_AFTERNOON) {
+		if (g_stage_data->daytime_timer > STAGE_DAYTIME_AFTERNOON_MAX) {
+			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_EVENING;
+
+			char buff[32] = { '\0' };
+			sprintf_s(buff, "Good Evening!!!");
+			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+		}
+	}
+	else if (g_stage_data->daytime_stat == STAGE_DAYTIME_STAT_EVENING) {
+		if (g_stage_data->daytime_timer > STAGE_DAYTIME_EVENING_MAX) {
+			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_LATE_NIGHT;
+
+			// reset timer
+			g_stage_data->daytime_timer -= STAGE_DAYTIME_MAX_VAL;
+
+			char buff[32] = { '\0' };
+			sprintf_s(buff, "Good Late-Night!!!");
+			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+		}
+	}
+	else if (g_stage_data->daytime_stat == STAGE_DAYTIME_STAT_LATE_NIGHT) {
+		if (g_stage_data->daytime_timer > STAGE_DAYTIME_LATE_NIGHT_MAX) {
+			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_MORNING;
+
+			char buff[32] = { '\0' };
+			sprintf_s(buff, "Good Morning!!!");
+			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
 		}
 	}
 }

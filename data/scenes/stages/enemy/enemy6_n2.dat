@@ -1,0 +1,23 @@
+#
+# 6-n2
+#
+
+[enemy]
+type=units/enemy/6/six.unit
+x=96,352,96,352
+y=96,96,160,160
+vec_x=0,0,0,0
+vec_y=0,0,0,0
+delay=0,0,0,0
+face=W,W,E,E
+[/enemy]
+
+[enemy]
+type=units/enemy/6/lv2/six.unit
+x=224,224
+y=96,160
+vec_x=0,0
+vec_y=0,0
+delay=0,0
+face=W,E
+[/enemy]

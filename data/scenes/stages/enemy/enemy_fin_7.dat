@@ -1,0 +1,23 @@
+#
+# fin-7
+#
+
+[enemy]
+type=units/enemy/1/one.unit
+x=320
+y=128
+vec_x=0
+vec_y=0
+delay=0
+face=E
+[/enemy]
+
+[enemy]
+type=units/enemy/8/reg_all/eight.unit
+x=128,128
+y=96,160
+vec_x=0,0
+vec_y=0,0
+delay=0,0
+face=E,E
+[/enemy]

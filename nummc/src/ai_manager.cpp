@@ -1153,6 +1153,10 @@ static void update_round(ai_data_t* ai_data)
 
 				bool attack_dirt = false;
 				int attack_count = ai_stat->val2;
+				if ((g_stage_data->daytime_stat == STAGE_DAYTIME_STAT_LATE_NIGHT) && (ai_stat->val1 & AI_PARAM_NIGHT_MODE)) {
+					attack_count = 4; // nightmare
+				}
+
 				if (((attack_count == 1) || (attack_count == 2) || (attack_count == 4))
 					&& (angle >= 0) && (angle < b2_pi * 5.0f / 180.0f)) {
 					attack_dirt = true;

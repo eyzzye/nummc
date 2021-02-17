@@ -1,0 +1,16 @@
+#
+# two animation (type=IDLE)
+#
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/enemy/2/
+path=two_idle1.png
+offset_x=*
+offset_y=*
+effect=color:S:0:0:0:D:255:127:39
+[/img]

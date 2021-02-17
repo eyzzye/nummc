@@ -1,0 +1,23 @@
+#
+# 5-n2
+#
+
+[enemy]
+type=units/enemy/5/reg_freeze/five.unit
+x=96,352,96,352
+y=96,96,160,160
+vec_x=0,0,0,0
+vec_y=0,0,0,0
+delay=0,0,0,0
+face=W,W,W,W
+[/enemy]
+
+[enemy]
+type=units/enemy/5/reg_freeze/lv2/five.unit
+x=224,224,
+y=96,160
+vec_x=0,0
+vec_y=0,0
+delay=0,0
+face=W,W
+[/enemy]
