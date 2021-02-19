@@ -711,10 +711,7 @@ int unit_manager_enemy_get_damage_force(unit_enemy_data_t* enemy_data, int hp)
 {
 	enemy_data->hp += hp;
 	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_SUB1);
-
-	char buff[32] = { '\0' };
-	sprintf_s(buff, "enemy %d damaged(force): %d", enemy_data->id, hp);
-	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+	quest_log_manager_message("enemy %d damaged(force): %d", enemy_data->id, hp);
 
 	if (enemy_data->hp <= 0) {
 		// give exp
@@ -747,10 +744,7 @@ int unit_manager_enemy_get_damage(unit_enemy_data_t* enemy_data, int hp)
 {
 	enemy_data->hp += hp;
 	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_SUB1);
-
-	char buff[32] = { '\0' };
-	sprintf_s(buff, "enemy %d damaged: %d", enemy_data->id, hp);
-	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+	quest_log_manager_message("enemy %d damaged: %d", enemy_data->id, hp);
 
 	if (enemy_data->hp <= 0) {
 		// give exp

@@ -907,9 +907,7 @@ static void section_init()
 		}
 	}
 
-	char buff[32] = { '\0' };
-	sprintf_s(buff, "start section: %d", g_stage_data->current_section_index);
-	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+	quest_log_manager_message("start section: %d", g_stage_data->current_section_index);
 
 	// set section_stat active
 	g_stage_data->section_stat = SECTION_STAT_ACTIVE;

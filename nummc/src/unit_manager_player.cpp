@@ -520,10 +520,7 @@ int unit_manager_player_get_damage_force(int hp)
 {
 	g_player.hp += hp;
 	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_MAIN2);
-
-	char buff[32] = { '\0' };
-	sprintf_s(buff, "player damaged(force): %d", hp);
-	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+	quest_log_manager_message("player damaged(force): %d", hp);
 
 	// set game over
 	if (g_player.hp <= 0) {
@@ -546,10 +543,7 @@ int unit_manager_player_get_damage(int hp)
 	//player.stat |= UNIT_PLAYER_STAT_FLAG_DAMAGE;
 	g_player.hp += hp;
 	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_MAIN2);
-
-	char buff[32] = { '\0' };
-	sprintf_s(buff, "player damaged: %d", hp);
-	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+	quest_log_manager_message("player damaged: %d", hp);
 
 	// set game over
 	if (g_player.hp <= 0) {
@@ -592,10 +586,7 @@ int unit_manager_player_recovery(int hp)
 		g_player.hp = g_player.hp_max;
 	}
 
-	char buff[32] = { '\0' };
-	sprintf_s(buff, "player recovered: %d", hp);
-	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
-
+	quest_log_manager_message("player recovered: %d", hp);
 	return 0;
 }
 
@@ -618,12 +609,9 @@ int unit_manager_player_set_hp_max(int hp_max)
 
 	g_player.hp_max += delta_hp;
 
-	char buff[32] = { '\0' };
-	sprintf_s(buff, "player health up: %d", delta_hp);
-	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
-
 	unit_manager_player_recovery(delta_hp);
 
+	quest_log_manager_message("player health up: %d", delta_hp);
 	return 0;
 }
 
@@ -652,10 +640,7 @@ static void unit_manager_player_change_bullet_curving(int bullet_curving)
 	int val = UNIT_BULLET_SPEC_GET_CURVING(&g_player) + bullet_curving;
 	val = MAX(UNIT_PLAYER_BULLET_CURVING_RANK_MIN, MIN(UNIT_PLAYER_BULLET_CURVING_RANK_MAX, val));
 	UNIT_BULLET_SPEC_SET_CURVING(&g_player, val);
-
-	char buff[32] = { '\0' };
-	sprintf_s(buff, "player curving Lv:%d", UNIT_BULLET_SPEC_GET_CURVING(&g_player));
-	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+	quest_log_manager_message("player curving Lv:%d", UNIT_BULLET_SPEC_GET_CURVING(&g_player));
 }
 
 static void unit_manager_player_change_bullet_strength(int bullet_strength)
@@ -664,30 +649,20 @@ static void unit_manager_player_change_bullet_strength(int bullet_strength)
 	int val = UNIT_BULLET_SPEC_GET_STRENGTH(&g_player) + bullet_strength;
 	val = MAX(UNIT_PLAYER_STRENGTH_RANK_MIN, MIN(UNIT_PLAYER_STRENGTH_RANK_MAX, val));
 	UNIT_BULLET_SPEC_SET_STRENGTH(&g_player, val);
-
-	char buff[32] = { '\0' };
-	sprintf_s(buff, "player strength Lv:%d", UNIT_BULLET_SPEC_GET_STRENGTH(&g_player));
-	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+	quest_log_manager_message("player strength Lv:%d", UNIT_BULLET_SPEC_GET_STRENGTH(&g_player));
 }
 
 static void unit_manager_player_change_speed(int speed)
 {
 	g_player.speed += speed;
 	g_player.speed = MAX(UNIT_PLAYER_SPEED_RANK_MIN, MIN(UNIT_PLAYER_SPEED_RANK_MAX, g_player.speed));
-
-	char buff[32] = { '\0' };
-	sprintf_s(buff, "player speed Lv:%d", g_player.speed);
-	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+	quest_log_manager_message("player speed Lv:%d", g_player.speed);
 }
 
 static int unit_manager_player_change_weapon(int weapon)
 {
 	g_player.weapon = weapon;
-
-	char buff[32] = { '\0' };
-	sprintf_s(buff, "player weapon: %d", g_player.weapon);
-	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
-
+	quest_log_manager_message("player weapon: %d", g_player.weapon);
 	return 0;
 }
 
@@ -697,10 +672,7 @@ static void unit_manager_player_change_luck(int luck)
 	int val = UNIT_SPEC_GET_LUCK(&g_player) + luck;
 	val = MAX(UNIT_PLAYER_LUCK_RANK_MIN, MIN(UNIT_PLAYER_LUCK_RANK_MAX, val));
 	UNIT_SPEC_SET_LUCK(&g_player, val);
-
-	char buff[32] = { '\0' };
-	sprintf_s(buff, "player luck Lv:%d", UNIT_SPEC_GET_LUCK(&g_player));
-	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+	quest_log_manager_message("player luck Lv:%d", UNIT_SPEC_GET_LUCK(&g_player));
 }
 
 int unit_manager_player_stock_item(unit_items_data_t* item_data)
@@ -779,10 +751,7 @@ int unit_manager_player_get_special_item(int item_id)
 		else {
 			//player_boost_on = true;
 			unit_manager_player_set_effect_stat(UNIT_EFFECT_FLAG_P_BOOST, true);
-
-			char buff[32] = { '\0' };
-			sprintf_s(buff, "player boost");
-			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+			quest_log_manager_message("player boost");
 
 			int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y, unit_manager_search_effect(star_effect_path));
 			unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&g_player);
@@ -793,20 +762,14 @@ int unit_manager_player_get_special_item(int item_id)
 			return 1;
 		}
 		unit_manager_player_change_bullet_curving(-1);
-
-		char buff[32] = { '\0' };
-		sprintf_s(buff, "player bullet_curving %d", UNIT_BULLET_SPEC_GET_CURVING(&g_player));
-		quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+		quest_log_manager_message("player bullet_curving %d", UNIT_BULLET_SPEC_GET_CURVING(&g_player));
 	}
 	else if (item_id == UNIT_SPECIAL_ID_BULLET_CURVING_UP) {
 		if (UNIT_BULLET_SPEC_GET_CURVING(&g_player) >= UNIT_PLAYER_BULLET_CURVING_RANK_MAX) {
 			return 1;
 		}
 		unit_manager_player_change_bullet_curving(1);
-
-		char buff[32] = { '\0' };
-		sprintf_s(buff, "player bullet_curving %d", UNIT_BULLET_SPEC_GET_CURVING(&g_player));
-		quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+		quest_log_manager_message("player bullet_curving %d", UNIT_BULLET_SPEC_GET_CURVING(&g_player));
 	}
 	else if (item_id == UNIT_SPECIAL_ID_BULLET_RANGE_DOWN) {
 		if (g_player.bullet_life_timer <= UNIT_PLAYER_BULLET_LIFE_TIMER_MIN) {
@@ -814,10 +777,7 @@ int unit_manager_player_get_special_item(int item_id)
 		}
 		else {
 			g_player.bullet_life_timer -= 200;
-
-			char buff[32] = { '\0' };
-			sprintf_s(buff, "player bullet_range %d", g_player.bullet_life_timer);
-			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+			quest_log_manager_message("player bullet_range %d", g_player.bullet_life_timer);
 		}
 	}
 	else if (item_id == UNIT_SPECIAL_ID_BULLET_RANGE_UP) {
@@ -826,10 +786,7 @@ int unit_manager_player_get_special_item(int item_id)
 		}
 		else {
 			g_player.bullet_life_timer += 200;
-
-			char buff[32] = { '\0' };
-			sprintf_s(buff, "player bullet_range %d", g_player.bullet_life_timer);
-			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+			quest_log_manager_message("player bullet_range %d", g_player.bullet_life_timer);
 		}
 	}
 	else if (item_id == UNIT_SPECIAL_ID_BULLET_RATE_DOWN) {
@@ -838,10 +795,7 @@ int unit_manager_player_get_special_item(int item_id)
 		}
 		else {
 			g_player.attack_wait_timer += 100;
-
-			char buff[32] = { '\0' };
-			sprintf_s(buff, "player bullet_rate %d", (UNIT_PLAYER_ATTACK_WAIT_TIMER_MAX + UNIT_PLAYER_ATTACK_WAIT_TIMER_MIN) / 100 - (g_player.attack_wait_timer / 100));
-			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+			quest_log_manager_message("player bullet_rate %d", (UNIT_PLAYER_ATTACK_WAIT_TIMER_MAX + UNIT_PLAYER_ATTACK_WAIT_TIMER_MIN) / 100 - (g_player.attack_wait_timer / 100));
 		}
 	}
 	else if (item_id == UNIT_SPECIAL_ID_BULLET_RATE_UP) {
@@ -850,10 +804,7 @@ int unit_manager_player_get_special_item(int item_id)
 		}
 		else {
 			g_player.attack_wait_timer -= 100;
-
-			char buff[32] = { '\0' };
-			sprintf_s(buff, "player bullet_rate %d", (UNIT_PLAYER_ATTACK_WAIT_TIMER_MAX + UNIT_PLAYER_ATTACK_WAIT_TIMER_MIN) / 100 - (g_player.attack_wait_timer / 100));
-			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+			quest_log_manager_message("player bullet_rate %d", (UNIT_PLAYER_ATTACK_WAIT_TIMER_MAX + UNIT_PLAYER_ATTACK_WAIT_TIMER_MIN) / 100 - (g_player.attack_wait_timer / 100));
 		}
 	}
 	else if (item_id == UNIT_SPECIAL_ID_SHIELD) {
@@ -864,10 +815,7 @@ int unit_manager_player_get_special_item(int item_id)
 		else {
 			//player_shield_on = true;
 			unit_manager_player_set_effect_stat(UNIT_EFFECT_FLAG_P_SHIELD, true);
-
-			char buff[32] = { '\0' };
-			sprintf_s(buff, "player shield");
-			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+			quest_log_manager_message("player shield");
 
 			int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y, unit_manager_search_effect(star_effect_path));
 			unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&g_player);
@@ -908,10 +856,7 @@ int unit_manager_player_get_special_item(int item_id)
 			return 1;
 		}
 		UNIT_BULLET_SPEC_SET_NUM(&g_player, UNIT_BULLET_NUM_DOUBLE);
-
-		char buff[32] = { '\0' };
-		sprintf_s(buff, "player bullet_double");
-		quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+		quest_log_manager_message("player bullet_double");
 	}
 	else if (item_id == UNIT_SPECIAL_ID_SCOPE) {
 		map_manager_stage_map_all_open();
@@ -922,10 +867,7 @@ int unit_manager_player_get_special_item(int item_id)
 			int pos_y = game_utils_random_gen((g_map_y_max - 2) * g_tile_height, g_tile_height);
 			unit_manager_create_effect(pos_x, pos_y, unit_manager_search_effect(star_effect_path));
 		}
-
-		char buff[32] = { '\0' };
-		sprintf_s(buff, "open all map");
-		quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+		quest_log_manager_message("open all map");
 	}
 	else if (item_id == UNIT_SPECIAL_ID_LUCKY) {
 		if (UNIT_SPEC_GET_LUCK(&g_player) >= UNIT_PLAYER_LUCK_RANK_MAX) {
@@ -935,20 +877,14 @@ int unit_manager_player_get_special_item(int item_id)
 	}
 	else if (item_id == UNIT_SPECIAL_ID_GOTO_HELL) {
 		unit_manager_create_hell();
-
-		char buff[32] = { '\0' };
-		sprintf_s(buff, "goto hell");
-		quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+		quest_log_manager_message("goto hell");
 	}
 	else if (item_id == UNIT_SPECIAL_ID_SLOWED) {
 		if (g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) {
 			return 1;
 		}
 		stage_manager_set_section_circumstance(SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY);
-
-		char buff[32] = { '\0' };
-		sprintf_s(buff, "enemy slowed");
-		quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+		quest_log_manager_message("enemy slowed");
 	}
 	else if (item_id == UNIT_SPECIAL_ID_RAMPAGE) {
 		if (g_player.effect_stat & UNIT_EFFECT_FLAG_P_RAMPAGE) {
@@ -958,10 +894,7 @@ int unit_manager_player_get_special_item(int item_id)
 		else {
 			//player_boost_on = true;
 			unit_manager_player_set_effect_stat(UNIT_EFFECT_FLAG_P_RAMPAGE, true);
-
-			char buff[32] = { '\0' };
-			sprintf_s(buff, "player rampage");
-			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+			quest_log_manager_message("player rampage");
 
 			int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y, unit_manager_search_effect(star_effect_path));
 			unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&g_player);
@@ -1051,10 +984,7 @@ static void use_bom_item()
 	unit_manager_get_spawn_items_pos_under_foot((unit_data_t*)&g_player, 1, &x, &y);
 	int id = unit_manager_create_items(x, y, unit_manager_search_items(bom_item_path));
 	unit_manager_items_set_anim_stat(id, ANIM_STAT_FLAG_ATTACK);
-
-	char buff[32] = { '\0' };
-	sprintf_s(buff, "player drop bom");
-	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+	quest_log_manager_message("player drop bom");
 }
 
 void unit_manager_player_use_weapon_item()

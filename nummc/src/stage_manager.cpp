@@ -746,19 +746,13 @@ void stage_manager_daytime_update()
 	if (g_stage_data->daytime_stat == STAGE_DAYTIME_STAT_MORNING) {
 		if (g_stage_data->daytime_timer > STAGE_DAYTIME_MORNING_MAX) {
 			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_AFTERNOON;
-
-			char buff[32] = { '\0' };
-			sprintf_s(buff, "Good AfterNoon!!!");
-			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+			quest_log_manager_message("Good AfterNoon!!!");
 		}
 	}
 	else if (g_stage_data->daytime_stat == STAGE_DAYTIME_STAT_AFTERNOON) {
 		if (g_stage_data->daytime_timer > STAGE_DAYTIME_AFTERNOON_MAX) {
 			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_EVENING;
-
-			char buff[32] = { '\0' };
-			sprintf_s(buff, "Good Evening!!!");
-			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+			quest_log_manager_message("Good Evening!!!");
 		}
 	}
 	else if (g_stage_data->daytime_stat == STAGE_DAYTIME_STAT_EVENING) {
@@ -767,19 +761,13 @@ void stage_manager_daytime_update()
 
 			// reset timer
 			g_stage_data->daytime_timer -= STAGE_DAYTIME_MAX_VAL;
-
-			char buff[32] = { '\0' };
-			sprintf_s(buff, "Good Late-Night!!!");
-			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+			quest_log_manager_message("Good Late-Night!!!");
 		}
 	}
 	else if (g_stage_data->daytime_stat == STAGE_DAYTIME_STAT_LATE_NIGHT) {
 		if (g_stage_data->daytime_timer > STAGE_DAYTIME_LATE_NIGHT_MAX) {
 			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_MORNING;
-
-			char buff[32] = { '\0' };
-			sprintf_s(buff, "Good Morning!!!");
-			quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+			quest_log_manager_message("Good Morning!!!");
 		}
 	}
 }

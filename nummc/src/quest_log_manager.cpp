@@ -109,6 +109,17 @@ static void tex_info_init()
 	}
 }
 
+void quest_log_manager_message(const char* message_fmt, ...)
+{
+	char buff[32];
+	va_list args;
+	va_start(args, message_fmt);
+	vsnprintf_s(buff, 31, message_fmt, args);
+	va_end(args);
+
+	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+}
+
 void quest_log_manager_set_new_message(char* message, int message_length, int regist_timer)
 {
 	int new_index = -1;
