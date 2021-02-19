@@ -10,10 +10,10 @@ sub_id=1
 [collision]
 type=BOX_S
 group=TRAP
-x=0
-y=0
-w=32
-h=32
+x=8
+y=8
+w=16
+h=16
 [/collision]
 
 [anim]

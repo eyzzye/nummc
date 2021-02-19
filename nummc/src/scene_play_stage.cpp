@@ -27,7 +27,7 @@
 #include "windows.h" // for Sleep()
 
 #define GAME_START_WAIT_TIMER         1500
-#define GAME_NEXT_STAGE_WAIT_TIMER    4000
+#define GAME_NEXT_STAGE_WAIT_TIMER    2000
 #define KEY_SYNC_ITEM_USE_WAIT_TIMER   300
 #define KEY_SYNC_WAIT_TIMER            150
 #define SHOT_BULLET_WAIT_TIMER         200
@@ -693,7 +693,7 @@ static void set_stat_event(int stat) {
 static void main_event_next_load()
 {
 	game_next_stage_wait_timer += g_delta_time;
-	game_next_stage_dark_alpha = MAX(0, MIN( (game_next_stage_wait_timer - 1200) / 10, 255));  // A:0->255 (1200[msec]~)
+	game_next_stage_dark_alpha = MAX(0, MIN(255 * game_next_stage_wait_timer / 1500, 255));  // A:0->255 (1500[msec]~)
 
 	if (game_next_stage_wait_timer > GAME_NEXT_STAGE_WAIT_TIMER) {
 		// NN -> load next stage
@@ -1295,7 +1295,7 @@ void scene_play_stage_play_current_bgm(bool on_off)
 void scene_play_next_stage() {
 	game_next_stage_dark_alpha = 0;
 	sound_manager_stop(SOUND_MANAGER_CH_MUSIC);
-	sound_manager_play(resource_manager_getChunkFromPath("music/win.ogg"), SOUND_MANAGER_CH_MUSIC);
+	sound_manager_play(resource_manager_getChunkFromPath("music/fallout.ogg"), SOUND_MANAGER_CH_MUSIC);
 	stage_manager_set_next_load(STAGE_NEXT_LOAD_ON);
 }
 
