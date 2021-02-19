@@ -143,7 +143,7 @@ static void update_contact(b2Contact* contact)
 		}
 
 		// send event
-		game_event_collision_dynamic_t* msg_param = new game_event_collision_dynamic_t;
+		game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)game_event_get_new_param();
 		msg_param->obj1 = unit_player->col_shape;
 		msg_param->obj2 = unit_item->col_shape;
 		game_event_t msg = { EVENT_MSG_COLLISION_DYNAMIC_PvI, (void*)msg_param };
@@ -157,7 +157,7 @@ static void update_contact(b2Contact* contact)
 	if ((unit_p_bullet) && (unit_enemy)) {
 		if (unit_p_bullet->col_shape->stat == COLLISION_STAT_ENABLE) {
 			// send event
-			game_event_collision_dynamic_t* msg_param = new game_event_collision_dynamic_t;
+			game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)game_event_get_new_param();
 			msg_param->obj1 = unit_p_bullet->col_shape;
 			msg_param->obj2 = unit_enemy->col_shape;
 			game_event_t msg = { EVENT_MSG_COLLISION_DYNAMIC_PBvE, (void*)msg_param };
@@ -170,7 +170,7 @@ static void update_contact(b2Contact* contact)
 	if ((unit_p_bullet) && (unit_tile)) {
 		if (unit_p_bullet->col_shape->stat == COLLISION_STAT_ENABLE) {
 			// send event
-			game_event_collision_dynamic_t* msg_param = new game_event_collision_dynamic_t;
+			game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)game_event_get_new_param();
 			msg_param->obj1 = unit_p_bullet->col_shape;
 			msg_param->obj2 = unit_tile->col_shape;
 			game_event_t msg = { EVENT_MSG_COLLISION_DYNAMIC_PBvM, (void*)msg_param };
@@ -181,7 +181,7 @@ static void update_contact(b2Contact* contact)
 	if ((unit_e_bullet) && (unit_tile)) {
 		if (unit_e_bullet->col_shape->stat == COLLISION_STAT_ENABLE) {
 			// send event
-			game_event_collision_dynamic_t* msg_param = new game_event_collision_dynamic_t;
+			game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)game_event_get_new_param();
 			msg_param->obj1 = unit_e_bullet->col_shape;
 			msg_param->obj2 = unit_tile->col_shape;
 			game_event_t msg = { EVENT_MSG_COLLISION_DYNAMIC_EBvM, (void*)msg_param };
@@ -198,7 +198,7 @@ static void update_contact(b2Contact* contact)
 		}
 
 		// send event
-		game_event_collision_dynamic_t* msg_param = new game_event_collision_dynamic_t;
+		game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)game_event_get_new_param();
 		msg_param->obj1 = unit_player->col_shape;
 		msg_param->obj2 = unit_enemy->col_shape;
 		game_event_t msg = { EVENT_MSG_COLLISION_DYNAMIC_PvE, (void*)msg_param };
@@ -210,7 +210,7 @@ static void update_contact(b2Contact* contact)
 	if ((unit_e_bullet) && (unit_player)) {
 		if (unit_e_bullet->col_shape->stat == COLLISION_STAT_ENABLE) {
 			// send event
-			game_event_collision_dynamic_t* msg_param = new game_event_collision_dynamic_t;
+			game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)game_event_get_new_param();
 			msg_param->obj1 = unit_e_bullet->col_shape;
 			msg_param->obj2 = unit_player->col_shape;
 			game_event_t msg = { EVENT_MSG_COLLISION_DYNAMIC_EBvP, (void*)msg_param };
@@ -317,7 +317,7 @@ static void update_trap_collision(b2Body* body1)
 			bool overlap = b2TestOverlap(shape1, 0, shape2, 0, body1->GetTransform(), body2->GetTransform());
 			if (overlap) {
 				// RECOVERY, TRAP send event
-				game_event_collision_dynamic_t* msg_param = new game_event_collision_dynamic_t;
+				game_event_collision_dynamic_t* msg_param = (game_event_collision_dynamic_t*)game_event_get_new_param();
 				msg_param->obj1 = unit_data2->col_shape;
 				msg_param->obj2 = unit_data1->col_shape;
 				game_event_t msg = { event_id, (void*)msg_param };

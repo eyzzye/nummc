@@ -65,7 +65,7 @@ void animation_manager_unload()
 {
 	for (int i = 0; i < ANIM_STAT_BASE_LIST_SIZE; i++) {
 		if (anim_stat_base_data_list[i].obj) {
-			delete [] anim_stat_base_data_list[i].obj;
+			game_utils_string_delete((char*)anim_stat_base_data_list[i].obj);
 			anim_stat_base_data_list[i].obj = NULL;
 		}
 

@@ -179,9 +179,8 @@ void load_anim(std::string& line, anim_data_t* anim)
 	}
 
 	// set anim path
-	char* path_c_str = new char[line.size() + 1];
-	memcpy(path_c_str, line.c_str(), line.size());
-	path_c_str[line.size()] = '\0';
+	char* path_c_str = game_utils_string_new();
+	game_utils_string_copy(path_c_str, line.c_str());
 	anim->anim_stat_base_list[stat_val]->obj = (void*)path_c_str;
 }
 
@@ -219,18 +218,16 @@ void load_bullet(std::string& line, ai_data_t** bullet_data)
 		bullet_data[0] = ai_manager_new_ai_base_data();
 		bullet_data[0]->type = AI_TYPE_BULLET;
 
-		char* path_c_str = new char[value.size() + 1];
-		memcpy(path_c_str, value.c_str(), value.size());
-		path_c_str[value.size()] = '\0';
+		char* path_c_str = game_utils_string_new();
+		game_utils_string_copy(path_c_str, value.c_str());
 		((ai_bullet_t*)bullet_data[0])->obj = (void*)path_c_str;
 	}
 	if (key == "bullet2_ai") {
 		bullet_data[1] = ai_manager_new_ai_base_data();
 		bullet_data[1]->type = AI_TYPE_BULLET;
 
-		char* path_c_str = new char[value.size() + 1];
-		memcpy(path_c_str, value.c_str(), value.size());
-		path_c_str[value.size()] = '\0';
+		char* path_c_str = game_utils_string_new();
+		game_utils_string_copy(path_c_str, value.c_str());
 		((ai_bullet_t*)bullet_data[1])->obj = (void*)path_c_str;
 	}
 }

@@ -9,6 +9,7 @@
 #include "unit_manager.h"
 #include "dialog_message.h"
 #include "game_log.h"
+#include "game_utils.h"
 
 static bool quit = false;
 
@@ -38,6 +39,9 @@ void game_loop_main()
 	game_key_event_init();
 	game_timer_init();
 	game_timer_start();
+
+	// common char buffer
+	game_utils_string_init();
 
 	// common dialog
 	dialog_message_init();

@@ -12,8 +12,15 @@ struct _game_event_t {
 	void* param;
 };
 
+// param common template
+typedef struct _game_event_param_t game_event_param_t;
+struct _game_event_param_t {
+	void* data_field[2];
+};
+
 extern int game_event_init();
 extern void game_event_clear();
+extern game_event_param_t* game_event_get_new_param();
 extern int game_event_push(game_event_t* msg);
 extern int game_event_pop(game_event_t* msg);
 

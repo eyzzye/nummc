@@ -1,3 +1,4 @@
+#include <string.h>
 #include <random>
 #include <io.h>
 #include <time.h>
@@ -146,6 +147,72 @@ int game_utils_backup_file(std::string path, int max_size)
 			return 0;
 		}
 	}
+}
+
+//
+// char buffer utils
+//
+#define GAME_UTILS_STRING_SIZE  (256 * 8)  /* *.unit, SPAWN.anim, IDLE.anim, MOVE.anim, DIE.anim, ATTACK1.anim, ATTACK2.anim, *.unit->next_level */
+static game_utils_string_t game_utils_string[GAME_UTILS_STRING_SIZE];
+static int game_utils_string_index_end;
+
+int game_utils_string_init()
+{
+	memset(game_utils_string, 0, sizeof(game_utils_string));
+	game_utils_string_index_end = 0;
+	return 0;
+}
+
+char* game_utils_string_new()
+{
+	int ret = -1;
+
+	int index = game_utils_string_index_end;
+	for (int i = 0; i < GAME_UTILS_STRING_SIZE; i++) {
+		if (index >= GAME_UTILS_STRING_SIZE) index -= GAME_UTILS_STRING_SIZE;
+		if (game_utils_string[index].type == GAME_UTILS_STRING_TYPE_NONE) {
+			ret = index;
+			break;
+		}
+		index++;
+	}
+
+	if (ret == -1) {
+		LOG_ERROR("Error: game_utils_string_new() overflow.");
+		return NULL;
+	}
+
+	game_utils_string[index].type = GAME_UTILS_STRING_TYPE_CHAR_BUF;
+	memset(game_utils_string[index].buffer, 0, sizeof(char) * GAME_UTILS_STRING_CHAR_BUF_SIZE);
+	game_utils_string_index_end = index + 1;
+
+	if (game_utils_string_index_end >= GAME_UTILS_STRING_SIZE) {
+		game_utils_string_index_end = 0;
+	}
+	return game_utils_string[index].buffer;
+}
+
+void game_utils_string_delete(char* ptr)
+{
+	size_t head_index = (size_t)game_utils_string[0].buffer;
+	size_t delete_index = (size_t)ptr;
+	int index = (int)((delete_index - head_index) / sizeof(game_utils_string_t));
+
+	if (game_utils_string[index].buffer != ptr) {
+		LOG_ERROR("ERROR: game_utils_string_delete() address is invalid\n");
+		return;
+	}
+	game_utils_string[index].type = GAME_UTILS_STRING_TYPE_NONE;
+}
+
+int game_utils_string_copy(char* dst, const char* src)
+{
+	int ret = strcpy_s(dst, GAME_UTILS_STRING_CHAR_BUF_SIZE - 1, src);
+	if (ret != 0) {
+		LOG_ERROR("ERROR: game_utils_string_copy() failed\n");
+		return 1;
+	}
+	return 0;
 }
 
 //

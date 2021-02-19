@@ -438,7 +438,7 @@ void game_save_get_config_player(int slot_index, unit_player_data_t* player)
 {
 	if (player->obj != NULL) {
 		const char* c_path = game_config_data.player[slot_index]->values["path"].c_str();
-		strcpy_s((char *)player->obj, MAX_PATH, c_path);
+		game_utils_string_copy((char *)player->obj, c_path);
 	}
 	player->hp = atoi(game_config_data.player[slot_index]->values["hp"].c_str());
 	player->exp = atoi(game_config_data.player[slot_index]->values["exp"].c_str());

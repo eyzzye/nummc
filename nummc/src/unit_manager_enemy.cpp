@@ -128,18 +128,18 @@ void unit_manager_unload_enemy()
 {
 	for (int i = 0; i < UNIT_ENEMY_BASE_LIST_SIZE; i++) {
 		if (enemy_base[i].obj) {
-			delete[] enemy_base[i].obj;
+			game_utils_string_delete((char*)enemy_base[i].obj);
 			enemy_base[i].obj = NULL;
 		}
 		if (enemy_base[i].next_level) {
-			delete[] enemy_base[i].next_level;
+			game_utils_string_delete((char*)enemy_base[i].next_level);
 			enemy_base[i].next_level = NULL;
 		}
 
 		for (int bi = 0; bi < UNIT_ENEMY_BULLET_NUM; bi++) {
 			if (enemy_base[i].bullet[bi]) {
 				if (enemy_base[i].bullet[bi]->obj) {
-					delete[] enemy_base[i].bullet[bi]->obj; // g_enemy_bullet_path
+					game_utils_string_delete((char*)enemy_base[i].bullet[bi]->obj); // g_enemy_bullet_path
 					enemy_base[i].bullet[bi]->obj = NULL;
 				}
 			}
@@ -352,9 +352,8 @@ int unit_manager_load_enemy(std::string path)
 				read_flg[UNIT_TAG_UNIT] = true;
 
 				// set base unit data
-				char* path_c_str = new char[path.size() + 1];
-				memcpy(path_c_str, path.c_str(), path.size());
-				path_c_str[path.size()] = '\0';
+				char* path_c_str = game_utils_string_new();
+				game_utils_string_copy(path_c_str, path.c_str());
 				enemy_base[enemy_base_index_end].obj = (void*)path_c_str;
 				enemy_base[enemy_base_index_end].type = UNIT_TYPE_ENEMY;
 				enemy_base[enemy_base_index_end].id = enemy_base_index_end;
@@ -455,9 +454,8 @@ static void load_unit_enemy(std::string& line, unit_enemy_data_t* enemy_data)
 	if (key == "exp_max") enemy_data->exp_max = atoi(value.c_str());
 	if (key == "level") enemy_data->level = atoi(value.c_str());
 	if (key == "next_level") {
-		char* next_level_c_str = new char[value.size() + 1];
-		memcpy(next_level_c_str, value.c_str(), value.size());
-		next_level_c_str[value.size()] = '\0';
+		char* next_level_c_str = game_utils_string_new();
+		game_utils_string_copy(next_level_c_str, value.c_str());
 		enemy_data->next_level = next_level_c_str;
 	}
 
@@ -1044,7 +1042,7 @@ void unit_manager_enemy_update()
 					if (enemy[ei].anim->anim_stat_list[stat]->current_frame != i) {
 						// send command
 						if (enemy[ei].anim->anim_stat_base_list[stat]->frame_list[i]->command == ANIM_FRAME_COMMAND_ON) {
-							game_event_unit_t* msg_param = new game_event_unit_t;
+							game_event_unit_t* msg_param = (game_event_unit_t*)game_event_get_new_param();
 							msg_param->obj1 = (unit_data_t*)&enemy[ei];
 							game_event_t msg = { (EVENT_MSG_UNIT_ENEMY | (0x00000001 << stat)), msg_param };
 							game_event_push(&msg);

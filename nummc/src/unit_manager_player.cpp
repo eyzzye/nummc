@@ -18,7 +18,7 @@
 
 unit_player_data_t g_player;
 unit_player_data_t g_player_backup;
-static char player_backup_path[MAX_PATH];
+static char player_backup_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 
 static unit_player_data_t player_base[UNIT_PLAYER_BASE_LIST_SIZE];
 static int player_base_index_end;
@@ -154,11 +154,11 @@ void unit_manager_unload_player()
 {
 	for (int i = 0; i < UNIT_PLAYER_BASE_LIST_SIZE; i++) {
 		if (player_base[i].obj) {
-			delete[] player_base[i].obj;
+			game_utils_string_delete((char*)player_base[i].obj);
 			player_base[i].obj = NULL;
 		}
 		if (player_base[i].next_level) {
-			delete[] player_base[i].next_level;
+			game_utils_string_delete((char*)player_base[i].next_level);
 			player_base[i].next_level = NULL;
 		}
 	}
@@ -168,7 +168,7 @@ void unit_manager_backup_player()
 {
 	memcpy(&g_player_backup, &g_player, sizeof(g_player_backup));
 	if (g_player.obj) {
-		strcpy_s(player_backup_path, MAX_PATH, (char*)g_player.obj);
+		game_utils_string_copy(player_backup_path, (char*)g_player.obj);
 		g_player_backup.obj = (void*)player_backup_path;
 	}
 }
@@ -238,9 +238,8 @@ int unit_manager_load_player(std::string path)
 				read_flg[UNIT_TAG_UNIT] = true;
 
 				// set base unit data
-				char* path_c_str = new char[path.size() + 1];
-				memcpy(path_c_str, path.c_str(), path.size());
-				path_c_str[path.size()] = '\0';
+				char* path_c_str = game_utils_string_new();
+				game_utils_string_copy(path_c_str, path.c_str());
 				player_base[player_base_index_end].obj = (void*)path_c_str;
 				player_base[player_base_index_end].type = UNIT_TYPE_PLAYER;
 				player_base[player_base_index_end].id = player_base_index_end;
@@ -315,9 +314,8 @@ static void load_unit(std::string& line)
 	if (key == "hp_max") player_base[player_base_index_end].hp_max = atoi(value.c_str());
 	if (key == "exp_max") player_base[player_base_index_end].exp_max = atoi(value.c_str());
 	if (key == "next_level") {
-		char* next_level_c_str = new char[value.size() + 1];
-		memcpy(next_level_c_str, value.c_str(), value.size());
-		next_level_c_str[value.size()] = '\0';
+		char* next_level_c_str = game_utils_string_new();
+		game_utils_string_copy(next_level_c_str, value.c_str());
 		player_base[player_base_index_end].next_level = next_level_c_str;
 	}
 

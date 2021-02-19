@@ -48,7 +48,7 @@ void unit_manager_unload_enemy_bullet()
 {
 	for (int i = 0; i < UNIT_ENEMY_BULLET_BASE_LIST_SIZE; i++) {
 		if (enemy_bullet_base[i].obj) {
-			delete[] enemy_bullet_base[i].obj;
+			game_utils_string_delete((char*)enemy_bullet_base[i].obj);
 			enemy_bullet_base[i].obj = NULL;
 		}
 	}
@@ -131,9 +131,8 @@ int unit_manager_load_enemy_bullet(std::string path)
 				read_flg[UNIT_TAG_UNIT] = true;
 
 				// set base unit data
-				char* path_c_str = new char[path.size() + 1];
-				memcpy(path_c_str, path.c_str(), path.size());
-				path_c_str[path.size()] = '\0';
+				char* path_c_str = game_utils_string_new();
+				game_utils_string_copy(path_c_str, path.c_str());
 				enemy_bullet_base[enemy_bullet_base_index_end].obj = (void*)path_c_str;
 				enemy_bullet_base[enemy_bullet_base_index_end].type = UNIT_TYPE_ENEMY_BULLET;
 				enemy_bullet_base[enemy_bullet_base_index_end].id = enemy_bullet_base_index_end;
@@ -361,7 +360,7 @@ void unit_manager_enemy_bullet_update()
 					if (enemy_bullet[i].anim->anim_stat_list[stat]->current_frame != fi) {
 						// send command
 						if (enemy_bullet[i].anim->anim_stat_base_list[stat]->frame_list[fi]->command == ANIM_FRAME_COMMAND_ON) {
-							game_event_unit_t* msg_param = new game_event_unit_t;
+							game_event_unit_t* msg_param = (game_event_unit_t*)game_event_get_new_param();
 							msg_param->obj1 = (unit_data_t*)(&enemy_bullet[i]);
 							game_event_t msg = { (EVENT_MSG_UNIT_ENEMY_BULLET | (0x00000001 << stat)), (void*)msg_param };
 							game_event_push(&msg);

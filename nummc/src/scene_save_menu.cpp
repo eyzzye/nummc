@@ -539,7 +539,6 @@ static void button_cancel() {
 }
 static void button_ok() {
 	if (display_title_type == SCENE_SAVE_MENU_DISP_TYPE_LOAD) {
-		// confirm overwrite
 		std::string slot_player;
 		std::string slot_stage;
 		std::string slot_timestamp;
@@ -549,6 +548,11 @@ static void button_ok() {
 			dialog_message_reset("Empty Slot!", NULL, dialog_message_cancel, DIALOG_MSG_TYPE_OK_ONLY);
 			dialog_message_set_enable(true);
 			return;
+		}
+
+		if (scene_play_stage_get_func()->get_stat_event() != SCENE_STAT_NONE) {
+			// release previous buffer
+			scene_play_stage_get_func()->unload_event();
 		}
 
 		// load backup

@@ -34,7 +34,7 @@ void unit_manager_unload_effect()
 {
 	for (int i = 0; i < UNIT_EFFECT_BASE_LIST_SIZE; i++) {
 		if (effect_base[i].obj) {
-			delete[] effect_base[i].obj;
+			game_utils_string_delete((char*)effect_base[i].obj);
 			effect_base[i].obj = NULL;
 		}
 	}
@@ -103,9 +103,8 @@ int unit_manager_load_effect(std::string path)
 				read_flg[UNIT_TAG_UNIT] = true;
 
 				// set base unit data
-				char* path_c_str = new char[path.size() + 1];
-				memcpy(path_c_str, path.c_str(), path.size());
-				path_c_str[path.size()] = '\0';
+				char* path_c_str = game_utils_string_new();
+				game_utils_string_copy(path_c_str, path.c_str());
 				effect_base[effect_base_index_end].obj = (void*)path_c_str;
 				effect_base[effect_base_index_end].type = UNIT_TYPE_EFFECT;
 				effect_base[effect_base_index_end].id = effect_base_index_end;

@@ -18,6 +18,22 @@ extern std::string game_utils_upper_folder(std::string path);
 extern int game_utils_create_folder(std::string path);
 extern int game_utils_backup_file(std::string path, int max_size = GAME_UTILS_BACKUP_FILE_SIZE);
 
+// char buffer
+#define GAME_UTILS_STRING_TYPE_NONE      0
+#define GAME_UTILS_STRING_TYPE_CHAR_BUF  1
+
+#define GAME_UTILS_STRING_CHAR_BUF_SIZE  128
+typedef struct _game_utils_string_t game_utils_string_t;
+struct _game_utils_string_t {
+	int type;        // NONE:0, CHAR_BUF:1
+	char buffer[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+};
+
+extern int game_utils_string_init();
+extern char* game_utils_string_new();
+extern void game_utils_string_delete(char* ptr);
+extern int game_utils_string_copy(char* dst, const char* src);
+
 // string
 extern std::string game_utils_replace_string(std::string src_str, const char old_c, const char new_c);
 extern std::string game_utils_get_extention(std::string src_str);
