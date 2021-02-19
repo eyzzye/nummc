@@ -11,6 +11,7 @@
 #include "unit_manager.h"
 #include "game_window.h"
 #include "stage_manager.h"
+#include "sound_manager.h"
 
 // global variables
 #ifdef _MAP_OFFSET_ENABLE_
@@ -796,6 +797,8 @@ void map_manager_create_door()
 //
 void map_manager_open_door()
 {
+	bool open_snd_flag = false;
+
 	// section info
 	int center_x = MAP_WIDTH_NUM_MAX / 2;
 	int center_y = MAP_HEIGHT_NUM_MAX / 2;
@@ -811,6 +814,7 @@ void map_manager_open_door()
 		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
 		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_N;
+		open_snd_flag = true;
 	}
 
 	int section_map_index_s = (MAP_HEIGHT_NUM_MAX - 1) * MAP_WIDTH_NUM_MAX + center_x;
@@ -823,6 +827,7 @@ void map_manager_open_door()
 		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
 		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_S;
+		open_snd_flag = true;
 	}
 
 	int section_map_index_w = center_y * MAP_WIDTH_NUM_MAX /* + 0 */;
@@ -835,6 +840,7 @@ void map_manager_open_door()
 		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
 		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_W;
+		open_snd_flag = true;
 	}
 
 	int section_map_index_e = center_y * MAP_WIDTH_NUM_MAX + (MAP_WIDTH_NUM_MAX - 1);
@@ -847,11 +853,18 @@ void map_manager_open_door()
 		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
 		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_E;
+		open_snd_flag = true;
+	}
+
+	if (open_snd_flag) {
+		sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_gate_open.ogg"), SOUND_MANAGER_CH_SFX2);
 	}
 }
 
 void map_manager_open_hide_door(int stage_map_face)
 {
+	bool open_snd_flag = false;
+
 	// section info
 	int center_x = MAP_WIDTH_NUM_MAX / 2;
 	int center_y = MAP_HEIGHT_NUM_MAX / 2;
@@ -878,6 +891,8 @@ void map_manager_open_hide_door(int stage_map_face)
 		if (!(g_stage_data->stage_map[next_stage_map_index].stat & STAGE_MAP_STAT_HINT)) {
 			g_stage_data->stage_map[next_stage_map_index].stat |= STAGE_MAP_STAT_HINT;
 		}
+
+		open_snd_flag = true;
 	}
 
 	int section_map_index_s = (MAP_HEIGHT_NUM_MAX - 1) * MAP_WIDTH_NUM_MAX + center_x;
@@ -901,6 +916,8 @@ void map_manager_open_hide_door(int stage_map_face)
 		if (!(g_stage_data->stage_map[next_stage_map_index].stat & STAGE_MAP_STAT_HINT)) {
 			g_stage_data->stage_map[next_stage_map_index].stat |= STAGE_MAP_STAT_HINT;
 		}
+
+		open_snd_flag = true;
 	}
 
 	int section_map_index_w = center_y * MAP_WIDTH_NUM_MAX /* + 0 */;
@@ -924,6 +941,8 @@ void map_manager_open_hide_door(int stage_map_face)
 		if (!(g_stage_data->stage_map[next_stage_map_index].stat & STAGE_MAP_STAT_HINT)) {
 			g_stage_data->stage_map[next_stage_map_index].stat |= STAGE_MAP_STAT_HINT;
 		}
+
+		open_snd_flag = true;
 	}
 
 	int section_map_index_e = center_y * MAP_WIDTH_NUM_MAX + (MAP_WIDTH_NUM_MAX - 1);
@@ -947,6 +966,12 @@ void map_manager_open_hide_door(int stage_map_face)
 		if (!(g_stage_data->stage_map[next_stage_map_index].stat & STAGE_MAP_STAT_HINT)) {
 			g_stage_data->stage_map[next_stage_map_index].stat |= STAGE_MAP_STAT_HINT;
 		}
+
+		open_snd_flag = true;
+	}
+
+	if (open_snd_flag) {
+		sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_gate_open.ogg"), SOUND_MANAGER_CH_SFX2);
 	}
 }
 

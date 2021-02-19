@@ -15,10 +15,3 @@ offset_x=*
 offset_y=*
 effect=*
 [/img]
-
-[snd]
-channel=6
-dir_path=sounds/
-path=sfx_gate_open.ogg,*
-volume=*
-[/snd]
