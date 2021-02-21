@@ -720,8 +720,9 @@ static void main_event_next_load()
 			inventory_manager_backup_stocker();
 			reload_player = true;
 
-			set_stat_event(SCENE_STAT_IDLE);
+			set_stat_event(SCENE_STAT_NONE);
 			scene_manager_load(SCENE_ID_PLAY_STAGE, true);
+			unload_event();
 		}
 		// _endNN -> end scroll
 		else {
@@ -745,7 +746,7 @@ static void main_event_next_load()
 				}
 			}
 
-			set_stat_event(SCENE_STAT_IDLE);
+			set_stat_event(SCENE_STAT_NONE);
 			std::string story_path = "scenes/story/infinity/ending.dat";
 			for (int prof_i = 0; prof_i < RESOURCE_MANAGER_PROFILE_LIST_SIZE; prof_i++) {
 				if (strcmp(g_resource_manager_profile[prof_i].unit_path, (char*)g_player.obj) == 0) {
@@ -755,6 +756,7 @@ static void main_event_next_load()
 			}
 			scene_play_story_set_story(story_path);
 			scene_manager_load(SCENE_ID_PLAY_STORY);
+			unload_event();
 		}
 	}
 }

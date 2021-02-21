@@ -11,46 +11,50 @@
 
 #define GAME_SAVE_SLOT_NUM 8
 
+// .ini data
 typedef struct _ini_data_t ini_data_t;
 struct _ini_data_t {
 	std::string section;
 	std::map<std::string, std::string> values;
 };
+#define INI_DATA_BUFFER_SIZE  (1 + GAME_SAVE_SLOT_NUM * 3)  /* settings, slot, player, stocker */
+static ini_data_t ini_data_buffer[INI_DATA_BUFFER_SIZE];
 
+// config data
 typedef struct _game_config_data_t game_config_data_t;
 struct _game_config_data_t {
 	ini_data_t* settings;
-	std::vector<ini_data_t*> slot;
-	std::vector<ini_data_t*> player;
-	std::vector<ini_data_t*> stocker;
+	ini_data_t* slot[GAME_SAVE_SLOT_NUM];
+	ini_data_t* player[GAME_SAVE_SLOT_NUM];
+	ini_data_t* stocker[GAME_SAVE_SLOT_NUM];
 };
-
 static game_config_data_t game_config_data;
+
+// extern variables
 std::string g_save_folder;
 std::string g_save_path;
 std::string g_save_player_path[GAME_SAVE_SLOT_NUM];
 
 static int game_config_data_alloc()
 {
-	game_config_data.settings = new ini_data_t;
-	if (!game_config_data.settings) return -1;
+	int index = 0;
 
-	game_config_data.slot.resize(GAME_SAVE_SLOT_NUM);
+	game_config_data.settings = &ini_data_buffer[index];
+	index++;
+
 	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-		game_config_data.slot[i] = new ini_data_t;
-		if (!game_config_data.slot[i]) return -1;
+		game_config_data.slot[i] = &ini_data_buffer[index];
+		index++;
 	}
 
-	game_config_data.player.resize(GAME_SAVE_SLOT_NUM);
 	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-		game_config_data.player[i] = new ini_data_t;
-		if (!game_config_data.player[i]) return -1;
+		game_config_data.player[i] = &ini_data_buffer[index];
+		index++;
 	}
 
-	game_config_data.stocker.resize(GAME_SAVE_SLOT_NUM);
 	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-		game_config_data.stocker[i] = new ini_data_t;
-		if (!game_config_data.stocker[i]) return -1;
+		game_config_data.stocker[i] = &ini_data_buffer[index];
+		index++;
 	}
 
 	return 0;
@@ -58,26 +62,19 @@ static int game_config_data_alloc()
 
 static void game_config_data_delete()
 {
-	delete game_config_data.settings;
 	game_config_data.settings = NULL;
 
 	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-		delete game_config_data.slot[i];
 		game_config_data.slot[i] = NULL;
 	}
-	game_config_data.slot.clear();
 
 	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-		delete game_config_data.player[i];
 		game_config_data.player[i] = NULL;
 	}
-	game_config_data.player.clear();
 
 	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-		delete game_config_data.stocker[i];
 		game_config_data.stocker[i] = NULL;
 	}
-	game_config_data.stocker.clear();
 }
 
 static int game_save_load_ini_file(std::string path)

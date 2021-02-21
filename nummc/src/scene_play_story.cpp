@@ -31,6 +31,7 @@ static int auto_text_index;
 static std::string story_path;
 
 static void tex_info_reset();
+static void unload_event();
 static void set_stat_event(int stat);
 
 static SceneManagerFunc scene_func;
@@ -76,12 +77,14 @@ static void main_event() {
 			scene_play_stage_set_stage_id(start_stage);
 
 			// loading play stage
-			set_stat_event(SCENE_STAT_IDLE);
+			set_stat_event(SCENE_STAT_NONE);
 			scene_manager_load(SCENE_ID_PLAY_STAGE, true);
+			unload_event();
 		}
 		else {
-			set_stat_event(SCENE_STAT_IDLE);
+			set_stat_event(SCENE_STAT_NONE);
 			scene_manager_load(SCENE_ID_TOP_MENU);
+			unload_event();
 		}
 	}
 }

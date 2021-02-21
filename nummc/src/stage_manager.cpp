@@ -37,6 +37,11 @@ static section_data_t* current_section_data;
 static int tmp_start_index;
 static int tmp_current_enemy_phase;
 
+static stage_data_t stage_data_buffer;
+#define SECTION_DATA_BUFFER_SIZE  (STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM)
+static section_data_t section_data_buffer[SECTION_DATA_BUFFER_SIZE];
+int section_data_buffer_index_end;
+
 #define SECTION_STOCK_ITEM_SIZE  (UNIT_ITEMS_LIST_SIZE * STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM)
 static section_stock_item_t section_stock_item[SECTION_STOCK_ITEM_SIZE];
 static int section_stock_item_index;
@@ -62,21 +67,31 @@ static void load_enemy(std::string& line);
 
 void stage_manager_init()
 {
-	g_stage_data = new stage_data_t();
+	// stage_data
+	g_stage_data = &stage_data_buffer;
 	g_stage_data->friction_coef = STAGE_FRICTION_DEFAULT;
 	g_stage_data->stat = STAGE_STAT_NONE;
 	g_stage_data->result = STAGE_RESULT_NONE;
 	g_stage_data->next_load = STAGE_NEXT_LOAD_OFF;
 	g_stage_data->section_stat = SECTION_STAT_NONE;
 
+	// section_data
+	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
+		section_data_buffer[i].section_type = SECTION_TYPE_NONE;
+	}
+	section_data_buffer_index_end = 0;
+
+	// item stocker
 	memset(section_stock_item, 0, sizeof(section_stock_item));
 	section_stock_item_index = 0;
 
+	// stage_map
 	memset(g_stage_data->stage_map, 0, sizeof(g_stage_data->stage_map));
 	for (int i = 0; i < LENGTH_OF(g_stage_data->stage_map); i++) {
 		g_stage_data->stage_map[i].section_id = STAGE_MAP_ID_IGNORE;
 	}
 
+	// daytime
 	stage_manager_daytime_init();
 }
 
@@ -131,17 +146,37 @@ void stage_manager_unload()
 			p_section->goal_items_list.clear();
 
 			// section
-			delete p_section;
-			p_section = NULL;
+			p_section->section_type = SECTION_TYPE_NONE;
+			g_stage_data->section_list[sec_i] = NULL;
 		}
+		g_stage_data->section_list.clear();
 
 		// common item
 		g_stage_data->common_items_list.clear();
 
 		// stage
-		delete g_stage_data;
 		g_stage_data = NULL;
 	}
+}
+
+//
+// data allocation
+//
+static section_data_t* new_section_data()
+{
+	if (section_data_buffer_index_end >= SECTION_DATA_BUFFER_SIZE) {
+		LOG_ERROR("ERROR: new_section_data() overflow\n");
+		return NULL;
+	}
+
+	section_data_t* ret = &section_data_buffer[section_data_buffer_index_end];
+	if (ret->section_type != SECTION_TYPE_NONE) {
+		LOG_ERROR("ERROR: new_section_data() occurred unexpected error\n");
+		return NULL;
+	}
+
+	section_data_buffer_index_end++;
+	return ret;
 }
 
 static section_stock_item_t* get_stock_item_end(section_stock_item_t* stock_item)
@@ -294,7 +329,7 @@ int stage_manager_load(std::string path)
 
 		// init section 0
 		{
-			current_section_data = new section_data_t();
+			current_section_data = new_section_data();
 			current_section_data->id = 0;
 			current_section_data->section_type = SECTION_TYPE_NORMAL;
 			g_stage_data->section_list.push_back(current_section_data);
@@ -429,9 +464,15 @@ static void load_section(std::string& line) {
 	game_utils_split_key_value(line, key, value);
 
 	if (key == "section") {
-		current_section_data = new section_data_t();
+		current_section_data = new_section_data();
 		current_section_data->id = atoi(value.c_str());
 		current_section_data->section_type = SECTION_TYPE_NORMAL;
+		current_section_data->map_path = "";
+		current_section_data->bgm_path = "";
+		for (int i = 0; i < SECTION_ENEMY_PHASE_SIZE; i++) current_section_data->enemy_path[i] = "";
+		current_section_data->trap_path = "";
+		current_section_data->items_path = "";
+
 		g_stage_data->section_list.push_back(current_section_data);
 		tmp_current_enemy_phase = -1;
 	}

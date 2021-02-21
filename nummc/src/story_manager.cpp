@@ -15,6 +15,7 @@
 #define STORY_ID_END          4
 
 story_data_t* g_story_data;
+story_data_t g_story_data_buffer;
 
 static void load_basic_info(std::string& line);
 static void load_img(std::string& line);
@@ -23,17 +24,13 @@ static void load_auto_text(std::string& line);
 
 void story_manager_init()
 {
-	g_story_data = new story_data_t();
+	g_story_data = &g_story_data_buffer;
 	g_story_data->stat = STORY_STAT_NONE;
 }
 
 void story_manager_unload()
 {
-	if (g_story_data) {
-		g_story_data->auto_text_list.clear();
-		delete g_story_data;
-		g_story_data = NULL;
-	}
+	g_story_data->auto_text_list.clear();
 }
 
 void story_manager_set_stat(int stat)

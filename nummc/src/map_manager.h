@@ -16,6 +16,8 @@
 #define TILE_ID_WALL  2
 #define TILE_ID_DOOR  5
 
+#define TILE_TEX_NUM  16
+
 #define MAP_TYPE_FIELD   0
 #define MAP_TYPE_BLOCK   1
 #define MAP_TYPE_END     2

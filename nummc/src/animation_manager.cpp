@@ -21,7 +21,7 @@
 //   + effect inst num
 #define ANIM_DATA_LIST_SIZE ((((UNIT_PLAYER_BASE_LIST_SIZE + UNIT_ENEMY_BASE_LIST_SIZE + UNIT_ITEMS_BASE_LIST_SIZE \
         + UNIT_EFFECT_BASE_LIST_SIZE + UNIT_TRAP_BASE_LIST_SIZE + UNIT_PLAYER_BULLET_BASE_LIST_SIZE + UNIT_ENEMY_BULLET_BASE_LIST_SIZE \
-        + MAP_TYPE_END \
+        + TILE_TEX_NUM \
         + 1 + UNIT_ENEMY_LIST_SIZE \
         + UNIT_ITEMS_LIST_SIZE + UNIT_TRAP_LIST_SIZE + UNIT_PLAYER_BULLET_LIST_SIZE + UNIT_ENEMY_BULLET_LIST_SIZE \
         + UNIT_EFFECT_LIST_SIZE) + 64) / 64) * 64)
@@ -31,13 +31,21 @@ static anim_data_t* anim_data_list_start;
 static anim_data_t* anim_data_list_end;
 int anim_data_index_end;
 
-#define ANIM_STAT_BASE_LIST_SIZE (ANIM_DATA_LIST_SIZE * ANIM_STAT_END)
+#define ANIM_STAT_BASE_LIST_SIZE_OF_UNIT_BASE ((((UNIT_PLAYER_BASE_LIST_SIZE + UNIT_ENEMY_BASE_LIST_SIZE + UNIT_ITEMS_BASE_LIST_SIZE \
+        + UNIT_EFFECT_BASE_LIST_SIZE + UNIT_TRAP_BASE_LIST_SIZE + UNIT_PLAYER_BULLET_BASE_LIST_SIZE + UNIT_ENEMY_BULLET_BASE_LIST_SIZE \
+        + TILE_TEX_NUM \
+        ) + 64) / 64) * 64)
+#define ANIM_STAT_BASE_LIST_SIZE (ANIM_STAT_BASE_LIST_SIZE_OF_UNIT_BASE * ANIM_STAT_END)
 static anim_stat_base_data_t anim_stat_base_data_list[ANIM_STAT_BASE_LIST_SIZE];
 int anim_stat_base_data_index_end;
 
 #define ANIM_STAT_LIST_SIZE (ANIM_DATA_LIST_SIZE * ANIM_STAT_END)
 static anim_stat_data_t anim_stat_data_list[ANIM_STAT_LIST_SIZE];
 int anim_stat_data_index_end;
+
+#define ANIM_FRAME_DATA_BUFFER_SIZE  (ANIM_STAT_BASE_LIST_SIZE_OF_UNIT_BASE * ANIM_FRAME_NUM_MAX)
+static anim_frame_data_t anim_frame_data_buffer[ANIM_FRAME_DATA_BUFFER_SIZE];
+int anim_frame_data_index_end;
 
 static void load_anim_frame(std::string line, anim_data_t* anim_data, int stat);
 static void load_anim_img(std::string line, anim_data_t* anim_data, int stat);
@@ -51,12 +59,14 @@ int animation_manager_init()
 	memset(anim_data_list, 0, sizeof(anim_data_list));
 	memset(anim_stat_base_data_list, 0, sizeof(anim_stat_base_data_list));
 	memset(anim_stat_data_list, 0, sizeof(anim_stat_data_list));
+	memset(anim_frame_data_buffer, 0, sizeof(anim_frame_data_buffer));
 
 	anim_data_index_end = 0;
 	anim_data_list_start = NULL;
 	anim_data_list_end = NULL;
 	anim_stat_base_data_index_end = 0;
 	anim_stat_data_index_end = 0;
+	anim_frame_data_index_end = 0;
 
 	return 0;
 }
@@ -71,7 +81,7 @@ void animation_manager_unload()
 
 		for (int fi = 0; fi < anim_stat_base_data_list[i].frame_size; fi++) {
 			if (anim_stat_base_data_list[i].frame_list[fi]) {
-				delete anim_stat_base_data_list[i].frame_list[fi];
+				memset(anim_stat_base_data_list[i].frame_list[fi], 0, sizeof(anim_frame_data_t));
 				anim_stat_base_data_list[i].frame_list[fi] = NULL;
 			}
 		}
@@ -99,12 +109,29 @@ void animation_manager_delete_anim_stat_data(anim_data_t* delete_data)
 
 anim_frame_data_t* animation_manager_new_anim_frame()
 {
-	anim_frame_data_t* anim_frame_data = new anim_frame_data_t;
+	if (anim_frame_data_index_end >= ANIM_FRAME_DATA_BUFFER_SIZE) {
+		LOG_ERROR("Error: animation_manager_new_anim_frame() buffer overflow\n");
+		return NULL;
+	}
+
+	anim_frame_data_t* anim_frame_data = &anim_frame_data_buffer[anim_frame_data_index_end];
+	if (anim_frame_data->type != ANIM_FRAME_TYPE_NONE) {
+		LOG_ERROR("Error: animation_manager_new_anim_frame() occurred unexpected error\n");
+		return NULL;
+	}
+
+	anim_frame_data->type = ANIM_FRAME_TYPE_FRAME;
+	anim_frame_data_index_end++;
 	return anim_frame_data;
 }
 
 void animation_manager_new_anim_stat_base_data(anim_data_t* anim_data)
 {
+	if (anim_stat_base_data_index_end >= ANIM_STAT_BASE_LIST_SIZE) {
+		LOG_ERROR("Error: animation_manager_new_anim_stat_base_data() buffer overflow\n");
+		return;
+	}
+
 	for (int i = 0; i < ANIM_STAT_END; i++) {
 		anim_data->anim_stat_base_list[i] = &anim_stat_base_data_list[anim_stat_base_data_index_end];
 		anim_stat_base_data_index_end += 1;

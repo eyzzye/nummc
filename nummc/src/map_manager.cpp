@@ -67,10 +67,16 @@ static int layer_width;
 static int layer_height;
 static int tile_width;
 static int tile_height;
+
+// map_raw_data
 static tile_instance_data_t* map_raw_data[MAP_TYPE_END];
 static tile_instance_data_t map_wall[COLLISION_STATIC_WALL_NUM]; // for invisible col_shape
 
-#define TILE_TEX_NUM  32
+// map_raw_data_buffer
+#define MAP_RAW_DATA_BUFFER_SIZE  (MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX * MAP_TYPE_END)
+static tile_instance_data_t map_raw_data_buffer[MAP_RAW_DATA_BUFFER_SIZE];
+
+// tile data
 static tile_data_t tile_tex[TILE_TEX_NUM];
 
 // unit path
@@ -120,9 +126,12 @@ int map_manager_init()
 	g_tile_width = 0;
 	g_tile_height = 0;
 
-	for (int i = 0; i < MAP_TYPE_END; i++)
-	{
-		map_raw_data[i] = NULL;
+	// map_raw_data_buffer
+	memset(map_raw_data_buffer, 0, sizeof(map_raw_data_buffer));
+
+	// map_raw_data
+	for (int i = 0; i < MAP_TYPE_END; i++) {
+		map_raw_data[i] = &map_raw_data_buffer[MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX * i];
 	}
 	memset(map_wall, 0, sizeof(map_wall));
 
@@ -144,7 +153,6 @@ void map_manager_unload()
 				map_manager_delete_tile_instance_col(map_raw_data[type] + i);
 			}
 		}
-		delete[] map_raw_data[type];
 		map_raw_data[type] = NULL;
 	}
 
@@ -157,8 +165,8 @@ void map_manager_unload()
 	{
 		shape_data* tmp_tile = ((tile_base_data_t*)&tile_tex[i])->col_shape;
 		if (tmp_tile) {
-			delete tmp_tile;
-			tmp_tile = NULL;
+			collision_manager_delete_shape(tmp_tile);
+			((tile_base_data_t*)&tile_tex[i])->col_shape = NULL;
 		}
 	}
 }
@@ -1116,7 +1124,7 @@ static int map_manager_load_tile(std::string path, tile_data_t* tile)
 				load_tile_img(line, tile);
 			}
 			if (read_flg[TILE_TAG_COLLISION]) {
-				load_tile_collision(line, tile);
+				load_collision(line, &tile->col_shape);
 			}
 		}
 		inFile.close();
@@ -1227,50 +1235,6 @@ static void load_tile_img(std::string& line, tile_data_t* tile) {
 	}
 }
 
-static void load_tile_collision(std::string& line, tile_data_t* tile) {
-	std::string key, value;
-	game_utils_split_key_value(line, key, value);
-
-	if (value == "") value = "0";
-	if (key == "type") {
-		if (value == "BOX_S") {
-			shape_box_data* new_shape = (shape_box_data*)(new shape_data);
-			new_shape->type = COLLISION_TYPE_BOX_S;
-			((tile_base_data_t*)tile)->col_shape = (shape_data*)new_shape;
-		}
-		else if (value == "ROUND_S") {
-			shape_round_data* new_shape = (shape_round_data*)(new shape_data);
-			new_shape->type = COLLISION_TYPE_ROUND_S;
-			((tile_base_data_t*)tile)->col_shape = (shape_data*)new_shape;
-		}
-	}
-	if (key == "group") collision_manager_set_group(((tile_base_data_t*)tile)->col_shape, value);
-
-	if (key == "x") {
-		if (((tile_base_data_t*)tile)->col_shape->type == COLLISION_TYPE_BOX_S) {
-			((shape_box_data*)((tile_base_data_t*)tile)->col_shape)->offset_x = atoi(value.c_str());
-		}
-		else if (((tile_base_data_t*)tile)->col_shape->type == COLLISION_TYPE_ROUND_S)
-		{
-			((shape_round_data*)((tile_base_data_t*)tile)->col_shape)->offset_x = atoi(value.c_str());
-		}
-	}
-	if (key == "y") {
-		if (((tile_base_data_t*)tile)->col_shape->type == COLLISION_TYPE_BOX_S) {
-			((shape_box_data*)((tile_base_data_t*)tile)->col_shape)->offset_y = atoi(value.c_str());
-		}
-		else if (((tile_base_data_t*)tile)->col_shape->type == COLLISION_TYPE_ROUND_S)
-		{
-			((shape_round_data*)((tile_base_data_t*)tile)->col_shape)->offset_y = atoi(value.c_str());
-		}
-	}
-
-	if (key == "w") ((shape_box_data*)((tile_base_data_t*)tile)->col_shape)->w = atoi(value.c_str());
-	if (key == "h") ((shape_box_data*)((tile_base_data_t*)tile)->col_shape)->h = atoi(value.c_str());
-	if (key == "r") ((shape_round_data*)((tile_base_data_t*)tile)->col_shape)->r = atoi(value.c_str());
-}
-
-
 int map_manager_load(std::string path)
 {
 	int img_width = 0;
@@ -1337,9 +1301,7 @@ int map_manager_load(std::string path)
 
 			if (line.substr(seek_index, 6) == "<data ") {
 				read_flg[MAP_TAG_DATA] = true;
-				size_t map_size = (size_t)(MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX);
 				if (layer_name == "1") {
-					map_raw_data[MAP_TYPE_FIELD] = new tile_instance_data_t[map_size];
 					read_tile_type = MAP_TYPE_FIELD;
 
 					map_field_data_t* tmp = (map_field_data_t*)&map_data_list[MAP_TYPE_FIELD];
@@ -1350,7 +1312,6 @@ int map_manager_load(std::string path)
 					tmp->map_raw_data = map_raw_data[MAP_TYPE_FIELD];
 				}
 				else if (layer_name == "2") {
-					map_raw_data[MAP_TYPE_BLOCK] = new tile_instance_data_t[map_size];
 					read_tile_type = MAP_TYPE_BLOCK;
 
 					map_block_data_t* tmp = (map_block_data_t*)&map_data_list[MAP_TYPE_BLOCK];
