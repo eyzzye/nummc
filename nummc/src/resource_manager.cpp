@@ -7,7 +7,6 @@
 #include "game_log.h"
 
 std::vector<ResourceImg*>   g_resource_manager_imgs;
-std::vector<ResourceFont*>  g_resource_manager_fonts;
 std::vector<ResourceMusic*> g_resource_manager_musics;
 std::vector<ResourceChunk*> g_resource_manager_chunks;
 
@@ -42,7 +41,6 @@ ResourceProfile g_resource_manager_profile[RESOURCE_MANAGER_PROFILE_LIST_SIZE] =
 void resource_manager_init()
 {
 	g_resource_manager_imgs.clear();
-	g_resource_manager_fonts.clear();
 	g_resource_manager_musics.clear();
 	g_resource_manager_chunks.clear();
 }
@@ -55,13 +53,6 @@ void resource_manager_unload()
 		delete resImg;
 	}
 	g_resource_manager_imgs.clear();
-
-	// Delete Texture
-	for (ResourceFont* resFont : g_resource_manager_fonts)
-	{
-		delete resFont;
-	}
-	g_resource_manager_fonts.clear();
 
 	// Delete Music
 	for (ResourceMusic* resMusic : g_resource_manager_musics)
@@ -126,7 +117,7 @@ int resource_manager_load_dat(std::string path)
 //
 // Image
 //
-SDL_Texture* resource_manager_load_img(std::string path, int type)
+ResourceImg* resource_manager_load_img(std::string path, int type)
 {
 	int scale_mode = -1;
 	bool effect_color = false;
@@ -212,15 +203,15 @@ SDL_Texture* resource_manager_load_img(std::string path, int type)
 	resImg->tex = tex;
 	resImg->type = type;
 	g_resource_manager_imgs.push_back(resImg);
-	return tex;
+	return resImg;
 }
 
-SDL_Texture* resource_manager_getTextureFromPath(std::string path)
+ResourceImg* resource_manager_getTextureFromPath(std::string path)
 {
 	for (ResourceImg* resImg : g_resource_manager_imgs)
 	{
 		if (resImg->path == path) {
-			return resImg->tex;
+			return resImg;
 		}
 	}
 	return resource_manager_load_img(path);
@@ -229,7 +220,7 @@ SDL_Texture* resource_manager_getTextureFromPath(std::string path)
 //
 // Font
 //
-SDL_Texture* resource_manager_load_font(std::string message, int type)
+ResourceImg* resource_manager_load_font(std::string message, int type)
 {
 	int font_size = 0;
 	int font_color[4] = { 0 };
@@ -315,20 +306,20 @@ SDL_Texture* resource_manager_load_font(std::string message, int type)
 	}
 	SDL_SetTextureScaleMode(tex, SDL_ScaleModeLinear);
 	SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
-	ResourceFont* resFont = new ResourceFont();
-	resFont->message = message;
+	ResourceImg* resFont = new ResourceImg();
+	resFont->path = "font:" + message;
 	resFont->tex = tex;
 	resFont->type = type;
-	g_resource_manager_fonts.push_back(resFont);
-	return tex;
+	g_resource_manager_imgs.push_back(resFont);
+	return resFont;
 }
 
-SDL_Texture* resource_manager_getFontTextureFromPath(std::string message)
+ResourceImg* resource_manager_getFontTextureFromPath(std::string message)
 {
-	for (ResourceFont* resFont : g_resource_manager_fonts)
+	for (ResourceImg* resFont : g_resource_manager_imgs)
 	{
-		if (resFont->message == message) {
-			return resFont->tex;
+		if (resFont->path == "font:" + message) {
+			return resFont;
 		}
 	}
 	return resource_manager_load_font(message);
@@ -337,7 +328,7 @@ SDL_Texture* resource_manager_getFontTextureFromPath(std::string message)
 //
 // Music
 //
-Mix_Music* resource_manager_load_music(std::string path, int type)
+ResourceMusic* resource_manager_load_music(std::string path, int type)
 {
 	g_render_mtx.lock();
 	Mix_Music* music = Mix_LoadMUS((g_base_path + "data/" + path).c_str());
@@ -351,15 +342,15 @@ Mix_Music* resource_manager_load_music(std::string path, int type)
 	resMusic->music = music;
 	resMusic->type = type;
 	g_resource_manager_musics.push_back(resMusic);
-	return music;
+	return resMusic;
 }
 
-Mix_Music* resource_manager_getMusicFromPath(std::string path)
+ResourceMusic* resource_manager_getMusicFromPath(std::string path)
 {
 	for (ResourceMusic* resMusic : g_resource_manager_musics)
 	{
 		if (resMusic->path == path) {
-			return resMusic->music;
+			return resMusic;
 		}
 	}
 	return resource_manager_load_music(path);
@@ -368,7 +359,7 @@ Mix_Music* resource_manager_getMusicFromPath(std::string path)
 //
 // Chunk
 //
-Mix_Chunk* resource_manager_load_chunk(std::string path, int type)
+ResourceChunk* resource_manager_load_chunk(std::string path, int type)
 {
 	g_render_mtx.lock();
 	Mix_Chunk* chunk = Mix_LoadWAV((g_base_path + "data/" + path).c_str());
@@ -382,15 +373,15 @@ Mix_Chunk* resource_manager_load_chunk(std::string path, int type)
 	resChunk->chunk = chunk;
 	resChunk->type = type;
 	g_resource_manager_chunks.push_back(resChunk);
-	return chunk;
+	return resChunk;
 }
 
-Mix_Chunk* resource_manager_getChunkFromPath(std::string path)
+ResourceChunk* resource_manager_getChunkFromPath(std::string path)
 {
 	for (ResourceChunk* resChunk : g_resource_manager_chunks)
 	{
 		if (resChunk->path == path) {
-			return resChunk->chunk;
+			return resChunk;
 		}
 	}
 	return resource_manager_load_chunk(path);

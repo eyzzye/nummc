@@ -102,7 +102,7 @@ static void draw() {
 		SDL_RenderFillRect(g_ren, &g_screen_size);
 
 		// background image
-		if (tex_info_background.tex) GUI_tex_info_draw(&tex_info_background);
+		if (tex_info_background.res_img) GUI_tex_info_draw(&tex_info_background);
 
 		if (auto_text_finish) {
 			if (enter_text_disp) GUI_tex_info_draw(&tex_info_enter);
@@ -142,8 +142,8 @@ static void load_event() {
 	enter_text_disp = false;
 
 	// play music
-	if (g_story_data->bgm_chunk) {
-		sound_manager_play(g_story_data->bgm_chunk, SOUND_MANAGER_CH_MUSIC, -1);
+	if (g_story_data->res_chunk) {
+		sound_manager_play(g_story_data->res_chunk, SOUND_MANAGER_CH_MUSIC, -1);
 	}
 }
 static void unload_event() {
@@ -168,9 +168,9 @@ static void tex_info_reset()
 	int w_pos = 0, h_pos = 0;
 
 	// background
-	if (g_story_data->tex) {
-		tex_info_background.tex = g_story_data->tex;
-		ret = SDL_QueryTexture(tex_info_background.tex, NULL, NULL, &w, &h);
+	if (g_story_data->res_img) {
+		tex_info_background.res_img = g_story_data->res_img;
+		ret = GUI_QueryTexture(tex_info_background.res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			w_pos = 0;
 			h_pos = 0;
@@ -180,8 +180,8 @@ static void tex_info_reset()
 
 	// enter
 	std::string enter_text_str = "{-,204:204:204:204,-,-}Press enter";
-	tex_info_enter.tex = resource_manager_getFontTextureFromPath(enter_text_str);
-	ret = SDL_QueryTexture(tex_info_enter.tex, NULL, NULL, &w, &h);
+	tex_info_enter.res_img = resource_manager_getFontTextureFromPath(enter_text_str);
+	ret = GUI_QueryTexture(tex_info_enter.res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = SCREEN_WIDTH / 2 - w / 2;
 		h_pos = SCREEN_HEIGHT - 40 - h;
@@ -195,8 +195,8 @@ static void tex_info_reset()
 		}
 
 		std::string auto_text_str = "{-,204:204:204:204,-,-}" + g_story_data->auto_text_list[i];
-		tex_info_auto_text[i].tex = resource_manager_getFontTextureFromPath(auto_text_str);
-		ret = SDL_QueryTexture(tex_info_auto_text[i].tex, NULL, NULL, &w, &h);
+		tex_info_auto_text[i].res_img = resource_manager_getFontTextureFromPath(auto_text_str);
+		ret = GUI_QueryTexture(tex_info_auto_text[i].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			w_pos = SCREEN_WIDTH / 2 - w / 2;
 			h_pos = SCREEN_HEIGHT - 40 - h;

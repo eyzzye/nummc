@@ -614,42 +614,42 @@ SDL_Texture* game_utils_render_font_tex(const std::string& message, const std::s
 	return texture;
 }
 
-SDL_Texture* game_utils_render_number_font_tex(int number)
+ResourceImg* game_utils_render_number_font_tex(int number)
 {
-	SDL_Texture* texture = NULL;
+	ResourceImg* res_img = NULL;
 	switch (number) {
 		case 0:
-			texture = resource_manager_getTextureFromPath("images/gui/font/0.png");
+			res_img = resource_manager_getTextureFromPath("images/gui/font/0.png");
 			break;
 		case 1:
-			texture = resource_manager_getTextureFromPath("images/gui/font/1.png");
+			res_img = resource_manager_getTextureFromPath("images/gui/font/1.png");
 			break;
 		case 2:
-			texture = resource_manager_getTextureFromPath("images/gui/font/2.png");
+			res_img = resource_manager_getTextureFromPath("images/gui/font/2.png");
 			break;
 		case 3:
-			texture = resource_manager_getTextureFromPath("images/gui/font/3.png");
+			res_img = resource_manager_getTextureFromPath("images/gui/font/3.png");
 			break;
 		case 4:
-			texture = resource_manager_getTextureFromPath("images/gui/font/4.png");
+			res_img = resource_manager_getTextureFromPath("images/gui/font/4.png");
 			break;
 		case 5:
-			texture = resource_manager_getTextureFromPath("images/gui/font/5.png");
+			res_img = resource_manager_getTextureFromPath("images/gui/font/5.png");
 			break;
 		case 6:
-			texture = resource_manager_getTextureFromPath("images/gui/font/6.png");
+			res_img = resource_manager_getTextureFromPath("images/gui/font/6.png");
 			break;
 		case 7:
-			texture = resource_manager_getTextureFromPath("images/gui/font/7.png");
+			res_img = resource_manager_getTextureFromPath("images/gui/font/7.png");
 			break;
 		case 8:
-			texture = resource_manager_getTextureFromPath("images/gui/font/8.png");
+			res_img = resource_manager_getTextureFromPath("images/gui/font/8.png");
 			break;
 		case 9:
-			texture = resource_manager_getTextureFromPath("images/gui/font/9.png");
+			res_img = resource_manager_getTextureFromPath("images/gui/font/9.png");
 			break;
 		default:
 			break;
 	}
-	return texture;
+	return res_img;
 }

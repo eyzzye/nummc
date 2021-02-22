@@ -128,8 +128,8 @@ static void tex_info_init()
 	std::string progress_str = "{-,204:204:204:204,-,-}Loading ...";
 	for (int i = 0; i < SCENE_LOADING_ID_PROGRESS_END; i++) {
 		size_t progress_str_length = progress_str.size() - (SCENE_LOADING_ID_PROGRESS_END - 1 - i);
-		tex_info_progress[SCENE_LOADING_ID_PROGRESS_1 + i].tex = resource_manager_getFontTextureFromPath(progress_str.substr(0, progress_str_length));
-		int ret = SDL_QueryTexture(tex_info_progress[SCENE_LOADING_ID_PROGRESS_1 + i].tex, NULL, NULL, &w, &h);
+		tex_info_progress[SCENE_LOADING_ID_PROGRESS_1 + i].res_img = resource_manager_getFontTextureFromPath(progress_str.substr(0, progress_str_length));
+		int ret = GUI_QueryTexture(tex_info_progress[SCENE_LOADING_ID_PROGRESS_1 + i].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			w_pos = 20;
 			h_pos = SCREEN_HEIGHT - 20 - h;
@@ -147,8 +147,8 @@ void scene_loading_set_stage(std::string& id)
 
 	// title
 	std::string title_str = "{48,204:204:204:204,-,-}STAGE " + next_stage_id;
-	tex_info_title.tex = resource_manager_getFontTextureFromPath(title_str);
-	int ret = SDL_QueryTexture(tex_info_title.tex, NULL, NULL, &w, &h);
+	tex_info_title.res_img = resource_manager_getFontTextureFromPath(title_str);
+	int ret = GUI_QueryTexture(tex_info_title.res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = (SCREEN_WIDTH - w) / 2;
 		h_pos = (SCREEN_HEIGHT - h) / 2;

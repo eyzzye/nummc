@@ -273,10 +273,9 @@ void map_manager_display(int layer) {
 				}
 
 				if (frame_data) {
-					SDL_Texture* tex = frame_data->tex;
 					src_rect = &frame_data->src_rect;
 					dst_rect = VIEW_STAGE_RECT(w * tile_width, h * tile_height, src_rect->w, src_rect->h);
-					SDL_RenderCopy(g_ren, tex, src_rect, &dst_rect);
+					GUI_RenderCopy(frame_data->res_img, src_rect, &dst_rect);
 				}
 			}
 			map_index++;
@@ -1195,7 +1194,7 @@ static void load_tile_img(std::string& line, tile_data_t* tile) {
 		std::string image_filename = dir_path + "/";
 		for (int i = 0; i < str_list.size(); i++) {
 			anim_frame_data_t* anim_frame_data = tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->frame_list[i];
-			anim_frame_data->tex = resource_manager_getTextureFromPath(image_filename + str_list[i]);
+			anim_frame_data->res_img = resource_manager_getTextureFromPath(image_filename + str_list[i]);
 		}
 	}
 	if (key == "effect") {

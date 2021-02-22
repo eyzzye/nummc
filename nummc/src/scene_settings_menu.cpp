@@ -615,8 +615,8 @@ static void tex_info_reset_music_volume()
 	_itoa_s(music_volume_value, c_buf_vol, 10);
 	std::string vol_str = c_buf_vol;
 
-	tex_info_music_text.tex = resource_manager_getFontTextureFromPath(vol_str);
-	int ret = SDL_QueryTexture(tex_info_music_text.tex, NULL, NULL, &w, &h);
+	tex_info_music_text.res_img = resource_manager_getFontTextureFromPath(vol_str);
+	int ret = GUI_QueryTexture(tex_info_music_text.res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info_music_text, w, h, w_pos, h_pos);
 	}
@@ -637,8 +637,8 @@ static void tex_info_reset_sfx_volume()
 	_itoa_s(sfx_volume_value, c_buf_vol, 10);
 	std::string vol_str = c_buf_vol;
 
-	tex_info_sfx_text.tex = resource_manager_getFontTextureFromPath(vol_str);
-	int ret = SDL_QueryTexture(tex_info_sfx_text.tex, NULL, NULL, &w, &h);
+	tex_info_sfx_text.res_img = resource_manager_getFontTextureFromPath(vol_str);
+	int ret = GUI_QueryTexture(tex_info_sfx_text.res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info_sfx_text, w, h, w_pos, h_pos);
 	}
@@ -657,8 +657,8 @@ static void tex_info_init()
 	int w_pos = 0, h_pos = 0;
 
 	// title
-	tex_info[SCENE_SETTINGS_MENU_ID_TITLE].tex = resource_manager_getFontTextureFromPath("Settings");
-	int ret = SDL_QueryTexture(tex_info[SCENE_SETTINGS_MENU_ID_TITLE].tex, NULL, NULL, &w, &h);
+	tex_info[SCENE_SETTINGS_MENU_ID_TITLE].res_img = resource_manager_getFontTextureFromPath("Settings");
+	int ret = GUI_QueryTexture(tex_info[SCENE_SETTINGS_MENU_ID_TITLE].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info[SCENE_SETTINGS_MENU_ID_TITLE], w, h, 20, 20);
 		w_pos = 20 + 32;
@@ -666,15 +666,15 @@ static void tex_info_init()
 	}
 
 	// video (left binding "video < 9999x9999 >")
-	tex_info[SCENE_SETTINGS_MENU_ID_LABEL_VIDEO].tex = resource_manager_getFontTextureFromPath("Video");
-	ret = SDL_QueryTexture(tex_info[SCENE_SETTINGS_MENU_ID_LABEL_VIDEO].tex, NULL, NULL, &w, &h);
+	tex_info[SCENE_SETTINGS_MENU_ID_LABEL_VIDEO].res_img = resource_manager_getFontTextureFromPath("Video");
+	ret = GUI_QueryTexture(tex_info[SCENE_SETTINGS_MENU_ID_LABEL_VIDEO].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info[SCENE_SETTINGS_MENU_ID_LABEL_VIDEO], w, h, w_pos, h_pos);
 		w_pos = w_pos + w + 100;
 	}
 
-	tex_info_video_button[VIDEO_BUTTON_ITEM_ID_LEFT].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cursor_l.png");
-	ret = SDL_QueryTexture(tex_info_video_button[VIDEO_BUTTON_ITEM_ID_LEFT].tex, NULL, NULL, &w, &h);
+	tex_info_video_button[VIDEO_BUTTON_ITEM_ID_LEFT].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cursor_l.png");
+	ret = GUI_QueryTexture(tex_info_video_button[VIDEO_BUTTON_ITEM_ID_LEFT].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info_video_button[VIDEO_BUTTON_ITEM_ID_LEFT], w, h, w_pos, h_pos);
 		video_button_items[VIDEO_BUTTON_ITEM_LEFT].tex_info_id = VIDEO_BUTTON_ITEM_ID_LEFT;
@@ -684,20 +684,20 @@ static void tex_info_init()
 		w_pos = w_pos + w + 20;
 	}
 
-	tex_info_video[VIDEO_ITEM_ID_640x480].tex = resource_manager_getFontTextureFromPath("640x480");
-	ret = SDL_QueryTexture(tex_info_video[VIDEO_ITEM_ID_640x480].tex, NULL, NULL, &w, &h);
+	tex_info_video[VIDEO_ITEM_ID_640x480].res_img = resource_manager_getFontTextureFromPath("640x480");
+	ret = GUI_QueryTexture(tex_info_video[VIDEO_ITEM_ID_640x480].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info_video[VIDEO_ITEM_ID_640x480], w, h, w_pos, h_pos);
 	}
-	tex_info_video[VIDEO_ITEM_ID_1280x720].tex = resource_manager_getFontTextureFromPath("1280x720");
-	ret = SDL_QueryTexture(tex_info_video[VIDEO_ITEM_ID_1280x720].tex, NULL, NULL, &w, &h);
+	tex_info_video[VIDEO_ITEM_ID_1280x720].res_img = resource_manager_getFontTextureFromPath("1280x720");
+	ret = GUI_QueryTexture(tex_info_video[VIDEO_ITEM_ID_1280x720].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info_video[VIDEO_ITEM_ID_1280x720], w, h, w_pos, h_pos);
 		w_pos = w_pos + w + 20;
 	}
 
-	tex_info_video_button[VIDEO_BUTTON_ITEM_ID_RIGHT].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cursor.png");
-	ret = SDL_QueryTexture(tex_info_video_button[VIDEO_BUTTON_ITEM_ID_RIGHT].tex, NULL, NULL, &w, &h);
+	tex_info_video_button[VIDEO_BUTTON_ITEM_ID_RIGHT].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cursor.png");
+	ret = GUI_QueryTexture(tex_info_video_button[VIDEO_BUTTON_ITEM_ID_RIGHT].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info_video_button[VIDEO_BUTTON_ITEM_ID_RIGHT], w, h, w_pos, h_pos);
 		video_button_items[VIDEO_BUTTON_ITEM_RIGHT].tex_info_id = VIDEO_BUTTON_ITEM_ID_RIGHT;
@@ -719,8 +719,8 @@ static void tex_info_init()
 
 
 	// music (left binding "music vol 100 ------[]--")
-	tex_info[SCENE_SETTINGS_MENU_ID_LABEL_MUSIC].tex = resource_manager_getFontTextureFromPath("Music Vol");
-	ret = SDL_QueryTexture(tex_info[SCENE_SETTINGS_MENU_ID_LABEL_MUSIC].tex, NULL, NULL, &w, &h);
+	tex_info[SCENE_SETTINGS_MENU_ID_LABEL_MUSIC].res_img = resource_manager_getFontTextureFromPath("Music Vol");
+	ret = GUI_QueryTexture(tex_info[SCENE_SETTINGS_MENU_ID_LABEL_MUSIC].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = 20 + 32;
 		h_pos = h_pos + tex_info[SCENE_SETTINGS_MENU_ID_LABEL_VIDEO].dst_rect_base.h + 20;
@@ -728,16 +728,16 @@ static void tex_info_init()
 		//w_pos = w_pos + w + 100;
 	}
 
-	tex_info_music_text.tex = resource_manager_getFontTextureFromPath("  0");
-	ret = SDL_QueryTexture(tex_info_music_text.tex, NULL, NULL, &w, &h);
+	tex_info_music_text.res_img = resource_manager_getFontTextureFromPath("  0");
+	ret = GUI_QueryTexture(tex_info_music_text.res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = tex_info_video[VIDEO_ITEM_ID_1280x720].dst_rect_base.x;
 		GUI_tex_info_init_rect(&tex_info_music_text, w, h, w_pos, h_pos);
 		w_pos = w_pos + w + 40;
 	}
 
-	tex_info_music_slider.tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/bar.png");
-	ret = SDL_QueryTexture(tex_info_music_slider.tex, NULL, NULL, &w, &h);
+	tex_info_music_slider.res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/bar.png");
+	ret = GUI_QueryTexture(tex_info_music_slider.res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info_music_slider, w, h, w_pos, h_pos);
 	}
@@ -766,24 +766,24 @@ static void tex_info_init()
 
 
 	// sfx (left binding "sfx vol 100 ------[]--")
-	tex_info[SCENE_SETTINGS_MENU_ID_LABEL_SFX].tex = resource_manager_getFontTextureFromPath("SFX Vol");
-	ret = SDL_QueryTexture(tex_info[SCENE_SETTINGS_MENU_ID_LABEL_SFX].tex, NULL, NULL, &w, &h);
+	tex_info[SCENE_SETTINGS_MENU_ID_LABEL_SFX].res_img = resource_manager_getFontTextureFromPath("SFX Vol");
+	ret = GUI_QueryTexture(tex_info[SCENE_SETTINGS_MENU_ID_LABEL_SFX].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = 20 + 32;
 		h_pos = h_pos + tex_info[SCENE_SETTINGS_MENU_ID_LABEL_MUSIC].dst_rect_base.h + 20;
 		GUI_tex_info_init_rect(&tex_info[SCENE_SETTINGS_MENU_ID_LABEL_SFX], w, h, w_pos, h_pos);
 	}
 
-	tex_info_sfx_text.tex = resource_manager_getFontTextureFromPath("  0");
-	ret = SDL_QueryTexture(tex_info_sfx_text.tex, NULL, NULL, &w, &h);
+	tex_info_sfx_text.res_img = resource_manager_getFontTextureFromPath("  0");
+	ret = GUI_QueryTexture(tex_info_sfx_text.res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = tex_info_video[VIDEO_ITEM_ID_1280x720].dst_rect_base.x;
 		GUI_tex_info_init_rect(&tex_info_sfx_text, w, h, w_pos, h_pos);
 		w_pos = w_pos + w + 40;
 	}
 
-	tex_info_sfx_slider.tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/bar.png");
-	ret = SDL_QueryTexture(tex_info_sfx_slider.tex, NULL, NULL, &w, &h);
+	tex_info_sfx_slider.res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/bar.png");
+	ret = GUI_QueryTexture(tex_info_sfx_slider.res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info_sfx_slider, w, h, w_pos, h_pos);
 	}
@@ -812,8 +812,8 @@ static void tex_info_init()
 
 
 	// button (right binding [default] [cancel] [ok])
-	tex_info[SCENE_SETTINGS_MENU_ID_OK].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/ok.png");
-	ret = SDL_QueryTexture(tex_info[SCENE_SETTINGS_MENU_ID_OK].tex, NULL, NULL, &w, &h);
+	tex_info[SCENE_SETTINGS_MENU_ID_OK].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/ok.png");
+	ret = GUI_QueryTexture(tex_info[SCENE_SETTINGS_MENU_ID_OK].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = SCREEN_WIDTH - w - 10;
 		h_pos = SCREEN_HEIGHT - h - 10;
@@ -824,8 +824,8 @@ static void tex_info_init()
 		button_items[BUTTON_ITEM_OK].func = NULL;
 	}
 
-	tex_info[SCENE_SETTINGS_MENU_ID_CANCEL].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cancel.png");
-	ret = SDL_QueryTexture(tex_info[SCENE_SETTINGS_MENU_ID_CANCEL].tex, NULL, NULL, &w, &h);
+	tex_info[SCENE_SETTINGS_MENU_ID_CANCEL].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cancel.png");
+	ret = GUI_QueryTexture(tex_info[SCENE_SETTINGS_MENU_ID_CANCEL].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = w_pos - w - 10;
 		//h_pos = dialog_bottom - h - 10;
@@ -836,8 +836,8 @@ static void tex_info_init()
 		button_items[BUTTON_ITEM_CANCEL].func = NULL;
 	}
 
-	tex_info[SCENE_SETTINGS_MENU_ID_DEFAULT].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/default.png");
-	ret = SDL_QueryTexture(tex_info[SCENE_SETTINGS_MENU_ID_DEFAULT].tex, NULL, NULL, &w, &h);
+	tex_info[SCENE_SETTINGS_MENU_ID_DEFAULT].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/default.png");
+	ret = GUI_QueryTexture(tex_info[SCENE_SETTINGS_MENU_ID_DEFAULT].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = w_pos - w - 10;
 		//h_pos = dialog_bottom - h - 10;

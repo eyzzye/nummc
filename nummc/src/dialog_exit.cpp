@@ -44,12 +44,12 @@ static void tex_info_init()
 	int dialog_right = dialog_left + dialog_w;
 	int dialog_bottom = dialog_top + dialog_h;
 
-	dialog_bg.tex = NULL;
+	dialog_bg.res_img = NULL;
 	GUI_tex_info_init_rect(&dialog_bg, dialog_w, dialog_h, dialog_left, dialog_top);
 
 	// message
-	tex_info[DIALOG_EXIT_ID_MESSAGE].tex = resource_manager_getFontTextureFromPath("Exit to DeskTop?");
-	int ret = SDL_QueryTexture(tex_info[DIALOG_EXIT_ID_MESSAGE].tex, NULL, NULL, &w, &h);
+	tex_info[DIALOG_EXIT_ID_MESSAGE].res_img = resource_manager_getFontTextureFromPath("Exit to DeskTop?");
+	int ret = GUI_QueryTexture(tex_info[DIALOG_EXIT_ID_MESSAGE].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = dialog_left + 20;
 		h_pos = dialog_top + 20;
@@ -57,8 +57,8 @@ static void tex_info_init()
 	}
 
 	// button (right binding [cancel] [ok])
-	tex_info[DIALOG_EXIT_ID_OK].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/ok.png");
-	ret = SDL_QueryTexture(tex_info[DIALOG_EXIT_ID_OK].tex, NULL, NULL, &w, &h);
+	tex_info[DIALOG_EXIT_ID_OK].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/ok.png");
+	ret = GUI_QueryTexture(tex_info[DIALOG_EXIT_ID_OK].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = dialog_right - w - 10;
 		h_pos = dialog_bottom - h - 10;
@@ -69,8 +69,8 @@ static void tex_info_init()
 		button_items[BUTTON_ITEM_OK].func = NULL;
 	}
 
-	tex_info[DIALOG_EXIT_ID_CANCEL].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cancel.png");
-	ret = SDL_QueryTexture(tex_info[DIALOG_EXIT_ID_CANCEL].tex, NULL, NULL, &w, &h);
+	tex_info[DIALOG_EXIT_ID_CANCEL].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cancel.png");
+	ret = GUI_QueryTexture(tex_info[DIALOG_EXIT_ID_CANCEL].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = w_pos - w - 10;
 		//h_pos = dialog_bottom - h - 10;

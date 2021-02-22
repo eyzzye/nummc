@@ -46,8 +46,8 @@ static void tex_info_init_message(std::string message)
 	int dialog_left = SCREEN_WIDTH * 2 / 5 / 2;
 
 	// message
-	tex_info_message.tex = resource_manager_getFontTextureFromPath(message);
-	int ret = SDL_QueryTexture(tex_info_message.tex, NULL, NULL, &w, &h);
+	tex_info_message.res_img = resource_manager_getFontTextureFromPath(message);
+	int ret = GUI_QueryTexture(tex_info_message.res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = dialog_left + 20;
 		h_pos = dialog_top + 20;
@@ -73,12 +73,12 @@ static void tex_info_init()
 
 	// button (right binding [cancel] [ok])
 	if ((dialog_type == DIALOG_MSG_TYPE_CANCEL_OK) || (dialog_type == DIALOG_MSG_TYPE_OK_ONLY)) {
-		tex_info[DIALOG_MESSAGE_ID_OK].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/ok.png");
+		tex_info[DIALOG_MESSAGE_ID_OK].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/ok.png");
 	}
 	else if (dialog_type == DIALOG_MSG_TYPE_NO_YES) {
-		tex_info[DIALOG_MESSAGE_ID_OK].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/yes.png");
+		tex_info[DIALOG_MESSAGE_ID_OK].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/yes.png");
 	}
-	int ret = SDL_QueryTexture(tex_info[DIALOG_MESSAGE_ID_OK].tex, NULL, NULL, &w, &h);
+	int ret = GUI_QueryTexture(tex_info[DIALOG_MESSAGE_ID_OK].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = dialog_right - w - 10;
 		h_pos = dialog_bottom - h - 10;
@@ -90,12 +90,12 @@ static void tex_info_init()
 	}
 
 	if ((dialog_type == DIALOG_MSG_TYPE_CANCEL_OK) || (dialog_type == DIALOG_MSG_TYPE_OK_ONLY)) {
-		tex_info[DIALOG_MESSAGE_ID_CANCEL].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cancel.png");
+		tex_info[DIALOG_MESSAGE_ID_CANCEL].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cancel.png");
 	}
 	else if (dialog_type == DIALOG_MSG_TYPE_NO_YES) {
-		tex_info[DIALOG_MESSAGE_ID_CANCEL].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/no.png");
+		tex_info[DIALOG_MESSAGE_ID_CANCEL].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/no.png");
 	}
-	ret = SDL_QueryTexture(tex_info[DIALOG_MESSAGE_ID_CANCEL].tex, NULL, NULL, &w, &h);
+	ret = GUI_QueryTexture(tex_info[DIALOG_MESSAGE_ID_CANCEL].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = w_pos - w - 10;
 		//h_pos = dialog_bottom - h - 10;

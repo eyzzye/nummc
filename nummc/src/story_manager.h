@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include "game_common.h"
+#include "resource_manager.h"
 
 #define STORY_STAT_NONE       0
 #define STORY_STAT_IDLE       1
@@ -14,8 +15,8 @@ struct _story_data_t {
 	int stat;
 
 	std::string story_path;
-	SDL_Texture* tex;
-	Mix_Chunk* bgm_chunk;
+	ResourceImg* res_img;
+	ResourceChunk* res_chunk;
 
 	int auto_text_time;
 	std::vector<std::string> auto_text_list;

@@ -107,7 +107,7 @@ typedef struct _stage_map_data_t stage_map_data_t;
 typedef struct _stage_data_t stage_data_t;
 
 struct _BGM_data_t {
-	Mix_Chunk* chunk;
+	ResourceChunk* res_chunk;
 	Uint32 time;       // start time[msec]
 };
 

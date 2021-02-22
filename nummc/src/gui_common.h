@@ -1,6 +1,5 @@
 #pragma once
 #include "game_common.h"
-
 #include "resource_manager.h"
 
 // button click stat
@@ -19,7 +18,7 @@ struct _rect_region_t {
 };
 
 struct _tex_info_t {
-	SDL_Texture* tex;
+	ResourceImg* res_img;
 	SDL_Rect src_rect;
 	SDL_Rect dst_rect;
 	SDL_Rect dst_rect_base;	// size on SCREEN_WIDTH x SCREEN_HEIGHT
@@ -32,6 +31,10 @@ struct _gui_item_t {
 	Uint32 mouse_stat;
 	void_func* func;
 };
+
+extern void GUI_RenderCopy(ResourceImg* res_img, const SDL_Rect* srcrect, const SDL_Rect* dstrect);
+extern void GUI_RenderCopyEx(ResourceImg* res_img, const SDL_Rect* srcrect, const SDL_Rect* dstrect, const double angle, const SDL_Point* center, int flip);
+extern int GUI_QueryTexture(ResourceImg* res_img, Uint32* format, int* access, int* w, int* h);
 
 extern void GUI_rect_region_init_rect(rect_region_t* rect_region, int offset_x, int offset_y, int w, int h);
 extern void GUI_rect_region_reset(rect_region_t* rect_region);

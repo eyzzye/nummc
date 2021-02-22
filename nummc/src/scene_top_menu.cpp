@@ -151,7 +151,7 @@ static void draw() {
 	GUI_tex_info_draw(tex_info, TEX_INFO_ID_END);
 
 	// draw cursor
-	SDL_RenderCopy(g_ren, tex_cursor.tex, &tex_cursor.src_rect, &menu_items[menu_index].dst_rect);
+	GUI_RenderCopy(tex_cursor.res_img, &tex_cursor.src_rect, &menu_items[menu_index].dst_rect);
 
 	// dialog exit
 	if (g_dialog_exit_enable) {
@@ -292,8 +292,8 @@ static void tex_info_init()
 	int cur_w_pos = 0, cur_h_pos = 0;
 
 	// title
-	tex_info[TEX_INFO_ID_TITLE].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/top_menu/title.png");
-	int ret = SDL_QueryTexture(tex_info[TEX_INFO_ID_TITLE].tex, NULL, NULL, &w, &h);
+	tex_info[TEX_INFO_ID_TITLE].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/top_menu/title.png");
+	int ret = GUI_QueryTexture(tex_info[TEX_INFO_ID_TITLE].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = SCREEN_WIDTH / 2 - w / 2;
 		h_pos = SCREEN_HEIGHT / 4 - h / 2;
@@ -301,8 +301,8 @@ static void tex_info_init()
 	}
 
 	// menu1
-	tex_info[TEX_INFO_ID_CONTINUE].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/top_menu/continue.png");
-	ret = SDL_QueryTexture(tex_info[TEX_INFO_ID_CONTINUE].tex, NULL, NULL, &w, &h);
+	tex_info[TEX_INFO_ID_CONTINUE].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/top_menu/continue.png");
+	ret = GUI_QueryTexture(tex_info[TEX_INFO_ID_CONTINUE].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		cur_w_pos = w_pos = SCREEN_WIDTH / 2 - w / 2;
 		cur_h_pos = h_pos = SCREEN_HEIGHT / 2 - h / 2;
@@ -311,8 +311,8 @@ static void tex_info_init()
 	}
 
 	// cursor
-	tex_cursor.tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cursor.png");
-	ret = SDL_QueryTexture(tex_cursor.tex, NULL, NULL, &cur_w, &cur_h);
+	tex_cursor.res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cursor.png");
+	ret = GUI_QueryTexture(tex_cursor.res_img, NULL, NULL, &cur_w, &cur_h);
 	if (ret == 0) {
 		cur_w_pos = cur_w_pos - cur_w - cur_w / 2;
 		tex_cursor.src_rect = { 0, 0, cur_w, cur_h };
@@ -324,8 +324,8 @@ static void tex_info_init()
 	}
 
 	// menu2 ...
-	tex_info[TEX_INFO_ID_LOAD].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/top_menu/load.png");
-	ret = SDL_QueryTexture(tex_info[TEX_INFO_ID_LOAD].tex, NULL, NULL, &w, &h);
+	tex_info[TEX_INFO_ID_LOAD].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/top_menu/load.png");
+	ret = GUI_QueryTexture(tex_info[TEX_INFO_ID_LOAD].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info[TEX_INFO_ID_LOAD], w, h, w_pos, h_pos);
 		menu_items[MENU_ITEM_LOAD].tex_info_id = TEX_INFO_ID_LOAD;
@@ -336,8 +336,8 @@ static void tex_info_init()
 		cur_h_pos += h + h / 10;
 	}
 
-	tex_info[TEX_INFO_ID_NEW_GAME].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/top_menu/new_game.png");
-	ret = SDL_QueryTexture(tex_info[TEX_INFO_ID_NEW_GAME].tex, NULL, NULL, &w, &h);
+	tex_info[TEX_INFO_ID_NEW_GAME].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/top_menu/new_game.png");
+	ret = GUI_QueryTexture(tex_info[TEX_INFO_ID_NEW_GAME].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info[TEX_INFO_ID_NEW_GAME], w, h, w_pos, h_pos);
 		menu_items[MENU_ITEM_NEW_GAME].tex_info_id = TEX_INFO_ID_NEW_GAME;
@@ -348,8 +348,8 @@ static void tex_info_init()
 		cur_h_pos += h + h / 10;
 	}
 
-	tex_info[TEX_INFO_ID_SETTINGS].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/top_menu/settings.png");
-	ret = SDL_QueryTexture(tex_info[TEX_INFO_ID_SETTINGS].tex, NULL, NULL, &w, &h);
+	tex_info[TEX_INFO_ID_SETTINGS].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/top_menu/settings.png");
+	ret = GUI_QueryTexture(tex_info[TEX_INFO_ID_SETTINGS].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info[TEX_INFO_ID_SETTINGS], w, h, w_pos, h_pos);
 		menu_items[MENU_ITEM_SETTINGS].tex_info_id = TEX_INFO_ID_SETTINGS;
@@ -360,8 +360,8 @@ static void tex_info_init()
 		cur_h_pos += h + h / 10;
 	}
 
-	tex_info[TEX_INFO_ID_EXIT].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/top_menu/exit.png");
-	ret = SDL_QueryTexture(tex_info[TEX_INFO_ID_EXIT].tex, NULL, NULL, &w, &h);
+	tex_info[TEX_INFO_ID_EXIT].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/top_menu/exit.png");
+	ret = GUI_QueryTexture(tex_info[TEX_INFO_ID_EXIT].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info[TEX_INFO_ID_EXIT], w, h, w_pos, h_pos);
 		menu_items[MENU_ITEM_EXIT].tex_info_id = TEX_INFO_ID_EXIT;

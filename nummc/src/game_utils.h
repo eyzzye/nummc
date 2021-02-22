@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "game_common.h"
+#include "resource_manager.h"
 
 #define GAME_UTILS_BACKUP_FILE_SIZE 2*1024*1024  // 2MB
 #define GAME_UTILS_LOCALTIME_FORMAT "----/--/--_--:--:--"
@@ -51,4 +52,4 @@ extern bool game_utils_decision_internal(SDL_Rect* rect, int x, int y);
 // resource
 extern SDL_Texture* game_utils_render_img_tex(const std::string& path, SDL_Color src_color, SDL_Color dst_color);
 extern SDL_Texture* game_utils_render_font_tex(const std::string& message, const std::string& fontFile, SDL_Color color, int fontSize);
-extern SDL_Texture* game_utils_render_number_font_tex(int number);
+extern ResourceImg* game_utils_render_number_font_tex(int number);

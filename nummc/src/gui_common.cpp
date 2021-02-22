@@ -4,6 +4,25 @@
 #include "game_log.h"
 
 //
+// SDL Wrapper
+//
+inline void GUI_RenderCopy(ResourceImg* res_img, const SDL_Rect* srcrect, const SDL_Rect* dstrect)
+{
+	if (res_img != NULL) SDL_RenderCopy(g_ren, res_img->tex, srcrect, dstrect);
+}
+
+inline void GUI_RenderCopyEx(ResourceImg* res_img, const SDL_Rect* srcrect, const SDL_Rect* dstrect, const double angle, const SDL_Point* center, int flip)
+{
+	if (res_img != NULL) SDL_RenderCopyEx(g_ren, res_img->tex, srcrect, dstrect, angle, center, (const SDL_RendererFlip)flip);
+}
+
+inline int GUI_QueryTexture(ResourceImg* res_img, Uint32* format, int* access, int* w, int* h)
+{
+	if (res_img != NULL) return SDL_QueryTexture(res_img->tex, format, access, w, h);
+	else return (-1);
+}
+
+//
 // rect_region
 //
 void GUI_rect_region_init_rect(rect_region_t* rect_region, int offset_x, int offset_y, int w, int h) {
@@ -41,12 +60,12 @@ void GUI_tex_info_reset(tex_info_t* tex_info, int tex_info_size) {
 }
 
 void GUI_tex_info_draw(tex_info_t* tex_info) {
-	SDL_RenderCopy(g_ren, tex_info->tex, &tex_info->src_rect, &tex_info->dst_rect);
+	GUI_RenderCopy(tex_info->res_img, &tex_info->src_rect, &tex_info->dst_rect);
 }
 
 void GUI_tex_info_draw(tex_info_t* tex_info, int tex_info_size) {
 	for (int i = 0; i < tex_info_size; i++) {
-		SDL_RenderCopy(g_ren, tex_info[i].tex, &tex_info[i].src_rect, &tex_info[i].dst_rect);
+		GUI_RenderCopy(tex_info[i].res_img, &tex_info[i].src_rect, &tex_info[i].dst_rect);
 	}
 }
 

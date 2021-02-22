@@ -72,6 +72,7 @@ void game_loop_main()
 		if (game_timer_get_delta_time() == ONE_FRAME_TIME) {
 			// main process
 			scene_manager_main_event();
+			if (quit) continue;  // called game_loop_exit() in main_event()
 		}
 
 		// draw

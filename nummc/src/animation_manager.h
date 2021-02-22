@@ -1,5 +1,6 @@
 #pragma once
 #include "game_common.h"
+#include "resource_manager.h"
 
 #define ANIM_DATA_DISABLE  0
 #define ANIM_DATA_ENABLE   1
@@ -73,8 +74,8 @@ struct _anim_frame_data_t {
 	int frame_time;
 	int reserve1;
 
-	SDL_Texture* tex;
-	Mix_Chunk* chunk;
+	ResourceImg* res_img;
+	ResourceChunk* res_chunk;
 	int command;       // OFF:0, ON:1
 	int reserve2;
 

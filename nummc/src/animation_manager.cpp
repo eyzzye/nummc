@@ -5,6 +5,7 @@
 #include "game_log.h"
 #include "game_utils.h"
 #include "resource_manager.h"
+#include "gui_common.h"
 #include "sound_manager.h"
 #include "map_manager.h"
 
@@ -274,8 +275,8 @@ static void load_anim_frame(std::string line, anim_data_t* anim_data, int stat)
 			anim_data->anim_stat_base_list[stat]->type = ANIM_TYPE_STATIC;
 			anim_frame_data_t* anim_frame_data = animation_manager_new_anim_frame();
 			anim_frame_data->frame_time = 0;
-			anim_frame_data->tex = NULL;
-			anim_frame_data->chunk = NULL;
+			anim_frame_data->res_img = NULL;
+			anim_frame_data->res_chunk = NULL;
 			anim_frame_data->command = ANIM_FRAME_COMMAND_OFF;
 			anim_data->anim_stat_base_list[stat]->frame_list[0] = anim_frame_data;
 			anim_data->anim_stat_base_list[stat]->total_time = 0;
@@ -291,8 +292,8 @@ static void load_anim_frame(std::string line, anim_data_t* anim_data, int stat)
 			for (int i = 0; i < int_list.size(); i++) {
 				anim_frame_data_t* anim_frame_data = animation_manager_new_anim_frame();
 				anim_frame_data->frame_time = int_list[i];
-				anim_frame_data->tex = NULL;
-				anim_frame_data->chunk = NULL;
+				anim_frame_data->res_img = NULL;
+				anim_frame_data->res_chunk = NULL;
 				anim_frame_data->command = ANIM_FRAME_COMMAND_OFF;
 				anim_data->anim_stat_base_list[stat]->frame_list[i] = anim_frame_data;
 				anim_data->anim_stat_base_list[stat]->total_time += int_list[i];
@@ -371,10 +372,10 @@ static void load_anim_img(std::string line, anim_data_t* anim_data, int stat)
 		std::string image_filename = dir_path + "/";
 		for (int i = 0; i < tmp_str_list.size(); i++) {
 			anim_frame_data_t* anim_frame_data = anim_data->anim_stat_base_list[stat]->frame_list[i];
-			anim_frame_data->tex = resource_manager_getTextureFromPath(image_filename + tmp_str_list[i]);
+			anim_frame_data->res_img = resource_manager_getTextureFromPath(image_filename + tmp_str_list[i]);
 
 			int w, h;
-			int ret = SDL_QueryTexture(anim_frame_data->tex, NULL, NULL, &w, &h);
+			int ret = GUI_QueryTexture(anim_frame_data->res_img, NULL, NULL, &w, &h);
 			anim_frame_data->src_rect = { 0, 0, w, h };
 		}
 	}
@@ -418,7 +419,7 @@ static void load_anim_img(std::string line, anim_data_t* anim_data, int stat)
 				else if (str_list[fi].substr(0, 6) == "color:") {
 					for (int i = 0; i < tmp_str_list.size(); i++) {
 						anim_frame_data_t* anim_frame_data = anim_data->anim_stat_base_list[stat]->frame_list[i];
-						anim_frame_data->tex = resource_manager_getTextureFromPath("{" + str_list[fi] + "}" + dir_path + tmp_str_list[i]);
+						anim_frame_data->res_img = resource_manager_getTextureFromPath("{" + str_list[fi] + "}" + dir_path + tmp_str_list[i]);
 					}
 				}
 			}
@@ -448,11 +449,11 @@ static void load_anim_snd(std::string line, anim_data_t* anim_data, int stat)
 		std::string snd_filename = dir_path + "/";
 		for (int i = 0; i < str_list.size(); i++) {
 			if (str_list[i] == "*") {
-				anim_data->anim_stat_base_list[stat]->frame_list[i]->chunk = NULL;
+				anim_data->anim_stat_base_list[stat]->frame_list[i]->res_chunk = NULL;
 			}
 			else {
 				anim_frame_data_t* anim_frame_data = anim_data->anim_stat_base_list[stat]->frame_list[i];
-				anim_frame_data->chunk = resource_manager_getChunkFromPath(snd_filename + str_list[i]);
+				anim_frame_data->res_chunk = resource_manager_getChunkFromPath(snd_filename + str_list[i]);
 			}
 		}
 
@@ -460,7 +461,7 @@ static void load_anim_snd(std::string line, anim_data_t* anim_data, int stat)
 		if (anim_data->anim_stat_base_list[stat]->frame_size > str_list.size()) {
 			if (str_list[str_list.size() - 1] == "*") {
 				for (int i = (int)str_list.size(); i < anim_data->anim_stat_base_list[stat]->frame_size; i++) {
-					anim_data->anim_stat_base_list[stat]->frame_list[i]->chunk = NULL;
+					anim_data->anim_stat_base_list[stat]->frame_list[i]->res_chunk = NULL;
 				}
 			}
 		}

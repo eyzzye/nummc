@@ -490,7 +490,7 @@ static void load_section(std::string& line) {
 	if (key == "bgm_path") {
 		current_section_data->bgm_path = value;
 		BGM_data_t* new_bgm = new BGM_data_t();
-		new_bgm->chunk = resource_manager_getChunkFromPath(value);
+		new_bgm->res_chunk = resource_manager_getChunkFromPath(value);
 		current_section_data->bgm_list.push_back(new_bgm);
 	}
 

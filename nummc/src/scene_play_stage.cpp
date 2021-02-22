@@ -1283,7 +1283,7 @@ void scene_play_stage_play_current_bgm(bool on_off)
 		else if (g_stage_data->current_section_data->bgm_list.size() > 0) {
 			if (!(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_GOAL)
 				&& !(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_WIN)) {
-				sound_manager_play(g_stage_data->current_section_data->bgm_list[0]->chunk, SOUND_MANAGER_CH_MUSIC, -1);
+				sound_manager_play(g_stage_data->current_section_data->bgm_list[0]->res_chunk, SOUND_MANAGER_CH_MUSIC, -1);
 				played = true;
 			}
 		}

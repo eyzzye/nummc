@@ -9,6 +9,7 @@
 #include "game_event.h"
 
 #include "resource_manager.h"
+#include "gui_common.h"
 #include "stage_manager.h"
 #include "map_manager.h"
 #include "sound_manager.h"
@@ -282,7 +283,6 @@ void unit_display(unit_data_t* unit_data, int layer)
 				}
 			}
 			else {
-				SDL_Texture* tex = frame_data->tex;
 				SDL_Rect* src_rect = &frame_data->src_rect;
 #ifdef _COLLISION_ENABLE_BOX_2D_
 				int dst_x = 0, dst_y = 0;
@@ -338,16 +338,16 @@ void unit_display(unit_data_t* unit_data, int layer)
 				}
 
 				if (disp_face != UNIT_FACE_W) {
-					SDL_RenderCopyEx(g_ren, tex, src_rect, &dst_rect, disp_angle, p_dst_center, disp_flip);
+					GUI_RenderCopyEx(frame_data->res_img, src_rect, &dst_rect, disp_angle, p_dst_center, disp_flip);
 				}
 				else {
-					SDL_RenderCopy(g_ren, tex, src_rect, &dst_rect);
+					GUI_RenderCopy(frame_data->res_img, src_rect, &dst_rect);
 				}
 			}
 
 			// update sounds
-			if ((frame_data->chunk) && (anim->anim_stat_list[stat]->chunk_frame != frame_num)) {
-				sound_manager_play(frame_data->chunk, anim->anim_stat_base_list[stat]->snd_channel);
+			if ((frame_data->res_chunk) && (anim->anim_stat_list[stat]->chunk_frame != frame_num)) {
+				sound_manager_play(frame_data->res_chunk, anim->anim_stat_base_list[stat]->snd_channel);
 				anim->anim_stat_list[stat]->chunk_frame = frame_num;
 			}
 		}

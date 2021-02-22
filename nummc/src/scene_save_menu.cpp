@@ -401,15 +401,15 @@ static void load_event() {
 			}
 		}
 
-		tex_info_slot_icon[SLOT_ITEM_1 + i].tex = resource_manager_getFontTextureFromPath(" ");
+		tex_info_slot_icon[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath(" ");
 		for (int prof_i = 0; prof_i < RESOURCE_MANAGER_PROFILE_LIST_SIZE; prof_i++) {
 			if (strcmp(slot_player.c_str(), g_resource_manager_profile[prof_i].name) == 0) {
 				std::string icon_path = g_resource_manager_profile[prof_i].icon_img_path;
-				tex_info_slot_icon[SLOT_ITEM_1 + i].tex = resource_manager_getTextureFromPath("{ scale_mode:linear }" + icon_path);
+				tex_info_slot_icon[SLOT_ITEM_1 + i].res_img = resource_manager_getTextureFromPath("{ scale_mode:linear }" + icon_path);
 				break;
 			}
 		}
-		ret = SDL_QueryTexture(tex_info_slot_icon[SLOT_ITEM_1 + i].tex, NULL, NULL, &w, &h);
+		ret = GUI_QueryTexture(tex_info_slot_icon[SLOT_ITEM_1 + i].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			tex_info_slot_icon[SLOT_ITEM_1 + i].src_rect = { 0, 0, w, h };
 			tmp_rect = &slot_items[SLOT_ITEM_1 + i].dst_rect_base;
@@ -417,9 +417,9 @@ static void load_event() {
 			GUI_tex_info_reset(&tex_info_slot_icon[SLOT_ITEM_1 + i]);
 		}
 
-		if (slot_stage == "") tex_info_slot_stage[SLOT_ITEM_1 + i].tex = resource_manager_getFontTextureFromPath("(EMPTY)");
-		else tex_info_slot_stage[SLOT_ITEM_1 + i].tex = resource_manager_getFontTextureFromPath("STAGE" + slot_stage);
-		ret = SDL_QueryTexture(tex_info_slot_stage[SLOT_ITEM_1 + i].tex, NULL, NULL, &w, &h);
+		if (slot_stage == "") tex_info_slot_stage[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath("(EMPTY)");
+		else tex_info_slot_stage[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath("STAGE" + slot_stage);
+		ret = GUI_QueryTexture(tex_info_slot_stage[SLOT_ITEM_1 + i].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			tex_info_slot_stage[SLOT_ITEM_1 + i].src_rect = { 0, 0, w, h };
 			tmp_rect = &slot_items[SLOT_ITEM_1 + i].dst_rect_base;
@@ -427,9 +427,9 @@ static void load_event() {
 			GUI_tex_info_reset(&tex_info_slot_stage[SLOT_ITEM_1 + i]);
 		}
 
-		if (slot_stage == "") tex_info_slot_timestamp[SLOT_ITEM_1 + i].tex = resource_manager_getFontTextureFromPath(" ");
-		else tex_info_slot_timestamp[SLOT_ITEM_1 + i].tex = resource_manager_getFontTextureFromPath("{18}" + slot_timestamp);
-		ret = SDL_QueryTexture(tex_info_slot_timestamp[SLOT_ITEM_1 + i].tex, NULL, NULL, &w, &h);
+		if (slot_stage == "") tex_info_slot_timestamp[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath(" ");
+		else tex_info_slot_timestamp[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath("{18}" + slot_timestamp);
+		ret = GUI_QueryTexture(tex_info_slot_timestamp[SLOT_ITEM_1 + i].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			tex_info_slot_timestamp[SLOT_ITEM_1 + i].src_rect = { 0, 0, w, h };
 			tmp_rect = &slot_items[SLOT_ITEM_1 + i].dst_rect_base;
@@ -606,8 +606,8 @@ static void dialog_message_delete_ok() {
 		SDL_Rect* tmp_rect;
 		int i = cursor_index;
 
-		tex_info_slot_icon[SLOT_ITEM_1 + i].tex = resource_manager_getFontTextureFromPath(" ");
-		int ret = SDL_QueryTexture(tex_info_slot_icon[SLOT_ITEM_1 + i].tex, NULL, NULL, &w, &h);
+		tex_info_slot_icon[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath(" ");
+		int ret = GUI_QueryTexture(tex_info_slot_icon[SLOT_ITEM_1 + i].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			tex_info_slot_icon[SLOT_ITEM_1 + i].src_rect = { 0, 0, w, h };
 			tmp_rect = &slot_items[SLOT_ITEM_1 + i].dst_rect_base;
@@ -615,8 +615,8 @@ static void dialog_message_delete_ok() {
 			GUI_tex_info_reset(&tex_info_slot_icon[SLOT_ITEM_1 + i]);
 		}
 
-		tex_info_slot_stage[SLOT_ITEM_1 + i].tex = resource_manager_getFontTextureFromPath("(EMPTY)");
-		ret = SDL_QueryTexture(tex_info_slot_stage[SLOT_ITEM_1 + i].tex, NULL, NULL, &w, &h);
+		tex_info_slot_stage[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath("(EMPTY)");
+		ret = GUI_QueryTexture(tex_info_slot_stage[SLOT_ITEM_1 + i].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			tex_info_slot_stage[SLOT_ITEM_1 + i].src_rect = { 0, 0, w, h };
 			tmp_rect = &slot_items[SLOT_ITEM_1 + i].dst_rect_base;
@@ -624,8 +624,8 @@ static void dialog_message_delete_ok() {
 			GUI_tex_info_reset(&tex_info_slot_stage[SLOT_ITEM_1 + i]);
 		}
 
-		tex_info_slot_timestamp[SLOT_ITEM_1 + i].tex = resource_manager_getFontTextureFromPath(" ");
-		ret = SDL_QueryTexture(tex_info_slot_timestamp[SLOT_ITEM_1 + i].tex, NULL, NULL, &w, &h);
+		tex_info_slot_timestamp[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath(" ");
+		ret = GUI_QueryTexture(tex_info_slot_timestamp[SLOT_ITEM_1 + i].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			tex_info_slot_timestamp[SLOT_ITEM_1 + i].src_rect = { 0, 0, w, h };
 			tmp_rect = &slot_items[SLOT_ITEM_1 + i].dst_rect_base;
@@ -703,22 +703,22 @@ static void tex_info_init()
 	int button_h_pos = 0;
 
 	// title
-	tex_info_title[SCENE_SAVE_MENU_ID_TITLE_SAVE].tex = resource_manager_getFontTextureFromPath("Save");
-	int ret = SDL_QueryTexture(tex_info_title[SCENE_SAVE_MENU_ID_TITLE_SAVE].tex, NULL, NULL, &w, &h);
+	tex_info_title[SCENE_SAVE_MENU_ID_TITLE_SAVE].res_img = resource_manager_getFontTextureFromPath("Save");
+	int ret = GUI_QueryTexture(tex_info_title[SCENE_SAVE_MENU_ID_TITLE_SAVE].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = 20;
 		h_pos = 20;
 		GUI_tex_info_init_rect(&tex_info_title[SCENE_SAVE_MENU_ID_TITLE_SAVE], w, h, w_pos, h_pos);
 	}
 
-	tex_info_title[SCENE_SAVE_MENU_ID_TITLE_NEW_GAME].tex = resource_manager_getFontTextureFromPath("NewGame");
-	ret = SDL_QueryTexture(tex_info_title[SCENE_SAVE_MENU_ID_TITLE_NEW_GAME].tex, NULL, NULL, &w, &h);
+	tex_info_title[SCENE_SAVE_MENU_ID_TITLE_NEW_GAME].res_img = resource_manager_getFontTextureFromPath("NewGame");
+	ret = GUI_QueryTexture(tex_info_title[SCENE_SAVE_MENU_ID_TITLE_NEW_GAME].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info_title[SCENE_SAVE_MENU_ID_TITLE_NEW_GAME], w, h, w_pos, h_pos);
 	}
 
-	tex_info_title[SCENE_SAVE_MENU_ID_TITLE_LOAD].tex = resource_manager_getFontTextureFromPath("Load");
-	ret = SDL_QueryTexture(tex_info_title[SCENE_SAVE_MENU_ID_TITLE_LOAD].tex, NULL, NULL, &w, &h);
+	tex_info_title[SCENE_SAVE_MENU_ID_TITLE_LOAD].res_img = resource_manager_getFontTextureFromPath("Load");
+	ret = GUI_QueryTexture(tex_info_title[SCENE_SAVE_MENU_ID_TITLE_LOAD].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info_title[SCENE_SAVE_MENU_ID_TITLE_LOAD], w, h, w_pos, h_pos);
 		w_pos = w_pos + 32;
@@ -726,20 +726,20 @@ static void tex_info_init()
 	}
 
 	// description
-	tex_info_description[SCENE_SAVE_MENU_ID_DESCRIPTION_1].tex = resource_manager_getFontTextureFromPath("Please select save Slot.");
-	ret = SDL_QueryTexture(tex_info_description[SCENE_SAVE_MENU_ID_DESCRIPTION_1].tex, NULL, NULL, &w, &h);
+	tex_info_description[SCENE_SAVE_MENU_ID_DESCRIPTION_1].res_img = resource_manager_getFontTextureFromPath("Please select save Slot.");
+	ret = GUI_QueryTexture(tex_info_description[SCENE_SAVE_MENU_ID_DESCRIPTION_1].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info_description[SCENE_SAVE_MENU_ID_DESCRIPTION_1], w, h, w_pos, h_pos);
 	}
 
-	tex_info_description[SCENE_SAVE_MENU_ID_DESCRIPTION_2].tex = resource_manager_getFontTextureFromPath("Please select new save Slot.");
-	ret = SDL_QueryTexture(tex_info_description[SCENE_SAVE_MENU_ID_DESCRIPTION_2].tex, NULL, NULL, &w, &h);
+	tex_info_description[SCENE_SAVE_MENU_ID_DESCRIPTION_2].res_img = resource_manager_getFontTextureFromPath("Please select new save Slot.");
+	ret = GUI_QueryTexture(tex_info_description[SCENE_SAVE_MENU_ID_DESCRIPTION_2].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info_description[SCENE_SAVE_MENU_ID_DESCRIPTION_2], w, h, w_pos, h_pos);
 	}
 
-	tex_info_description[SCENE_SAVE_MENU_ID_DESCRIPTION_3].tex = resource_manager_getFontTextureFromPath("Please select Slot.");
-	ret = SDL_QueryTexture(tex_info_description[SCENE_SAVE_MENU_ID_DESCRIPTION_3].tex, NULL, NULL, &w, &h);
+	tex_info_description[SCENE_SAVE_MENU_ID_DESCRIPTION_3].res_img = resource_manager_getFontTextureFromPath("Please select Slot.");
+	ret = GUI_QueryTexture(tex_info_description[SCENE_SAVE_MENU_ID_DESCRIPTION_3].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info_description[SCENE_SAVE_MENU_ID_DESCRIPTION_3], w, h, w_pos, h_pos);
 		slot_w_pos = w_pos;
@@ -747,8 +747,8 @@ static void tex_info_init()
 	}
 
 	// button (left binding [delete])
-	tex_info[SCENE_SAVE_MENU_ID_DELETE].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/delete.png");
-	ret = SDL_QueryTexture(tex_info[SCENE_SAVE_MENU_ID_DELETE].tex, NULL, NULL, &w, &h);
+	tex_info[SCENE_SAVE_MENU_ID_DELETE].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/delete.png");
+	ret = GUI_QueryTexture(tex_info[SCENE_SAVE_MENU_ID_DELETE].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = 10;
 		h_pos = SCREEN_HEIGHT - h - 10;
@@ -760,8 +760,8 @@ static void tex_info_init()
 	}
 
 	// button (right binding [cancel] [ok])
-	tex_info[SCENE_SAVE_MENU_ID_OK].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/ok.png");
-	ret = SDL_QueryTexture(tex_info[SCENE_SAVE_MENU_ID_OK].tex, NULL, NULL, &w, &h);
+	tex_info[SCENE_SAVE_MENU_ID_OK].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/ok.png");
+	ret = GUI_QueryTexture(tex_info[SCENE_SAVE_MENU_ID_OK].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = SCREEN_WIDTH - w - 10;
 		h_pos = SCREEN_HEIGHT - h - 10;
@@ -773,8 +773,8 @@ static void tex_info_init()
 		button_items[BUTTON_ITEM_OK].func = NULL;
 	}
 
-	tex_info[SCENE_SAVE_MENU_ID_CANCEL].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cancel.png");
-	ret = SDL_QueryTexture(tex_info[SCENE_SAVE_MENU_ID_CANCEL].tex, NULL, NULL, &w, &h);
+	tex_info[SCENE_SAVE_MENU_ID_CANCEL].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cancel.png");
+	ret = GUI_QueryTexture(tex_info[SCENE_SAVE_MENU_ID_CANCEL].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = w_pos - w - 10;
 		//h_pos = dialog_bottom - h - 10;
@@ -800,8 +800,8 @@ static void tex_info_init()
 	SDL_Rect* tmp_rect;
 	std::string label_slot = "SLOT1";
 	for (int i = 0; i < 4; i++) {
-		tex_info[SCENE_SAVE_MENU_ID_LABEL_SLOT1 + i].tex = resource_manager_getFontTextureFromPath(label_slot.c_str());
-		ret = SDL_QueryTexture(tex_info[SCENE_SAVE_MENU_ID_LABEL_SLOT1 + i].tex, NULL, NULL, &w, &h);
+		tex_info[SCENE_SAVE_MENU_ID_LABEL_SLOT1 + i].res_img = resource_manager_getFontTextureFromPath(label_slot.c_str());
+		ret = GUI_QueryTexture(tex_info[SCENE_SAVE_MENU_ID_LABEL_SLOT1 + i].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			slot_label_w = slot_left + i * slot_item_dw + (slot_item_dw / 2) - (w/2);
 			slot_label_h = slot_top + slot_item_dh - h - 20;
@@ -817,8 +817,8 @@ static void tex_info_init()
 
 	label_slot = "SLOT5";
 	for (int i = 0; i < 4; i++) {
-		tex_info[SCENE_SAVE_MENU_ID_LABEL_SLOT5 + i].tex = resource_manager_getFontTextureFromPath(label_slot.c_str());
-		ret = SDL_QueryTexture(tex_info[SCENE_SAVE_MENU_ID_LABEL_SLOT5 + i].tex, NULL, NULL, &w, &h);
+		tex_info[SCENE_SAVE_MENU_ID_LABEL_SLOT5 + i].res_img = resource_manager_getFontTextureFromPath(label_slot.c_str());
+		ret = GUI_QueryTexture(tex_info[SCENE_SAVE_MENU_ID_LABEL_SLOT5 + i].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			slot_label_w = slot_left + i * slot_item_dw + (slot_item_dw / 2) - (w / 2);
 			slot_label_h = slot_top + 2 * slot_item_dh - h - 20;

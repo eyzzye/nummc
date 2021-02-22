@@ -1,5 +1,6 @@
 #pragma once
 #include "game_common.h"
+#include "resource_manager.h"
 
 #define SOUND_MANAGER_CH_AUTO   (-1)
 #define SOUND_MANAGER_CH_MAIN1  0
@@ -14,5 +15,5 @@
 extern int sound_manager_init_track_volume();
 extern int sound_manager_init();
 extern void sound_manager_close();
-extern void sound_manager_play(Mix_Chunk* chunk, int channel= SOUND_MANAGER_CH_AUTO, int loop = 0);
+extern void sound_manager_play(ResourceChunk* res_chunk, int channel= SOUND_MANAGER_CH_AUTO, int loop = 0);
 extern void sound_manager_stop(int channel);

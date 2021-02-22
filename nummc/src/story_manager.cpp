@@ -45,6 +45,8 @@ int story_manager_load(std::string path)
 	std::ifstream inFile(g_base_path + "data/" + path);
 	if (inFile.is_open()) {
 		g_story_data->story_path = path;
+		g_story_data->res_img = NULL;
+		g_story_data->res_chunk = NULL;
 
 		std::string line;
 		while (std::getline(inFile, line)) {
@@ -91,13 +93,13 @@ static void load_basic_info(std::string& line) {
 
 static void load_img(std::string& line) {
 	if (line != "") {
-		g_story_data->tex = resource_manager_getTextureFromPath(line);
+		g_story_data->res_img = resource_manager_getTextureFromPath(line);
 	}
 }
 
 static void load_bgm(std::string& line) {
 	if (line != "") {
-		g_story_data->bgm_chunk = resource_manager_getChunkFromPath(line);
+		g_story_data->res_chunk = resource_manager_getChunkFromPath(line);
 	}
 }
 

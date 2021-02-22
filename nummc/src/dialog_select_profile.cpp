@@ -83,8 +83,8 @@ static void tex_info_init_message(std::string message)
 	int dialog_left = SCREEN_WIDTH * 2 / 5 / 2;
 
 	// message
-	tex_info_message.tex = resource_manager_getFontTextureFromPath(message);
-	int ret = SDL_QueryTexture(tex_info_message.tex, NULL, NULL, &w, &h);
+	tex_info_message.res_img = resource_manager_getFontTextureFromPath(message);
+	int ret = GUI_QueryTexture(tex_info_message.res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = dialog_left + 20;
 		h_pos = dialog_top + 20;
@@ -109,8 +109,8 @@ static void tex_info_init()
 	GUI_rect_region_init_rect(&dialog_bg, dialog_left, dialog_top, dialog_w, dialog_h);
 
 	// button (right binding [cancel] [ok])
-	tex_info[DIALOG_MESSAGE_ID_OK].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/ok.png");
-	int ret = SDL_QueryTexture(tex_info[DIALOG_MESSAGE_ID_OK].tex, NULL, NULL, &w, &h);
+	tex_info[DIALOG_MESSAGE_ID_OK].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/ok.png");
+	int ret = GUI_QueryTexture(tex_info[DIALOG_MESSAGE_ID_OK].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = dialog_right - w - 10;
 		h_pos = dialog_bottom - h - 10;
@@ -125,11 +125,11 @@ static void tex_info_init()
 	int profile_stat_flag = 0x00000001 << 1;
 	for (int prof_i = 0; prof_i < PROFILE_ITEM_SIZE; prof_i++) {
 		std::string profile_img = g_resource_manager_profile[0].portrait_img_path; // "unlock"
-		tex_info_profile[prof_i].tex = resource_manager_getTextureFromPath("{scale_mode:linear}" + profile_img);
+		tex_info_profile[prof_i].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}" + profile_img);
 		if (current_profile_stat & profile_stat_flag) { // enable charactor
-			tex_info_profile[prof_i].tex = resource_manager_getTextureFromPath(g_resource_manager_profile[prof_i + 1].portrait_img_path);
+			tex_info_profile[prof_i].res_img = resource_manager_getTextureFromPath(g_resource_manager_profile[prof_i + 1].portrait_img_path);
 		}
-		int ret = SDL_QueryTexture(tex_info_profile[prof_i].tex, NULL, NULL, &w, &h);
+		int ret = GUI_QueryTexture(tex_info_profile[prof_i].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			w_pos = dialog_left + dialog_w / 2 - w / 2;
 			h_pos = dialog_top + dialog_h / 2 - h / 2;
@@ -149,8 +149,8 @@ static void tex_info_init()
 		group_region_profile_left, group_region_profile_top, group_region_profile_w, group_region_profile_h);
 
 	// left button
-	tex_info_profile_button[PROFILE_BUTTON_ITEM_ID_LEFT].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cursor_l.png");
-	ret = SDL_QueryTexture(tex_info_profile_button[PROFILE_BUTTON_ITEM_ID_LEFT].tex, NULL, NULL, &w, &h);
+	tex_info_profile_button[PROFILE_BUTTON_ITEM_ID_LEFT].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cursor_l.png");
+	ret = GUI_QueryTexture(tex_info_profile_button[PROFILE_BUTTON_ITEM_ID_LEFT].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = dialog_left + dialog_w / 5;
 		h_pos = dialog_top + dialog_h / 2;
@@ -162,8 +162,8 @@ static void tex_info_init()
 	}
 
 	// right button
-	tex_info_profile_button[PROFILE_BUTTON_ITEM_ID_RIGHT].tex = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cursor.png");
-	ret = SDL_QueryTexture(tex_info_profile_button[PROFILE_BUTTON_ITEM_ID_RIGHT].tex, NULL, NULL, &w, &h);
+	tex_info_profile_button[PROFILE_BUTTON_ITEM_ID_RIGHT].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/button/cursor.png");
+	ret = GUI_QueryTexture(tex_info_profile_button[PROFILE_BUTTON_ITEM_ID_RIGHT].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = dialog_right - dialog_w / 5 - w;
 		h_pos = dialog_top + dialog_h / 2;
