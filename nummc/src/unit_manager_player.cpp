@@ -517,7 +517,7 @@ int unit_manager_player_get_luck()
 int unit_manager_player_get_damage_force(int hp)
 {
 	g_player.hp += hp;
-	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_MAIN2);
+	sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_MAIN2);
 	quest_log_manager_message("player damaged(force): %d", hp);
 
 	// set game over
@@ -540,7 +540,7 @@ int unit_manager_player_get_damage(int hp)
 
 	//player.stat |= UNIT_PLAYER_STAT_FLAG_DAMAGE;
 	g_player.hp += hp;
-	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_MAIN2);
+	sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_MAIN2);
 	quest_log_manager_message("player damaged: %d", hp);
 
 	// set game over
@@ -996,7 +996,7 @@ void unit_manager_player_use_weapon_item()
 			}
 
 			if (inventory_manager_set_weapon_count(-1) == 0) {
-				sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_warning1.ogg"));
+				sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_warning1.ogg"));
 			}
 		}
 	}
@@ -1044,10 +1044,10 @@ void unit_manager_player_use_charge_item()
 
 		if (use_item) {
 			inventory_manager_charge_val(- INVENTORY_CHARGE_EXP_UNIT_VAL * INVENTORY_CHARGE_VAL_MAX);
-			sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_warning1.ogg"));
+			sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_warning1.ogg"));
 		}
 		else {
-			sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"));
+			sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"));
 		}
 	}
 }
@@ -1058,10 +1058,10 @@ void unit_manager_player_use_special_item()
 	if (item_use_id >= 0) {
 		if (unit_manager_player_get_special_item(item_use_id) == 0) {
 			inventory_manager_clear_special();
-			sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_warning1.ogg"));
+			sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_warning1.ogg"));
 		}
 		else {
-			sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"));
+			sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"));
 		}
 	}
 }

@@ -863,7 +863,7 @@ void map_manager_open_door()
 	}
 
 	if (open_snd_flag) {
-		sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_gate_open.ogg"), SOUND_MANAGER_CH_SFX2);
+		sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_gate_open.ogg"), SOUND_MANAGER_CH_SFX2);
 	}
 }
 
@@ -977,7 +977,7 @@ void map_manager_open_hide_door(int stage_map_face)
 	}
 
 	if (open_snd_flag) {
-		sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_gate_open.ogg"), SOUND_MANAGER_CH_SFX2);
+		sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_gate_open.ogg"), SOUND_MANAGER_CH_SFX2);
 	}
 }
 

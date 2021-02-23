@@ -347,7 +347,7 @@ void unit_display(unit_data_t* unit_data, int layer)
 
 			// update sounds
 			if ((frame_data->res_chunk) && (anim->anim_stat_list[stat]->chunk_frame != frame_num)) {
-				sound_manager_play(frame_data->res_chunk, anim->anim_stat_base_list[stat]->snd_channel);
+				sound_manager_set(frame_data->res_chunk, anim->anim_stat_base_list[stat]->snd_channel);
 				anim->anim_stat_list[stat]->chunk_frame = frame_num;
 			}
 		}

@@ -101,7 +101,7 @@ static void main_event_section_boss() {
 		else {
 			// play win bgm
 			scene_play_stage_play_current_bgm(false);
-			sound_manager_play(resource_manager_getChunkFromPath("music/win.ogg"), SOUND_MANAGER_CH_MUSIC);
+			sound_manager_set(resource_manager_getChunkFromPath("music/win.ogg"), SOUND_MANAGER_CH_MUSIC);
 
 			// give bonus exp
 			unit_manager_player_get_exp(g_stage_data->bonus_exp);
@@ -180,7 +180,7 @@ static void main_event_section_nest() {
 			load_next_enemy_phase();
 
 			// spawn sound
-			sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_drop.ogg"));
+			sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_drop.ogg"));
 
 			g_stage_data->section_timer = 0;
 			g_stage_data->section_stat = SECTION_STAT_ACTIVE;
@@ -535,7 +535,11 @@ static void draw() {
 		SDL_RenderFillRect(g_ren, &disabel_region);
 	}
 
+	// render all
 	SDL_RenderPresent(g_ren);
+
+	// play all sounds
+	sound_manager_play_all();
 }
 static void after_draw() {
 	if (scene_stat != SCENE_STAT_ACTIVE) return;
@@ -778,7 +782,7 @@ static void dialog_message_ok()
 {
 	unload_event();
 
-	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_click1.ogg"), SOUND_MANAGER_CH_SFX2);
+	sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_click1.ogg"), SOUND_MANAGER_CH_SFX2);
 	scene_stat = SCENE_STAT_IDLE;
 	scene_manager_load(SCENE_ID_TOP_MENU);
 
@@ -1244,7 +1248,7 @@ static void event_msg_handler()
 	// after event process
 	if (g_stage_data->result == STAGE_RESULT_LOSE) {
 		sound_manager_stop(SOUND_MANAGER_CH_MUSIC);
-		sound_manager_play(resource_manager_getChunkFromPath("music/lose.ogg"), SOUND_MANAGER_CH_MUSIC);
+		sound_manager_set(resource_manager_getChunkFromPath("music/lose.ogg"), SOUND_MANAGER_CH_MUSIC);
 	}
 }
 
@@ -1298,13 +1302,13 @@ void scene_play_stage_play_current_bgm(bool on_off)
 	bool played = false;
 	if (on_off) {
 		if (g_player.effect_stat & UNIT_EFFECT_FLAG_P_RAMPAGE) {
-			sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_bom_warning.ogg"), SOUND_MANAGER_CH_MUSIC, -1);
+			sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_bom_warning.ogg"), SOUND_MANAGER_CH_MUSIC, -1);
 			played = true;
 		}
 		else if ((g_stage_data->current_section_data->bgm_list != NULL) && (g_stage_data->current_section_data->bgm_list->start_node != NULL)) {
 			if (!(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_GOAL)
 				&& !(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_WIN)) {
-				sound_manager_play(((BGM_data_t*)g_stage_data->current_section_data->bgm_list->start_node)->res_chunk, SOUND_MANAGER_CH_MUSIC, -1);
+				sound_manager_set(((BGM_data_t*)g_stage_data->current_section_data->bgm_list->start_node)->res_chunk, SOUND_MANAGER_CH_MUSIC, -1);
 				played = true;
 			}
 		}
@@ -1318,7 +1322,7 @@ void scene_play_stage_play_current_bgm(bool on_off)
 void scene_play_next_stage() {
 	game_next_stage_dark_alpha = 0;
 	sound_manager_stop(SOUND_MANAGER_CH_MUSIC);
-	sound_manager_play(resource_manager_getChunkFromPath("music/fallout.ogg"), SOUND_MANAGER_CH_MUSIC);
+	sound_manager_set(resource_manager_getChunkFromPath("music/fallout.ogg"), SOUND_MANAGER_CH_MUSIC);
 	stage_manager_set_next_load(STAGE_NEXT_LOAD_ON);
 }
 

@@ -648,7 +648,7 @@ int ai_manager_boss_spawn_six(ai_data_t* ai_data)
 	enemy_id = unit_manager_create_enemy(312, 88, UNIT_FACE_W, unit_manager_search_enemy(mini_boss_six_path));
 
 	// spawn sound
-	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_drop.ogg"));
+	sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_drop.ogg"));
 
 	return 0;
 }
@@ -880,7 +880,7 @@ int ai_manager_boss_spawn_eight(ai_data_t* ai_data)
 		enemy_id = unit_manager_create_enemy(enemy_cx + g_tile_width / 2, enemy_cy, UNIT_FACE_E, unit_manager_search_enemy(mini_enemy_eight_path));
 
 		// spawn sound
-		sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_drop.ogg"));
+		sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_drop.ogg"));
 	}
 
 	return 0;
@@ -1195,7 +1195,7 @@ int ai_manager_boss_spawn_x(ai_data_t* ai_data)
 	enemy_id = unit_manager_create_enemy(322, 128, UNIT_FACE_E, unit_manager_search_enemy(enemy_x_path[enemy_x_path_index]));
 
 	// spawn sound
-	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_drop.ogg"));
+	sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_drop.ogg"));
 
 	ai_data->val2 += 1;
 	if (ai_data->val2 >= AI_ENEMY_X_PATH_SIZE) ai_data->val2 = 0;

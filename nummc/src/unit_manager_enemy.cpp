@@ -631,7 +631,7 @@ void unit_manager_create_hell()
 		unit_manager_create_enemy(hell_enemy_list[i].x, hell_enemy_list[i].y, hell_enemy_list[i].face, unit_manager_search_enemy(hell_enemy_list[i].path));
 	}
 
-	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_bom.ogg"));
+	sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_bom.ogg"));
 }
 
 void unit_manager_clear_all_enemy()
@@ -708,7 +708,7 @@ int unit_manager_enemy_get_delta_time(unit_enemy_data_t* enemy_data)
 int unit_manager_enemy_get_damage_force(unit_enemy_data_t* enemy_data, int hp)
 {
 	enemy_data->hp += hp;
-	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_SUB1);
+	sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_SUB1);
 	quest_log_manager_message("enemy %d damaged(force): %d", enemy_data->id, hp);
 
 	if (enemy_data->hp <= 0) {
@@ -741,7 +741,7 @@ int unit_manager_enemy_get_damage_force(unit_enemy_data_t* enemy_data, int hp)
 int unit_manager_enemy_get_damage(unit_enemy_data_t* enemy_data, int hp)
 {
 	enemy_data->hp += hp;
-	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_SUB1);
+	sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_SUB1);
 	quest_log_manager_message("enemy %d damaged: %d", enemy_data->id, hp);
 
 	if (enemy_data->hp <= 0) {
