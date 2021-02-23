@@ -91,13 +91,13 @@ typedef struct _unit_enemy_bullet_data_t unit_enemy_bullet_data_t;
 struct _unit_data_t {
 	int type;        // NONE:0, PLAYER:1, ENEMY:2, ITEMS:3, PLAYER_BULLET:4, ENEMY_BULLET:5
 	int id;          // unit_id_end
-	void* obj;       // object address
-	int reserve0;
-
 	unit_data_t* prev;
 	unit_data_t* next;
+
+	void* obj;       // object address
 	shape_data* col_shape;
 	anim_data_t* anim;
+	int reserve0;
 
 	unit_data_t* base;
 	int* stat_timer;
@@ -110,13 +110,13 @@ struct _unit_data_t {
 struct _unit_player_data_t {
 	int type;        // PLAYER:1
 	int id;          // unit_id_end
-	void* obj;       // char* path
-	int reserve0;
-
 	unit_data_t* prev;
 	unit_data_t* next;
+
+	void* obj;       // char* path
 	shape_data* col_shape;
 	anim_data_t* anim;
+	int reserve0;
 
 	unit_player_data_t* base;
 	int* stat_timer;
@@ -147,13 +147,13 @@ struct _unit_player_data_t {
 struct _unit_enemy_data_t {
 	int type;        // ENEMY:2
 	int id;          // unit_id_end
-	void* obj;       // char* path
-	int reserve0;
-
 	unit_data_t* prev;
 	unit_data_t* next;
+
+	void* obj;       // char* path
 	shape_data* col_shape;
 	anim_data_t* anim;
+	int reserve0;
 
 	unit_enemy_data_t* base;
 	int* stat_timer;
@@ -188,13 +188,13 @@ struct _unit_enemy_data_t {
 struct _unit_items_data_t {
 	int type;        // ITEMS:3
 	int id;          // unit_id_end
-	void* obj;       // char* path
-	int group;       // item group
-
 	unit_data_t* prev;
 	unit_data_t* next;
+
+	void* obj;       // char* path
 	shape_data* col_shape;
 	anim_data_t* anim;
+	int group;       // item group
 
 	unit_items_data_t* base;
 	int* stat_timer;
@@ -220,13 +220,13 @@ struct _unit_items_data_t {
 struct _unit_trap_data_t {
 	int type;        // TRAP:7
 	int id;          // unit_id_end
-	void* obj;       // char* path
-	int group;       // item group
-
 	unit_data_t* prev;
 	unit_data_t* next;
+
+	void* obj;       // char* path
 	shape_data* col_shape;
 	anim_data_t* anim;
+	int group;       // item group
 
 	unit_trap_data_t* base;
 	int* stat_timer;
@@ -242,13 +242,13 @@ struct _unit_trap_data_t {
 struct _unit_effect_data_t {
 	int type;        // EFFECT:8
 	int id;          // unit_id_end
-	void* obj;       // char* path
-	int group;       // STATIC, DYNAMIC, DIE_AUTO
-
 	unit_data_t* prev;
 	unit_data_t* next;
+
+	void* obj;       // char* path
 	shape_data* col_shape;
 	anim_data_t* anim;
+	int group;       // STATIC, DYNAMIC, DIE_AUTO
 
 	unit_effect_data_t* base;
 	int* stat_timer;
@@ -272,13 +272,13 @@ struct _unit_effect_stat_data_t {
 struct _unit_player_bullet_data_t {
 	int type;        // PLAYER_BULLET:4
 	int id;          // unit_id_end
-	void* obj;       // char* path
-	int reserve0;
-
 	unit_data_t* prev;
 	unit_data_t* next;
+
+	void* obj;       // char* path
 	shape_data* col_shape;
 	anim_data_t* anim;
+	int reserve0;
 
 	unit_player_bullet_data_t* base;
 	int* stat_timer;
@@ -299,13 +299,13 @@ struct _unit_player_bullet_data_t {
 struct _unit_enemy_bullet_data_t {
 	int type;        // ENEMY_BULLET:5
 	int id;          // unit_id_end
-	void* obj;       // char* path
-	int reserve0;
-
 	unit_data_t* prev;
 	unit_data_t* next;
+
+	void* obj;       // char* path
 	shape_data* col_shape;
 	anim_data_t* anim;
+	int reserve0;
 
 	unit_enemy_bullet_data_t* base;
 	int* stat_timer;

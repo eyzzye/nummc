@@ -150,6 +150,87 @@ int game_utils_backup_file(std::string path, int max_size)
 }
 
 //
+// node data utils
+//
+void game_utils_node_init(node_buffer_info_t* node_buffer_info, node_data_t* node_data, int node_size, int buffer_size)
+{
+	node_buffer_info->node_size        = node_size;
+	node_buffer_info->buffer_size      = buffer_size;
+	node_buffer_info->used_buffer_size = 0;
+	node_buffer_info->head_node        = node_data;
+	node_buffer_info->start_node       = NULL;
+	node_buffer_info->end_node         = NULL;
+}
+
+node_data_t* game_utils_node_new(node_buffer_info_t* node_buffer_info)
+{
+	int search_start_index = 0;
+	if (node_buffer_info->end_node != NULL) {
+		search_start_index = (int)((size_t)node_buffer_info->end_node - (size_t)node_buffer_info->head_node) / node_buffer_info->node_size;
+		search_start_index += 1;
+	}
+
+	node_data_t* new_node = NULL;
+	for (int i = 0; i < node_buffer_info->buffer_size; i++) {
+		if (search_start_index >= node_buffer_info->buffer_size) {
+			search_start_index -= node_buffer_info->buffer_size;
+		}
+
+		node_data_t*  tmp_node = (node_data_t*)((char*)node_buffer_info->head_node + (size_t)node_buffer_info->node_size * search_start_index);
+		if (tmp_node->type == GAME_UTILS_NODE_TYPE_NONE) {
+			new_node = tmp_node;
+			new_node->type = GAME_UTILS_NODE_TYPE_USED;
+			new_node->id = search_start_index;
+			node_buffer_info->used_buffer_size += 1;
+			break;
+		}
+		search_start_index++;
+	}
+
+	if (new_node == NULL) {
+		LOG_ERROR("Error: game_utils_node_new() buffer overflow\n");
+		return NULL;
+	}
+
+	if (node_buffer_info->start_node == NULL) {
+		node_buffer_info->start_node = new_node;
+		new_node->prev = NULL;
+	}
+
+	if (node_buffer_info->end_node != NULL) {
+		node_buffer_info->end_node->next = new_node;
+		new_node->prev = node_buffer_info->end_node;
+		new_node->next = NULL;
+		node_buffer_info->end_node = new_node;
+	} else {
+		node_buffer_info->end_node = new_node;
+		new_node->next = NULL;
+	}
+
+	return new_node;
+}
+
+void game_utils_node_delete(node_data_t* node_data, node_buffer_info_t* node_buffer_info)
+{
+	node_data_t* tmp1 = node_data->prev;
+	node_data_t* tmp2 = node_data->next;
+	if (tmp1) tmp1->next = tmp2;
+	if (tmp2) tmp2->prev = tmp1;
+
+	// replace start node
+	if (node_buffer_info->start_node == node_data) {
+		node_buffer_info->start_node = tmp2;
+	}
+	// replace end node
+	if (node_buffer_info->end_node == node_data) {
+		node_buffer_info->end_node = tmp1;
+	}
+
+	node_buffer_info->used_buffer_size -= 1;
+	node_data->type = GAME_UTILS_NODE_TYPE_NONE;
+}
+
+//
 // char buffer utils
 //
 #define GAME_UTILS_STRING_SIZE  (256 * 8)  /* *.unit, SPAWN.anim, IDLE.anim, MOVE.anim, DIE.anim, ATTACK1.anim, ATTACK2.anim, *.unit->next_level */

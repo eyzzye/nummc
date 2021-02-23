@@ -153,7 +153,8 @@ static void main_event_section_nest() {
 			// if re-enter room, do nothing
 		}
 		else if ((g_stage_data->section_enemy_phase < SECTION_ENEMY_PHASE_SIZE - 1)
-			&& (g_stage_data->current_section_data->enemy_list[g_stage_data->section_enemy_phase + 1].size() > 0)) {
+			&& (g_stage_data->current_section_data->enemy_list[g_stage_data->section_enemy_phase + 1] != NULL)
+			&& (g_stage_data->current_section_data->enemy_list[g_stage_data->section_enemy_phase + 1]->start_node != NULL)) {
 			// set enemy phase wait
 			g_stage_data->section_timer = SECTION_TIMER_ENEMY_PHASE_WAIT_TIME;
 			g_stage_data->section_stat = SECTION_STAT_ENEMY_PHASE_WAIT;
@@ -674,6 +675,8 @@ static void unload_event() {
 	ai_manager_unload();
 	collision_manager_unload();
 	stage_manager_unload();
+
+	scene_stat = SCENE_STAT_NONE;
 }
 static int get_stat_event() {
 	return scene_stat;
@@ -720,7 +723,7 @@ static void main_event_next_load()
 			inventory_manager_backup_stocker();
 			reload_player = true;
 
-			set_stat_event(SCENE_STAT_NONE);
+			set_stat_event(SCENE_STAT_IDLE);
 			scene_manager_load(SCENE_ID_PLAY_STAGE, true);
 			unload_event();
 		}
@@ -746,7 +749,7 @@ static void main_event_next_load()
 				}
 			}
 
-			set_stat_event(SCENE_STAT_NONE);
+			set_stat_event(SCENE_STAT_IDLE);
 			std::string story_path = "scenes/story/infinity/ending.dat";
 			for (int prof_i = 0; prof_i < RESOURCE_MANAGER_PROFILE_LIST_SIZE; prof_i++) {
 				if (strcmp(g_resource_manager_profile[prof_i].unit_path, (char*)g_player.obj) == 0) {
@@ -844,11 +847,14 @@ static void section_init()
 		stage_manager_create_all_stock_item();
 
 		// load trap
-		for (int i = 0; i < p_section->trap_list.size(); i++) {
-			unit_manager_load_trap(p_section->trap_list[i]->type);
-			if ((p_section->trap_list[i]->x >= 0) && (p_section->trap_list[i]->y >= 0)) {
-				unit_manager_create_trap(p_section->trap_list[i]->x, p_section->trap_list[i]->y, unit_manager_search_trap(p_section->trap_list[i]->type));
+		node_data_t* node = (p_section->trap_list == NULL) ? NULL : p_section->trap_list->start_node;
+		while (node != NULL) {
+			trap_data_t* spawn_trap_data = (trap_data_t*)node;
+			unit_manager_load_trap(spawn_trap_data->path);
+			if ((spawn_trap_data->x >= 0) && (spawn_trap_data->y >= 0)) {
+				unit_manager_create_trap(spawn_trap_data->x, spawn_trap_data->y, unit_manager_search_trap(spawn_trap_data->path));
 			}
+			node = node->next;
 		}
 	}
 	else if (g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_GOAL) {
@@ -856,21 +862,27 @@ static void section_init()
 		stage_manager_create_all_stock_item();
 
 		// load trap
-		for (int i = 0; i < p_section->trap_list.size(); i++) {
-			unit_manager_load_trap(p_section->trap_list[i]->type);
-			if ((p_section->trap_list[i]->x >= 0) && (p_section->trap_list[i]->y >= 0)) {
-				unit_manager_create_trap(p_section->trap_list[i]->x, p_section->trap_list[i]->y, unit_manager_search_trap(p_section->trap_list[i]->type));
+		node_data_t* node = (p_section->trap_list == NULL) ? NULL : p_section->trap_list->start_node;
+		while (node != NULL) {
+			trap_data_t* spawn_trap_data = (trap_data_t*)node;
+			unit_manager_load_trap(spawn_trap_data->path);
+			if ((spawn_trap_data->x >= 0) && (spawn_trap_data->y >= 0)) {
+				unit_manager_create_trap(spawn_trap_data->x, spawn_trap_data->y, unit_manager_search_trap(spawn_trap_data->path));
 			}
+			node = node->next;
 		}
 	}
 	// STAGE_MAP_STAT_NONE
 	else {
 		// load items
-		for (int i = 0; i < p_section->items_list.size(); i++) {
-			unit_manager_load_items(p_section->items_list[i]->type);
-			if ((p_section->items_list[i]->x >= 0) && (p_section->items_list[i]->y >= 0)) {
-				unit_manager_create_items(p_section->items_list[i]->x, p_section->items_list[i]->y, unit_manager_search_items(p_section->items_list[i]->type));
+		node_data_t* node = (p_section->items_list == NULL) ? NULL : p_section->items_list->start_node;
+		while (node != NULL) {
+			items_data_t* spawn_items_data = (items_data_t*)node;
+			unit_manager_load_items(spawn_items_data->path);
+			if ((spawn_items_data->x >= 0) && (spawn_items_data->y >= 0)) {
+				unit_manager_create_items(spawn_items_data->x, spawn_items_data->y, unit_manager_search_items(spawn_items_data->path));
 			}
+			node = node->next;
 		}
 
 		// load drop items
@@ -886,26 +898,32 @@ static void section_init()
 		}
 
 		// load trap
-		for (int i = 0; i < p_section->trap_list.size(); i++) {
-			unit_manager_load_trap(p_section->trap_list[i]->type);
-			if ((p_section->trap_list[i]->x >= 0) && (p_section->trap_list[i]->y >= 0)) {
-				unit_manager_create_trap(p_section->trap_list[i]->x, p_section->trap_list[i]->y, unit_manager_search_trap(p_section->trap_list[i]->type));
+		node = (p_section->trap_list == NULL) ? NULL : p_section->trap_list->start_node;
+		while (node != NULL) {
+			trap_data_t* spawn_trap_data = (trap_data_t*)node;
+			unit_manager_load_trap(spawn_trap_data->path);
+			if ((spawn_trap_data->x >= 0) && (spawn_trap_data->y >= 0)) {
+				unit_manager_create_trap(spawn_trap_data->x, spawn_trap_data->y, unit_manager_search_trap(spawn_trap_data->path));
 			}
+			node = node->next;
 		}
 
 		// load enemy unit
-		for (int i = 0; i < p_section->enemy_list[0].size(); i++) {
-			unit_manager_load_enemy(p_section->enemy_list[0][i]->type);
-			int enemy_id = unit_manager_create_enemy(p_section->enemy_list[0][i]->x, p_section->enemy_list[0][i]->y,
-				p_section->enemy_list[0][i]->face, unit_manager_search_enemy(p_section->enemy_list[0][i]->type));
-			if (p_section->enemy_list[0][i]->ai_step != 0) {
-				unit_manager_set_ai_step(enemy_id, p_section->enemy_list[0][i]->ai_step);
+		node = (p_section->enemy_list[0] == NULL) ? NULL : p_section->enemy_list[0]->start_node;
+		while (node != NULL) {
+			enemy_data_t* spawn_enemy_data = (enemy_data_t*)node;
+			unit_manager_load_enemy(spawn_enemy_data->path);
+			int enemy_id = unit_manager_create_enemy(spawn_enemy_data->x, spawn_enemy_data->y, spawn_enemy_data->face, unit_manager_search_enemy(spawn_enemy_data->path));
+			if (spawn_enemy_data->ai_step != 0) {
+				unit_manager_set_ai_step(enemy_id, spawn_enemy_data->ai_step);
 			}
 
 			if (g_stage_data->current_section_index != 0) {
 				// create smoke effect
-				unit_manager_create_effect(p_section->enemy_list[0][i]->x - g_tile_width / 2, p_section->enemy_list[0][i]->y - g_tile_height / 2, unit_manager_search_effect(smoke_effect_path));
+				unit_manager_create_effect(spawn_enemy_data->x - g_tile_width / 2, spawn_enemy_data->y - g_tile_height / 2, unit_manager_search_effect(smoke_effect_path));
 			}
+
+			node = node->next;
 		}
 	}
 
@@ -920,18 +938,21 @@ static void load_next_enemy_phase()
 	// load enemy unit
 	int phase = g_stage_data->section_enemy_phase;
 	section_data_t* p_section = g_stage_data->current_section_data;
-	for (int i = 0; i < p_section->enemy_list[phase].size(); i++) {
-		unit_manager_load_enemy(p_section->enemy_list[phase][i]->type);
-		int enemy_id = unit_manager_create_enemy(p_section->enemy_list[phase][i]->x, p_section->enemy_list[phase][i]->y,
-			p_section->enemy_list[phase][i]->face, unit_manager_search_enemy(p_section->enemy_list[phase][i]->type));
-		if (p_section->enemy_list[phase][i]->ai_step != 0) {
-			unit_manager_set_ai_step(enemy_id, p_section->enemy_list[phase][i]->ai_step);
+	node_data_t* node = (p_section->enemy_list[phase] == NULL) ? NULL : p_section->enemy_list[phase]->start_node;
+	while (node != NULL) {
+		enemy_data_t* spawn_enemy_data = (enemy_data_t*)node;
+		unit_manager_load_enemy(spawn_enemy_data->path);
+		int enemy_id = unit_manager_create_enemy(spawn_enemy_data->x, spawn_enemy_data->y, spawn_enemy_data->face, unit_manager_search_enemy(spawn_enemy_data->path));
+		if (spawn_enemy_data->ai_step != 0) {
+			unit_manager_set_ai_step(enemy_id, spawn_enemy_data->ai_step);
 		}
 
 		if (g_stage_data->current_section_index != 0) {
 			// create smoke effect
-			unit_manager_create_effect(p_section->enemy_list[phase][i]->x - g_tile_width / 2, p_section->enemy_list[phase][i]->y - g_tile_height / 2, unit_manager_search_effect(smoke_effect_path));
+			unit_manager_create_effect(spawn_enemy_data->x - g_tile_width / 2, spawn_enemy_data->y - g_tile_height / 2, unit_manager_search_effect(smoke_effect_path));
 		}
+
+		node = node->next;
 	}
 }
 
@@ -1280,10 +1301,10 @@ void scene_play_stage_play_current_bgm(bool on_off)
 			sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_bom_warning.ogg"), SOUND_MANAGER_CH_MUSIC, -1);
 			played = true;
 		}
-		else if (g_stage_data->current_section_data->bgm_list.size() > 0) {
+		else if ((g_stage_data->current_section_data->bgm_list != NULL) && (g_stage_data->current_section_data->bgm_list->start_node != NULL)) {
 			if (!(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_GOAL)
 				&& !(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_WIN)) {
-				sound_manager_play(g_stage_data->current_section_data->bgm_list[0]->res_chunk, SOUND_MANAGER_CH_MUSIC, -1);
+				sound_manager_play(((BGM_data_t*)g_stage_data->current_section_data->bgm_list->start_node)->res_chunk, SOUND_MANAGER_CH_MUSIC, -1);
 				played = true;
 			}
 		}

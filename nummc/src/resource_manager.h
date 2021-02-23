@@ -13,19 +13,31 @@ typedef struct _ResourceChunk ResourceChunk;
 typedef struct _ResourceProfile ResourceProfile;
 
 struct _ResourceImg {
-	int type;
+	int type;        // NONE:0
+	int id;          // index
+	node_data_t* prev;
+	node_data_t* next;
+
 	std::string path;
 	SDL_Texture* tex;
 };
 
 struct _ResourceMusic {
-	int type;
+	int type;        // NONE:0
+	int id;          // index
+	node_data_t* prev;
+	node_data_t* next;
+
 	std::string path;
 	Mix_Music* music;
 };
 
 struct _ResourceChunk {
-	int type;
+	int type;        // NONE:0
+	int id;          // index
+	node_data_t* prev;
+	node_data_t* next;
+
 	std::string path;
 	Mix_Chunk* chunk;
 };

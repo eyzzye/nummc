@@ -41,7 +41,6 @@ extern SDL_Renderer* g_ren;
 extern int g_view_scale; // double size (1:640x480, 2:1280x720)
 extern int g_view_stage_scale;
 extern SDL_Rect g_screen_size;
-extern std::vector<SDL_DisplayMode> g_mode_list;
 
 extern int  game_window_create();
 extern void game_window_destory();

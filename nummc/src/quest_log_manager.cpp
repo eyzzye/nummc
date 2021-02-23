@@ -12,11 +12,12 @@
 
 typedef struct _quest_log_data_t quest_log_data_t;
 
-#define QUEST_LOG_MESSAGE_SIZE (256 - 5)
+#define QUEST_LOG_MESSAGE_SIZE 128
 struct _quest_log_data_t {
+	int type;
 	int id;
-	quest_log_data_t* prev;
-	quest_log_data_t* next;
+	node_data_t* prev;
+	node_data_t* next;
 
 	char message[QUEST_LOG_MESSAGE_SIZE];
 	int message_length;
@@ -26,9 +27,7 @@ struct _quest_log_data_t {
 #define QUEST_LOG_LIST_SIZE (20)
 static quest_log_data_t quest_log_list[QUEST_LOG_LIST_SIZE];
 static tex_info_t tex_info_quest_log_list[QUEST_LOG_LIST_SIZE];
-static int quest_log_start_idx;
-static int quest_log_end_idx;
-static int quest_log_count;
+static node_buffer_info_t quest_log_buffer_info;
 
 static int start_pos_list[QUEST_LOG_LIST_SIZE][2]; // x, y
 
@@ -46,9 +45,7 @@ int quest_log_manager_init()
 {
 	memset(quest_log_list, 0, sizeof(quest_log_list));
 	memset(tex_info_quest_log_list, 0, sizeof(tex_info_quest_log_list));
-	quest_log_start_idx = 0;
-	quest_log_end_idx = 0;
-	quest_log_count = 0;
+	game_utils_node_init(&quest_log_buffer_info, (node_data_t*)quest_log_list, (int)sizeof(quest_log_data_t), QUEST_LOG_LIST_SIZE);
 
 	tex_info_init();
 	return 0;
@@ -84,8 +81,8 @@ static void all_message_reset()
 
 	// reset position
 	int log_count = 0;
-	quest_log_data_t* log_data = &quest_log_list[quest_log_start_idx];
-	while ((log_data != NULL) && (log_count < quest_log_count)) {
+	quest_log_data_t* log_data = (quest_log_data_t*)quest_log_buffer_info.start_node;
+	while (log_data != NULL) {
 		w = tex_info_quest_log_list[log_data->id].src_rect.w;
 		h = tex_info_quest_log_list[log_data->id].src_rect.h;
 		w_pos = start_pos_list[log_count][0];
@@ -93,7 +90,7 @@ static void all_message_reset()
 		tex_info_quest_log_list[log_data->id].dst_rect = VIEW_SCALE_RECT(w_pos, h_pos, w / 2, h / 2);
 		tex_info_quest_log_list[log_data->id].dst_rect_base = { w_pos, h_pos, w / 2, h / 2 };
 
-		log_data = log_data->next;
+		log_data = (quest_log_data_t*)log_data->next;
 		log_count += 1;
 	}
 }
@@ -122,75 +119,30 @@ void quest_log_manager_message(const char* message_fmt, ...)
 
 void quest_log_manager_set_new_message(char* message, int message_length, int regist_timer)
 {
-	int new_index = -1;
-	if (quest_log_count >= QUEST_LOG_LIST_SIZE) {
-		// delete head log
-		new_index = quest_log_start_idx;
-		quest_log_manager_clear_message(quest_log_start_idx);
+	quest_log_data_t* new_node = NULL;
+	if (quest_log_buffer_info.used_buffer_size >= quest_log_buffer_info.buffer_size) {
+		// delete start node
+		game_utils_node_delete(quest_log_buffer_info.start_node, &quest_log_buffer_info);
 	}
-	else {
-		// search empty log
-		for (int i = 0; i < QUEST_LOG_LIST_SIZE; i++) {
-			if (quest_log_list[i].message_length == 0) {
-				new_index = i;
-				break;
-			}
-		}
-	}
+	new_node = (quest_log_data_t*)game_utils_node_new(&quest_log_buffer_info);
 
-	if (new_index != -1) {
-		// regist end index
-		quest_log_list[new_index].id = new_index;
-		quest_log_list[new_index].prev = &quest_log_list[quest_log_end_idx];
-		quest_log_list[new_index].next = NULL;
-		quest_log_list[quest_log_end_idx].next = &quest_log_list[new_index];
-		quest_log_end_idx = new_index;
-
-		memcpy(quest_log_list[new_index].message, message, message_length);
-		quest_log_list[new_index].message_length = message_length;
-		quest_log_list[new_index].regist_timer = regist_timer;
-		quest_log_count += 1;
+	if (new_node != NULL) {
+		strcpy_s(new_node->message, (QUEST_LOG_MESSAGE_SIZE - 1), message);
+		new_node->message_length = message_length;
+		new_node->regist_timer = regist_timer;
 
 		// create message texture
 		int w, h;
 		std::string tex_message = message;
-		tex_info_quest_log_list[new_index].res_img = resource_manager_getFontTextureFromPath(tex_message);
-		int ret = GUI_QueryTexture(tex_info_quest_log_list[new_index].res_img, NULL, NULL, &w, &h);
+		tex_info_quest_log_list[new_node->id].res_img = resource_manager_getFontTextureFromPath(tex_message);
+		int ret = GUI_QueryTexture(tex_info_quest_log_list[new_node->id].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
-			tex_info_quest_log_list[new_index].src_rect = { 0, 0, w, h };
+			tex_info_quest_log_list[new_node->id].src_rect = { 0, 0, w, h };
 		}
 
 		// reset position
 		all_message_reset();
 	}
-}
-
-void quest_log_manager_clear_message(int quest_log_index)
-{
-	if (quest_log_list[quest_log_index].next) {
-		quest_log_list[quest_log_index].next->prev = NULL;
-		if (quest_log_start_idx == quest_log_index) {
-			quest_log_start_idx = quest_log_list[quest_log_index].next->id;
-		}
-
-		if (quest_log_list[quest_log_index].prev) {
-			quest_log_list[quest_log_index].prev->next = quest_log_list[quest_log_index].next;
-		}
-	}
-	else if (quest_log_list[quest_log_index].prev) {
-		quest_log_list[quest_log_index].prev->next = NULL;
-		if (quest_log_end_idx == quest_log_index) {
-			quest_log_end_idx = quest_log_list[quest_log_index].prev->id;
-		}
-	}
-
-	//
-	// delete message texture
-	//
-
-	// clear log
-	memset(&quest_log_list[quest_log_index], 0, sizeof(quest_log_data_t));
-	quest_log_count -= 1;
 }
 
 void quest_log_manager_update()
@@ -208,10 +160,10 @@ void quest_log_manager_display()
 
 	// draw log message
 	int log_count = 0;
-	quest_log_data_t* log_data = &quest_log_list[quest_log_start_idx];
-	while ((log_data != NULL) && (log_count < QUEST_LOG_LIST_SIZE)) {
+	quest_log_data_t* log_data = (quest_log_data_t*)quest_log_buffer_info.start_node;
+	while (log_data != NULL) {
 		GUI_tex_info_draw(&tex_info_quest_log_list[log_data->id]);
-		log_data = log_data->next;
+		log_data = (quest_log_data_t*)log_data->next;
 		log_count += 1;
 	}
 }

@@ -18,6 +18,10 @@
 #define LOWER_BIT(a) (a & 0x0000FFFF)
 #define FLOAT_NEAR_ZERO  (0.0005f)
 
+// map
+#define TILE_TEX_NUM  16
+
+// unit
 #define UNIT_FACE_TYPE_NONE  0
 #define UNIT_FACE_TYPE_LR    1
 #define UNIT_FACE_TYPE_UD    2
@@ -50,6 +54,42 @@
 #define UNIT_PLAYER_BULLET_BASE_LIST_SIZE  (UNIT_PLAYER_BULLET_LIST_SIZE / 2)  // div 2 => rough estimate
 #define UNIT_ENEMY_BULLET_BASE_LIST_SIZE   (UNIT_ENEMY_BULLET_LIST_SIZE / 8)   // div 8 => rough estimate
 
+// ANIM_DATA_LIST_SIZE =
+//  all unit base num
+//   + TILE_TEX_NUM
+//   + PLAYER + ENEMY_LIST_SIZE
+//   + UNIT_ITEMS_LIST_SIZE + UNIT_TRAP_LIST_SIZE + UNIT_PLAYER_BULLET_LIST_SIZE + UNIT_ENEMY_BULLET_LIST_SIZE
+//   + effect inst num
+#define ANIM_DATA_LIST_SIZE ((((UNIT_PLAYER_BASE_LIST_SIZE + UNIT_ENEMY_BASE_LIST_SIZE + UNIT_ITEMS_BASE_LIST_SIZE \
+        + UNIT_EFFECT_BASE_LIST_SIZE + UNIT_TRAP_BASE_LIST_SIZE + UNIT_PLAYER_BULLET_BASE_LIST_SIZE + UNIT_ENEMY_BULLET_BASE_LIST_SIZE \
+        + TILE_TEX_NUM \
+        + 1 + UNIT_ENEMY_LIST_SIZE \
+        + UNIT_ITEMS_LIST_SIZE + UNIT_TRAP_LIST_SIZE + UNIT_PLAYER_BULLET_LIST_SIZE + UNIT_ENEMY_BULLET_LIST_SIZE \
+        + UNIT_EFFECT_LIST_SIZE) + 64) / 64) * 64)
+
+// node data
+#define GAME_UTILS_NODE_TYPE_NONE  0
+#define GAME_UTILS_NODE_TYPE_USED  1
+
+typedef struct _node_data_t node_data_t;
+struct _node_data_t {
+	int type;        // NONE:0
+	int id;          // index
+	node_data_t* prev;
+	node_data_t* next;
+};
+
+typedef struct _node_buffer_info_t node_buffer_info_t;
+struct _node_buffer_info_t {
+	int node_size;            // sizeof(xxx_data_t)
+	int buffer_size;          // sizeof(buffer) / node_size
+	int used_buffer_size;     // used_buffer < buffer_size
+	node_data_t* head_node;   // buffer[]
+	node_data_t* start_node;  // prev=NULL data
+	node_data_t* end_node;    // next=NULL data
+};
+
+// function pointers
 typedef void void_func();
 typedef void void_p_func(void*);
 typedef void event_func(SDL_Event*);

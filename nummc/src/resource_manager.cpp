@@ -6,9 +6,17 @@
 #include "game_utils.h"
 #include "game_log.h"
 
-std::vector<ResourceImg*>   g_resource_manager_imgs;
-std::vector<ResourceMusic*> g_resource_manager_musics;
-std::vector<ResourceChunk*> g_resource_manager_chunks;
+#define RESOURCE_IMG_BUFFER_SIZE  (ANIM_DATA_LIST_SIZE)
+static ResourceImg resource_img_buffer[RESOURCE_IMG_BUFFER_SIZE];
+static node_buffer_info_t resource_img_buffer_info;
+
+#define RESOURCE_MUSIC_BUFFER_SIZE  (32)
+static ResourceMusic resource_music_buffer[RESOURCE_MUSIC_BUFFER_SIZE];
+static node_buffer_info_t resource_music_buffer_info;
+
+#define RESOURCE_CHUNK_BUFFER_SIZE  (64)
+static ResourceChunk resource_chunk_buffer[RESOURCE_CHUNK_BUFFER_SIZE];
+static node_buffer_info_t resource_chunk_buffer_info;
 
 ResourceProfile g_resource_manager_profile[RESOURCE_MANAGER_PROFILE_LIST_SIZE] = {
 	// name, unit, icon, portrait, opening, ending
@@ -40,33 +48,36 @@ ResourceProfile g_resource_manager_profile[RESOURCE_MANAGER_PROFILE_LIST_SIZE] =
 
 void resource_manager_init()
 {
-	g_resource_manager_imgs.clear();
-	g_resource_manager_musics.clear();
-	g_resource_manager_chunks.clear();
+	game_utils_node_init(&resource_img_buffer_info, (node_data_t*)resource_img_buffer, (int)sizeof(ResourceImg), RESOURCE_IMG_BUFFER_SIZE);
+	game_utils_node_init(&resource_music_buffer_info, (node_data_t*)resource_music_buffer, (int)sizeof(ResourceMusic), RESOURCE_MUSIC_BUFFER_SIZE);
+	game_utils_node_init(&resource_chunk_buffer_info, (node_data_t*)resource_chunk_buffer, (int)sizeof(ResourceChunk), RESOURCE_CHUNK_BUFFER_SIZE);
 }
 
 void resource_manager_unload()
 {
 	// Delete Texture
-	for (ResourceImg* resImg : g_resource_manager_imgs)
-	{
-		delete resImg;
+	node_data_t* node = resource_img_buffer_info.start_node;
+	while (node != NULL) {
+		node_data_t* del_node = node;
+		node = node->next;
+		game_utils_node_delete(del_node, &resource_img_buffer_info);
 	}
-	g_resource_manager_imgs.clear();
 
 	// Delete Music
-	for (ResourceMusic* resMusic : g_resource_manager_musics)
-	{
-		delete resMusic;
+	node = resource_music_buffer_info.start_node;
+	while (node != NULL) {
+		node_data_t* del_node = node;
+		node = node->next;
+		game_utils_node_delete(del_node, &resource_music_buffer_info);
 	}
-	g_resource_manager_musics.clear();
 
 	// Delete Chunk
-	for (ResourceChunk* resChunk : g_resource_manager_chunks)
-	{
-		delete resChunk;
+	node = resource_chunk_buffer_info.start_node;
+	while (node != NULL) {
+		node_data_t* del_node = node;
+		node = node->next;
+		game_utils_node_delete(del_node, &resource_chunk_buffer_info);
 	}
-	g_resource_manager_chunks.clear();
 }
 
 int resource_manager_load_dat(std::string path)
@@ -93,16 +104,16 @@ int resource_manager_load_dat(std::string path)
 			if (line == "[/snd]")   { snd_flg   = false; continue; }
 
 			if (img_flg) {
-				resource_manager_load_img(line);
+				resource_manager_getTextureFromPath(line);
 			}
 			if (font_flg) {
-				resource_manager_load_font(line);
+				resource_manager_getFontTextureFromPath(line);
 			}
 			if (music_flg) {
-				resource_manager_load_music(line);
+				resource_manager_getMusicFromPath(line);
 			}
 			if (snd_flg) {
-				resource_manager_load_chunk(line);
+				resource_manager_getChunkFromPath(line);
 			}
 		}
 		inFile.close();
@@ -198,21 +209,21 @@ ResourceImg* resource_manager_load_img(std::string path, int type)
 		SDL_SetTextureScaleMode(tex, SDL_ScaleModeLinear);
 	}
 	SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
-	ResourceImg* resImg = new ResourceImg();
+	ResourceImg* resImg = (ResourceImg*)game_utils_node_new(&resource_img_buffer_info);
 	resImg->path = path;
 	resImg->tex = tex;
 	resImg->type = type;
-	g_resource_manager_imgs.push_back(resImg);
 	return resImg;
 }
 
 ResourceImg* resource_manager_getTextureFromPath(std::string path)
 {
-	for (ResourceImg* resImg : g_resource_manager_imgs)
-	{
-		if (resImg->path == path) {
-			return resImg;
+	node_data_t* node = resource_img_buffer_info.start_node;
+	while (node != NULL) {
+		if (((ResourceImg*)node)->path == path) {
+			return (ResourceImg*)node;
 		}
+		node = node->next;
 	}
 	return resource_manager_load_img(path);
 }
@@ -306,21 +317,21 @@ ResourceImg* resource_manager_load_font(std::string message, int type)
 	}
 	SDL_SetTextureScaleMode(tex, SDL_ScaleModeLinear);
 	SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
-	ResourceImg* resFont = new ResourceImg();
+	ResourceImg* resFont = (ResourceImg*)game_utils_node_new(&resource_img_buffer_info);
 	resFont->path = "font:" + message;
 	resFont->tex = tex;
 	resFont->type = type;
-	g_resource_manager_imgs.push_back(resFont);
 	return resFont;
 }
 
 ResourceImg* resource_manager_getFontTextureFromPath(std::string message)
 {
-	for (ResourceImg* resFont : g_resource_manager_imgs)
-	{
-		if (resFont->path == "font:" + message) {
-			return resFont;
+	node_data_t* node = resource_img_buffer_info.start_node;
+	while (node != NULL) {
+		if (((ResourceImg*)node)->path == "font:" + message) {
+			return (ResourceImg*)node;
 		}
+		node = node->next;
 	}
 	return resource_manager_load_font(message);
 }
@@ -337,21 +348,21 @@ ResourceMusic* resource_manager_load_music(std::string path, int type)
 		LOG_ERROR("Mix_LoadMUS Error: %s\n", SDL_GetError());
 		return NULL;
 	}
-	ResourceMusic* resMusic = new ResourceMusic();
+	ResourceMusic* resMusic = (ResourceMusic*)game_utils_node_new(&resource_music_buffer_info);
 	resMusic->path = path;
 	resMusic->music = music;
 	resMusic->type = type;
-	g_resource_manager_musics.push_back(resMusic);
 	return resMusic;
 }
 
 ResourceMusic* resource_manager_getMusicFromPath(std::string path)
 {
-	for (ResourceMusic* resMusic : g_resource_manager_musics)
-	{
-		if (resMusic->path == path) {
-			return resMusic;
+	node_data_t* node = resource_music_buffer_info.start_node;
+	while (node != NULL) {
+		if (((ResourceMusic*)node)->path == path) {
+			return (ResourceMusic*)node;
 		}
+		node = node->next;
 	}
 	return resource_manager_load_music(path);
 }
@@ -368,21 +379,21 @@ ResourceChunk* resource_manager_load_chunk(std::string path, int type)
 		LOG_ERROR("Mix_LoadWAV Error: %s\n", SDL_GetError());
 		return NULL;
 	}
-	ResourceChunk* resChunk = new ResourceChunk();
+	ResourceChunk* resChunk = (ResourceChunk*)game_utils_node_new(&resource_chunk_buffer_info);
 	resChunk->path = path;
 	resChunk->chunk = chunk;
 	resChunk->type = type;
-	g_resource_manager_chunks.push_back(resChunk);
 	return resChunk;
 }
 
 ResourceChunk* resource_manager_getChunkFromPath(std::string path)
 {
-	for (ResourceChunk* resChunk : g_resource_manager_chunks)
-	{
-		if (resChunk->path == path) {
-			return resChunk;
+	node_data_t* node = resource_chunk_buffer_info.start_node;
+	while (node != NULL) {
+		if (((ResourceChunk*)node)->path == path) {
+			return (ResourceChunk*)node;
 		}
+		node = node->next;
 	}
 	return resource_manager_load_chunk(path);
 }

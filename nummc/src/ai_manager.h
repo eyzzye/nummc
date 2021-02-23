@@ -97,13 +97,13 @@ typedef struct _ai_stat_bullet_t ai_stat_bullet_t;
 struct _ai_data_t {
 	int type;        // NONE:0
 	int id;          // ai_id_end
-	void* obj;       // object address
-	int reserve0;
-
 	ai_data_t* prev;
 	ai_data_t* next;
-	int reserv1;
-	int reserv2;
+
+	void* obj;       // object address
+	int reserve0;
+	int reserve1;
+	int reserve2;
 
 	int val1;
 	int val2;
@@ -117,13 +117,13 @@ struct _ai_data_t {
 struct _ai_common_data_t {
 	int type;        // SIMPLE,SIMPLE_FIRE, ...
 	int id;          // ai_id_end
-	void* obj;       // object address
-	int reserve0;
-
 	ai_data_t* prev;
 	ai_data_t* next;
-	int reserv1;
-	int reserv2;
+
+	void* obj;       // object address
+	int reserve0;
+	int reserve1;
+	int reserve2;
 
 	int val1;
 	int val2;
@@ -134,13 +134,13 @@ struct _ai_common_data_t {
 struct _ai_stat_data_t {
 	int type;        // SIMPLE,SIMPLE_FIRE, ...
 	int id;          // ai_id_end
-	void* obj;       // unit address
-	int reserve0;
-
 	ai_data_t* prev;
 	ai_data_t* next;
+
+	void* obj;       // unit address
 	int ghost_id;
-	int reserv1;
+	int reserve0;
+	int reserve1;
 
 	int val1;
 	int val2;
@@ -149,8 +149,8 @@ struct _ai_stat_data_t {
 
 	int timer1;
 	int timer2;
-	int reserv2;
-	int reserv3;
+	int reserve2;
+	int reserve3;
 
 	int step[AI_STAT_STEP_END];
 };
@@ -159,13 +159,13 @@ struct _ai_stat_data_t {
 struct _ai_bullet_t {
 	int type;        // AI_TYPE_BULLET
 	int id;          // ai_id_end
-	void* obj;       // object address
-	int reserve0;
-
 	ai_data_t* prev;
 	ai_data_t* next;
-	int reserv1;
-	int reserv2;
+
+	void* obj;       // object address
+	int reserve0;
+	int reserve1;
+	int reserve2;
 
 	int val1;
 	int val2;
@@ -181,13 +181,13 @@ struct _ai_bullet_t {
 struct _ai_stat_bullet_t {
 	int type;        // AI_TYPE_BULLET
 	int id;          // ai_id_end
-	void* obj;       // object address
-	int reserve0;
-
 	ai_data_t* prev;
 	ai_data_t* next;
-	int reserv1;
-	int reserv2;
+
+	void* obj;       // object address
+	int reserve0;
+	int reserve1;
+	int reserve2;
 
 	int val1;
 	int val2;

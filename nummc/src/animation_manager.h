@@ -66,12 +66,12 @@ typedef struct _anim_data_t anim_data_t;
 struct _anim_frame_data_t {
 	int type;        // NONE:0, FRAME:1
 	int id;          // frame_id_end
-	void* parent;    // anim_stat_base_data_t address
-	int reserve0;
-
 	anim_frame_data_t* prev;
 	anim_frame_data_t* next;
+
+	void* parent;    // anim_stat_base_data_t address
 	int frame_time;
+	int reserve0;
 	int reserve1;
 
 	ResourceImg* res_img;
@@ -86,13 +86,13 @@ struct _anim_frame_data_t {
 struct _anim_stat_base_data_t {
 	int type;        // NONE:0, STATIC:1, DYNAMIC:2
 	int id;          // anim_stat_id_end
-	void* obj;       // obj address
-	int reserve0;
-
 	anim_stat_base_data_t* prev;
 	anim_stat_base_data_t* next;
+
+	void* obj;       // obj address
 	int total_time;
 	int frame_size;
+	int reserve0;
 
 	anim_frame_data_t* frame_list[ANIM_FRAME_NUM_MAX];
 
@@ -111,11 +111,11 @@ struct _anim_stat_base_data_t {
 struct _anim_stat_data_t {
 	int type;        // NONE:0, ENABLE:1
 	int id;          // anim_stat_id_end
-	void* parent;    // anim_data_t address
-	int reserve0;
-
 	anim_stat_data_t* prev;
 	anim_stat_data_t* next;
+
+	void* parent;    // anim_data_t address
+	int reserve0;
 	int reserve1;
 	int reserve2;
 
@@ -128,11 +128,11 @@ struct _anim_stat_data_t {
 struct _anim_data_t {
 	int type;        // NONE:0
 	int id;          // anim_id_end
-	void* obj;       // unit_data_t*
-	int stat;        // NONE:0, IDLE:0x01, MOVE:0x02, ATTACK1-3:0x04,0x08,0x10, DAMAGE:0x20, DIE:0x40
-
 	anim_data_t* prev;
 	anim_data_t* next;
+
+	void* obj;       // unit_data_t*
+	int stat;        // NONE:0, IDLE:0x01, MOVE:0x02, ATTACK1-3:0x04,0x08,0x10, DAMAGE:0x20, DIE:0x40
 	int base_w;
 	int base_h;
 

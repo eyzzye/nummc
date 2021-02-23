@@ -14,19 +14,6 @@
 #define ANIM_TAG_SND        2
 #define ANIM_TAG_END        3
 
-// ANIM_DATA_LIST_SIZE =
-//  all unit base num
-//   + TILE_TEX_NUM
-//   + PLAYER + ENEMY_LIST_SIZE
-//   + UNIT_ITEMS_LIST_SIZE + UNIT_TRAP_LIST_SIZE + UNIT_PLAYER_BULLET_LIST_SIZE + UNIT_ENEMY_BULLET_LIST_SIZE
-//   + effect inst num
-#define ANIM_DATA_LIST_SIZE ((((UNIT_PLAYER_BASE_LIST_SIZE + UNIT_ENEMY_BASE_LIST_SIZE + UNIT_ITEMS_BASE_LIST_SIZE \
-        + UNIT_EFFECT_BASE_LIST_SIZE + UNIT_TRAP_BASE_LIST_SIZE + UNIT_PLAYER_BULLET_BASE_LIST_SIZE + UNIT_ENEMY_BULLET_BASE_LIST_SIZE \
-        + TILE_TEX_NUM \
-        + 1 + UNIT_ENEMY_LIST_SIZE \
-        + UNIT_ITEMS_LIST_SIZE + UNIT_TRAP_LIST_SIZE + UNIT_PLAYER_BULLET_LIST_SIZE + UNIT_ENEMY_BULLET_LIST_SIZE \
-        + UNIT_EFFECT_LIST_SIZE) + 64) / 64) * 64)
-
 static anim_data_t anim_data_list[ANIM_DATA_LIST_SIZE];
 static anim_data_t* anim_data_list_start;
 static anim_data_t* anim_data_list_end;
@@ -36,6 +23,7 @@ int anim_data_index_end;
         + UNIT_EFFECT_BASE_LIST_SIZE + UNIT_TRAP_BASE_LIST_SIZE + UNIT_PLAYER_BULLET_BASE_LIST_SIZE + UNIT_ENEMY_BULLET_BASE_LIST_SIZE \
         + TILE_TEX_NUM \
         ) + 64) / 64) * 64)
+
 #define ANIM_STAT_BASE_LIST_SIZE (ANIM_STAT_BASE_LIST_SIZE_OF_UNIT_BASE * ANIM_STAT_END)
 static anim_stat_base_data_t anim_stat_base_data_list[ANIM_STAT_BASE_LIST_SIZE];
 int anim_stat_base_data_index_end;
@@ -369,7 +357,7 @@ static void load_anim_img(std::string line, anim_data_t* anim_data, int stat)
 		game_utils_expand_value(value, expand_str);
 		game_utils_split_conmma(expand_str, tmp_str_list);
 
-		std::string image_filename = dir_path + "/";
+		std::string image_filename = dir_path;
 		for (int i = 0; i < tmp_str_list.size(); i++) {
 			anim_frame_data_t* anim_frame_data = anim_data->anim_stat_base_list[stat]->frame_list[i];
 			anim_frame_data->res_img = resource_manager_getTextureFromPath(image_filename + tmp_str_list[i]);
@@ -446,7 +434,7 @@ static void load_anim_snd(std::string line, anim_data_t* anim_data, int stat)
 		game_utils_expand_value(value, expand_str);
 		game_utils_split_conmma(expand_str, str_list);
 
-		std::string snd_filename = dir_path + "/";
+		std::string snd_filename = dir_path;
 		for (int i = 0; i < str_list.size(); i++) {
 			if (str_list[i] == "*") {
 				anim_data->anim_stat_base_list[stat]->frame_list[i]->res_chunk = NULL;

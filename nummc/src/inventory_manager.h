@@ -26,11 +26,11 @@ typedef struct _inventory_stocker_data_t inventory_stocker_data_t;
 struct _inventory_item_data_t {
 	int type;        // NONE:0
 	int id;          // inventory_id_end
-	void* obj;       // object address
-	int reserve0;
-
 	inventory_item_data_t* prev;
 	inventory_item_data_t* next;
+
+	void* obj;       // object address
+	int reserve0;
 	int reserve1;
 	int reserve2;
 
@@ -40,25 +40,25 @@ struct _inventory_item_data_t {
 struct _inventory_weapon_item_data_t {
 	int type;        // NONE:0
 	int id;          // inventory_id_end
-	void* obj;       // object address
-	int reserve0;
-
 	inventory_item_data_t* prev;
 	inventory_item_data_t* next;
+
+	void* obj;       // object address
 	int item_list_idx;
 	int item_count;
+	int reserve0;
 };
 
 struct _inventory_charge_item_data_t {
 	int type;        // NONE:0
 	int id;          // inventory_id_end
-	void* obj;       // object address
-	int reserve0;
-
 	inventory_item_data_t* prev;
 	inventory_item_data_t* next;
+
+	void* obj;       // object address
 	int item_list_idx;
 	int item_count;
+	int reserve0;
 
 	int charge_val;
 	int charge_timer;
@@ -67,25 +67,25 @@ struct _inventory_charge_item_data_t {
 struct _inventory_special_item_data_t {
 	int type;        // NONE:0
 	int id;          // inventory_id_end
-	void* obj;       // object address
-	int reserve0;
-
 	inventory_item_data_t* prev;
 	inventory_item_data_t* next;
+
+	void* obj;       // object address
 	int item_list_idx;
 	int item_count;
+	int reserve0;
 };
 
 struct _inventory_stocker_data_t {
 	int type;        // NONE:0, PLAYER:1
 	int id;          // unit_id_end
-	void* obj;       // object address
-	int version;
-
 	inventory_stocker_data_t* prev;
 	inventory_stocker_data_t* next;
+
+	void* obj;       // object address
+	int version;
+	int reserve0;
 	int reserve1;
-	int reserve2;
 
 	inventory_weapon_item_data_t* weapon_item;
 	inventory_charge_item_data_t* charge_item;

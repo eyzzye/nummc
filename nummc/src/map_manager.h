@@ -16,8 +16,6 @@
 #define TILE_ID_WALL  2
 #define TILE_ID_DOOR  5
 
-#define TILE_TEX_NUM  16
-
 #define MAP_TYPE_FIELD   0
 #define MAP_TYPE_BLOCK   1
 #define MAP_TYPE_END     2
@@ -39,13 +37,13 @@ typedef struct _map_block_data_t map_block_data_t;
 struct _tile_data_t {
 	int type;        // NONE:0, TILE:6
 	int id;          // tile_id
-	void* obj;       // object address
-	int tile_type;   // NONE:0, BASE:1, INSTANCE:2
+	unit_data_t* prev;
+	unit_data_t* next;
 
-	struct _unit_data_t* prev;
-	struct _unit_data_t* next;
+	void* obj;       // object address
 	shape_data* col_shape;
 	anim_data_t* anim;
+	int tile_type;   // NONE:0, BASE:1, INSTANCE:2
 
 	unit_data_t* base;
 	int* stat_timer;
@@ -58,13 +56,13 @@ struct _tile_data_t {
 struct _tile_base_data_t {
 	int type;        // NONE:0, TILE:6
 	int id;          // tile_id
-	void* obj;       // object address
-	int tile_type;   // BASE:1
+	unit_data_t* prev;
+	unit_data_t* next;
 
-	struct _unit_data_t* prev;
-	struct _unit_data_t* next;
+	void* obj;       // object address
 	shape_data* col_shape;
 	anim_data_t* anim;
+	int tile_type;   // BASE:1
 
 	unit_data_t* base;
 	int* stat_timer;
@@ -75,13 +73,13 @@ struct _tile_base_data_t {
 struct _tile_instance_data_t {
 	int type;        // NONE:0, TILE:6
 	int id;          // tile_id
-	void* obj;       // tile_base address
-	int tile_type;   // INSTANCE:2
+	unit_data_t* prev;
+	unit_data_t* next;
 
-	struct _unit_data_t* prev;
-	struct _unit_data_t* next;
+	void* obj;       // tile_base address
 	shape_data* col_shape;
 	anim_data_t* anim;
+	int tile_type;   // INSTANCE:2
 
 	unit_data_t* base;
 	int* stat_timer;
@@ -95,13 +93,13 @@ struct _tile_instance_data_t {
 struct _map_data_t {
 	int type;        // FIELD:0, BLOCK:1
 	int id;          // map_id_end
-	void* obj;       // object address
-	int reserve0;
-
 	map_data_t* prev;
 	map_data_t* next;
-	int reserv1;
-	int reserv2;
+
+	void* obj;       // object address
+	int reserve0;
+	int reserve1;
+	int reserve2;
 
 	Uint32 data_field[16];
 };
@@ -109,13 +107,13 @@ struct _map_data_t {
 struct _map_field_data_t {
 	int type;        // FIELD:0
 	int id;          // map_id_end
-	void* obj;       // object address
-	int reserve0;
-
 	map_data_t* prev;
 	map_data_t* next;
-	int reserv1;
-	int reserv2;
+
+	void* obj;       // object address
+	int reserve0;
+	int reserve1;
+	int reserve2;
 
 	int layer;
 	int x;
@@ -126,13 +124,13 @@ struct _map_field_data_t {
 struct _map_block_data_t {
 	int type;        // BLOCK:1
 	int id;          // map_id_end
-	void* obj;       // object address
-	int reserve0;
-
 	map_data_t* prev;
 	map_data_t* next;
-	int reserv1;
-	int reserv2;
+
+	void* obj;       // object address
+	int reserve0;
+	int reserve1;
+	int reserve2;
 
 	int layer;
 	int x;

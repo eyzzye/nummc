@@ -82,11 +82,11 @@ typedef struct _shape_round_data shape_round_data;
 struct _shape_data {
 	int type;        // NONE:0, BOX:1, ROUND:2
 	int id;          // COLLISION_ID_xxx_SHAPE | xxx_shape_id_end
-	int group;       // COLLISION_GROUP_xxx
-	void* obj;       // object address
-
 	shape_data* prev;
 	shape_data* next;
+
+	void* obj;       // object address
+	int group;       // COLLISION_GROUP_xxx
 	int stat;        // DISABLE:0, ENABLE:1
 #ifdef _COLLISION_ENABLE_BOX_2D_
 	b2Body* b2body;
@@ -125,11 +125,11 @@ struct _shape_data {
 struct _shape_box_data {
 	int type;        // NONE:0, BOX:1, ROUND:2
 	int id;
-	int group;
-	void* obj;       // object address
-
 	shape_data* prev;
 	shape_data* next;
+
+	void* obj;       // object address
+	int group;
 	int stat;        // DISABLE:0, ENABLE:1
 #ifdef _COLLISION_ENABLE_BOX_2D_
 	b2Body* b2body;
@@ -172,11 +172,11 @@ struct _shape_box_data {
 struct _shape_round_data {
 	int type;        // NONE:0, BOX:1, ROUND:2
 	int id;
-	int group;
-	void* obj;       // object address
-
 	shape_data* prev;
 	shape_data* next;
+
+	void* obj;       // object address
+	int group;
 	int stat;        // DISABLE:0, ENABLE:1
 #ifdef _COLLISION_ENABLE_BOX_2D_
 	b2Body* b2body;

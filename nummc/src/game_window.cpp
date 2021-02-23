@@ -14,7 +14,10 @@ SDL_Renderer* g_ren = NULL;
 int g_view_scale = VIEW_SCALE_BASE_DEFAULT;
 int g_view_stage_scale = VIEW_STAGE_SCALE_DEFAULT;
 SDL_Rect g_screen_size = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-std::vector<SDL_DisplayMode> g_mode_list;
+
+#define DISPLAY_MODE_LIST_SIZE  (64)
+static SDL_DisplayMode display_mode_list[DISPLAY_MODE_LIST_SIZE];
+static int display_mode_list_size;
 
 static void reset_screen_size(int w, int h) {
 	int scale_w = 2 * w / SCREEN_WIDTH;
@@ -73,10 +76,14 @@ int game_window_get_resolution()
 	int displayIndex = SDL_GetWindowDisplayIndex(g_win);
 	int displayNum = SDL_GetNumDisplayModes(displayIndex);
 
-	g_mode_list.clear();
-	g_mode_list.resize(displayNum);
+	memset(display_mode_list, 0, sizeof(display_mode_list));
+	display_mode_list_size = displayNum;
 	for (int i = 0; i < displayNum; i++) {
-		SDL_GetDisplayMode(displayIndex, i, &g_mode_list[i]);
+		if (i >= DISPLAY_MODE_LIST_SIZE) {
+			display_mode_list_size = DISPLAY_MODE_LIST_SIZE;
+			break;
+		}
+		SDL_GetDisplayMode(displayIndex, i, &display_mode_list[i]);
 	}
 
 	return 0;
@@ -107,8 +114,8 @@ int game_window_set_resolution(int width, int height)
 	int mode_index = -1;
 
 	game_window_get_resolution();
-	for (int i = 0; i < g_mode_list.size(); i++) {
-		if ((g_mode_list[i].w == width) && (g_mode_list[i].h == height))
+	for (int i = 0; i < display_mode_list_size; i++) {
+		if ((display_mode_list[i].w == width) && (display_mode_list[i].h == height))
 		{
 			mode_index = i;
 			break;
@@ -116,6 +123,6 @@ int game_window_set_resolution(int width, int height)
 	}
 	if (mode_index < 0) return 1;
 
-	ret = game_window_set_resolution(&g_mode_list[mode_index]);
+	ret = game_window_set_resolution(&display_mode_list[mode_index]);
 	return ret;
 }

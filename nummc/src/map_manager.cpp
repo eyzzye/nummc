@@ -308,22 +308,21 @@ void map_manager_create_stage_map()
 	// 5 1 [P] 3  7
 	//      4
 	//      8
-	int section_list_size = (int)g_stage_data->section_list.size();
-	if (section_list_size > 1) g_stage_data->stage_map[(y + 0) * STAGE_MAP_WIDTH_NUM + (x - 1)].section_id = 1;
-	if (section_list_size > 2) g_stage_data->stage_map[(y - 1) * STAGE_MAP_WIDTH_NUM + (x + 0)].section_id = 2;
-	if (section_list_size > 3) g_stage_data->stage_map[(y + 0) * STAGE_MAP_WIDTH_NUM + (x + 1)].section_id = 3;
-	if (section_list_size > 4) g_stage_data->stage_map[(y + 1) * STAGE_MAP_WIDTH_NUM + (x + 0)].section_id = 4;
+	if (g_stage_data->section_list[1] != NULL) g_stage_data->stage_map[(y + 0) * STAGE_MAP_WIDTH_NUM + (x - 1)].section_id = 1;
+	if (g_stage_data->section_list[2] != NULL) g_stage_data->stage_map[(y - 1) * STAGE_MAP_WIDTH_NUM + (x + 0)].section_id = 2;
+	if (g_stage_data->section_list[3] != NULL) g_stage_data->stage_map[(y + 0) * STAGE_MAP_WIDTH_NUM + (x + 1)].section_id = 3;
+	if (g_stage_data->section_list[4] != NULL) g_stage_data->stage_map[(y + 1) * STAGE_MAP_WIDTH_NUM + (x + 0)].section_id = 4;
 
-	if (section_list_size > 5) g_stage_data->stage_map[(y + 0) * STAGE_MAP_WIDTH_NUM + (x - 2)].section_id = 5;
-	if (section_list_size > 6) g_stage_data->stage_map[(y - 2) * STAGE_MAP_WIDTH_NUM + (x + 0)].section_id = 6;
-	if (section_list_size > 7) g_stage_data->stage_map[(y + 0) * STAGE_MAP_WIDTH_NUM + (x + 2)].section_id = 7;
-	if (section_list_size > 8) g_stage_data->stage_map[(y + 2) * STAGE_MAP_WIDTH_NUM + (x + 0)].section_id = 8;
+	if (g_stage_data->section_list[5] != NULL) g_stage_data->stage_map[(y + 0) * STAGE_MAP_WIDTH_NUM + (x - 2)].section_id = 5;
+	if (g_stage_data->section_list[6] != NULL) g_stage_data->stage_map[(y - 2) * STAGE_MAP_WIDTH_NUM + (x + 0)].section_id = 6;
+	if (g_stage_data->section_list[7] != NULL) g_stage_data->stage_map[(y + 0) * STAGE_MAP_WIDTH_NUM + (x + 2)].section_id = 7;
+	if (g_stage_data->section_list[8] != NULL) g_stage_data->stage_map[(y + 2) * STAGE_MAP_WIDTH_NUM + (x + 0)].section_id = 8;
 #else
 	generate_stage_map();
 #endif
 
 	// load basic map settings from section1
-	if (g_stage_data->section_list.size() > 1) {
+	if (g_stage_data->section_list[1] != NULL) {
 		std::string path = g_stage_data->section_list[1]->map_path;
 		map_manager_load(path);
 
@@ -1810,9 +1809,9 @@ static void generate_stage_map()
 	int normal_section_num = 1;
 
 	int boss_section_id = -1;
-	int section_list_size = (int)g_stage_data->section_list.size();
-	for (int i = 1; i < section_list_size; i++) {
+	for (int i = 1; i < STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM; i++) {
 		bool setup_flg = false;
+		if (g_stage_data->section_list[i] == NULL) break;
 
 		if (g_stage_data->section_list[i]->section_type == SECTION_TYPE_BOSS) {
 			boss_section_id = i;

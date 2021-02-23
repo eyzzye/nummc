@@ -34,17 +34,47 @@
 
 stage_data_t* g_stage_data;
 static section_data_t* current_section_data;
-static int tmp_start_index;
+static int current_section_id;
+static node_data_t* tmp_new_node;
 static int tmp_current_enemy_phase;
 
+// stage data instance
 static stage_data_t stage_data_buffer;
+
+// section data list
 #define SECTION_DATA_BUFFER_SIZE  (STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM)
 static section_data_t section_data_buffer[SECTION_DATA_BUFFER_SIZE];
 int section_data_buffer_index_end;
+static section_data_t* section_list_buffer[SECTION_DATA_BUFFER_SIZE];
 
+// BGM
+#define BGM_LIST_SIZE_MAX     5
+#define BGM_LIST_BUFFER_SIZE  (BGM_LIST_SIZE_MAX * SECTION_DATA_BUFFER_SIZE)
+static BGM_data_t bgm_list_buffer[BGM_LIST_BUFFER_SIZE];
+static node_buffer_info_t bgm_list_buffer_info[SECTION_DATA_BUFFER_SIZE];
+
+// enemy
+#define ENEMY_LIST_SIZE_MAX     (UNIT_ENEMY_LIST_SIZE)  /* 32 */
+#define ENEMY_LIST_BUFFER_SIZE  (ENEMY_LIST_SIZE_MAX * SECTION_DATA_BUFFER_SIZE + ENEMY_LIST_SIZE_MAX * SECTION_ENEMY_PHASE_SIZE)
+static enemy_data_t enemy_list_buffer[ENEMY_LIST_BUFFER_SIZE];
+static node_buffer_info_t enemy_list_buffer_info[SECTION_DATA_BUFFER_SIZE * SECTION_ENEMY_PHASE_SIZE];
+
+// trap
+#define TRAP_LIST_SIZE_MAX     (UNIT_TRAP_LIST_SIZE)  /* 64 */
+#define TRAP_LIST_BUFFER_SIZE  (TRAP_LIST_SIZE_MAX * SECTION_DATA_BUFFER_SIZE)
+static trap_data_t trap_list_buffer[TRAP_LIST_BUFFER_SIZE];
+static node_buffer_info_t trap_list_buffer_info[SECTION_DATA_BUFFER_SIZE];
+
+// items
+#define ITEMS_LIST_SIZE_MAX     (UNIT_ITEMS_LIST_SIZE)  /* 64 */
+#define ITEMS_LIST_BUFFER_SIZE  (ITEMS_LIST_SIZE_MAX * SECTION_DATA_BUFFER_SIZE)
+static items_data_t items_list_buffer[ITEMS_LIST_BUFFER_SIZE];
+static node_buffer_info_t items_list_buffer_info[SECTION_DATA_BUFFER_SIZE];
+
+// stock item
 #define SECTION_STOCK_ITEM_SIZE  (UNIT_ITEMS_LIST_SIZE * STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM)
 static section_stock_item_t section_stock_item[SECTION_STOCK_ITEM_SIZE];
-static int section_stock_item_index;
+static node_buffer_info_t section_stock_item_buffer_info[SECTION_DATA_BUFFER_SIZE];
 
 // stage
 static void load_basic_info(std::string& line);
@@ -81,9 +111,42 @@ void stage_manager_init()
 	}
 	section_data_buffer_index_end = 0;
 
+	// section_list
+	memset(section_list_buffer, 0, sizeof(section_list_buffer));
+	g_stage_data->section_list = &section_list_buffer[0];
+
+	// BGM node
+	memset(bgm_list_buffer, 0, sizeof(bgm_list_buffer));
+	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
+		game_utils_node_init(&bgm_list_buffer_info[i], (node_data_t*)&bgm_list_buffer[0], (int)sizeof(BGM_data_t), BGM_LIST_BUFFER_SIZE);
+	}
+
+	// enemy node
+	memset(enemy_list_buffer, 0, sizeof(enemy_list_buffer));
+	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
+		for (int phase = 0; phase < SECTION_ENEMY_PHASE_SIZE; phase++) {
+			game_utils_node_init(&enemy_list_buffer_info[i* SECTION_ENEMY_PHASE_SIZE + phase],
+				(node_data_t*)&enemy_list_buffer[0], (int)sizeof(enemy_data_t), ENEMY_LIST_BUFFER_SIZE);
+		}
+	}
+
+	// trap node
+	memset(trap_list_buffer, 0, sizeof(trap_list_buffer));
+	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
+		game_utils_node_init(&trap_list_buffer_info[i], (node_data_t*)&trap_list_buffer[0], (int)sizeof(trap_data_t), TRAP_LIST_BUFFER_SIZE);
+	}
+
+	// items node
+	memset(items_list_buffer, 0, sizeof(items_list_buffer));
+	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
+		game_utils_node_init(&items_list_buffer_info[i], (node_data_t*)&items_list_buffer[0], (int)sizeof(items_data_t), ITEMS_LIST_BUFFER_SIZE);
+	}
+
 	// item stocker
 	memset(section_stock_item, 0, sizeof(section_stock_item));
-	section_stock_item_index = 0;
+	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
+		game_utils_node_init(&section_stock_item_buffer_info[i], (node_data_t*)&section_stock_item[0], (int)sizeof(section_stock_item_t), SECTION_STOCK_ITEM_SIZE);
+	}
 
 	// stage_map
 	memset(g_stage_data->stage_map, 0, sizeof(g_stage_data->stage_map));
@@ -98,47 +161,43 @@ void stage_manager_init()
 void stage_manager_unload()
 {
 	if (g_stage_data) {
-		for (int sec_i = 0; sec_i < g_stage_data->section_list.size(); sec_i++) {
+		for (int sec_i = 0; sec_i < SECTION_DATA_BUFFER_SIZE; sec_i++) {
 			section_data_t* p_section = g_stage_data->section_list[sec_i];
 			if (p_section == NULL) continue;
 
 			// bgm
-			for (int i = 0; i < p_section->bgm_list.size(); i++) {
-				if (p_section->bgm_list[i]) {
-					delete p_section->bgm_list[i];
-					p_section->bgm_list[i] = NULL;
-				}
+			node_data_t* node = (p_section->bgm_list == NULL) ? NULL : p_section->bgm_list->start_node;
+			while (node != NULL) {
+				node_data_t* del_node = node;
+				node = del_node->next;
+				game_utils_node_delete(del_node, p_section->bgm_list);
 			}
-			p_section->bgm_list.clear();
 
 			// enemy
 			for (int phase = 0; phase < SECTION_ENEMY_PHASE_SIZE; phase++) {
-				for (int i = 0; i < p_section->enemy_list[phase].size(); i++) {
-					if (p_section->enemy_list[phase][i]) {
-						delete p_section->enemy_list[phase][i];
-						p_section->enemy_list[phase][i] = NULL;
-					}
+				node = (p_section->enemy_list[phase] == NULL) ? NULL : p_section->enemy_list[phase]->start_node;
+				while (node != NULL) {
+					node_data_t* del_node = node;
+					node = del_node->next;
+					game_utils_node_delete(del_node, p_section->enemy_list[phase]);
 				}
-				p_section->enemy_list[phase].clear();
 			}
 
 			// trap
-			for (int i = 0; i < p_section->trap_list.size(); i++) {
-				if (p_section->trap_list[i]) {
-					delete p_section->trap_list[i];
-					p_section->trap_list[i] = NULL;
-				}
+			node = (p_section->trap_list == NULL) ? NULL : p_section->trap_list->start_node;
+			while (node != NULL) {
+				node_data_t* del_node = node;
+				node = del_node->next;
+				game_utils_node_delete(del_node, p_section->trap_list);
 			}
-			p_section->trap_list.clear();
 
 			// item
-			for (int i = 0; i < p_section->items_list.size(); i++) {
-				if (p_section->items_list[i]) {
-					delete p_section->items_list[i];
-					p_section->items_list[i] = NULL;
-				}
+			node = (p_section->items_list == NULL) ? NULL : p_section->items_list->start_node;
+			while (node != NULL) {
+				node_data_t* del_node = node;
+				node = del_node->next;
+				game_utils_node_delete(del_node, p_section->items_list);
 			}
-			p_section->items_list.clear();
 
 			p_section->drop_items_id_list.clear();
 			p_section->drop_items_list.clear();
@@ -149,7 +208,7 @@ void stage_manager_unload()
 			p_section->section_type = SECTION_TYPE_NONE;
 			g_stage_data->section_list[sec_i] = NULL;
 		}
-		g_stage_data->section_list.clear();
+		g_stage_data->section_list = NULL;
 
 		// common item
 		g_stage_data->common_items_list.clear();
@@ -179,75 +238,46 @@ static section_data_t* new_section_data()
 	return ret;
 }
 
-static section_stock_item_t* get_stock_item_end(section_stock_item_t* stock_item)
-{
-	if (stock_item == NULL) return NULL;
-
-	int max_count = 0;
-	section_stock_item_t* end_node = stock_item;
-	while ((max_count < SECTION_STOCK_ITEM_SIZE) && (end_node->next != NULL)) {
-		end_node = end_node->next;
-		max_count++;
-	}
-
-	if (max_count >= SECTION_STOCK_ITEM_SIZE) {
-		LOG_ERROR("ERROR: get_stock_item_end() not found end_node\n");
-	}
-	return end_node;
-}
-
 section_stock_item_t* stage_manager_register_stock_item(void* unit_data)
 {
+	int stage_map_index = g_stage_data->current_stage_map_index;
+
 	// search empty node
-	int new_index = -1;
-	for (int i = 0; i < SECTION_STOCK_ITEM_SIZE; i++) {
-		int index = section_stock_item_index + i;
-		if (index >= SECTION_STOCK_ITEM_SIZE) index -= SECTION_STOCK_ITEM_SIZE;
-		if (section_stock_item[index].type == COLLISION_TYPE_NONE) {
-			new_index = index;
-			section_stock_item_index = index;
-			break;
-		}
-	}
-	if (new_index == -1) {
-		LOG_ERROR("ERROR: stage_manager_register_stock_item overflow\n");
+	section_stock_item_t* new_node = (section_stock_item_t*)game_utils_node_new(&section_stock_item_buffer_info[stage_map_index]);
+	if (new_node == NULL) {
+		LOG_ERROR("ERROR: stage_manager_register_stock_item() overflow\n");
 		return NULL;
 	}
 
 	unit_items_data_t* items_data = (unit_items_data_t*)unit_data;
-	section_stock_item[new_index].type = items_data->base->type;
-	section_stock_item[new_index].id = items_data->base->id;
-	section_stock_item[new_index].x = items_data->col_shape->x;
-	section_stock_item[new_index].y = items_data->col_shape->y;
+	new_node->type = items_data->base->type;
+	new_node->item_id = items_data->base->id;
+	new_node->x = items_data->col_shape->x;
+	new_node->y = items_data->col_shape->y;
 
 	if ((items_data->group == UNIT_ITEM_GROUP_STOCK) && (items_data->sub_id == UNIT_STOCK_SUB_ID_CHARGE)) {
-		section_stock_item[new_index].val1 = items_data->val1;
-		section_stock_item[new_index].val2 = items_data->val2;
+		new_node->val1 = items_data->val1;
+		new_node->val2 = items_data->val2;
 	}
 
 	if (g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item == NULL) {
-		section_stock_item[new_index].prev = NULL;
-		section_stock_item[new_index].next = NULL;
-		g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item = &section_stock_item[new_index];
+		g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item = &section_stock_item_buffer_info[stage_map_index];
 	}
-	else {
-		section_stock_item_t* end_node = get_stock_item_end(g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item);
-		end_node->next = &section_stock_item[new_index];
-		section_stock_item[new_index].prev = end_node;
-		section_stock_item[new_index].next = NULL;
-	}
-	return &section_stock_item[new_index];
+	return new_node;
 }
 
 void stage_manager_create_all_stock_item()
 {
+	node_buffer_info_t* node_buffer_info = g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item;
+	if (node_buffer_info == NULL) return;
+
 	int max_count = 0;
-	section_stock_item_t* node = g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item;
-	while ((max_count < SECTION_STOCK_ITEM_SIZE) && (node != NULL)) {
-		section_stock_item_t* ref_node = node;
+	node_data_t* node = node_buffer_info->start_node;
+	while (node != NULL) {
+		section_stock_item_t* ref_node = (section_stock_item_t*)node;
 		node = ref_node->next;
 
-		int item_id = unit_manager_create_items(ref_node->x, ref_node->y, ref_node->id);
+		int item_id = unit_manager_create_items(ref_node->x, ref_node->y, ref_node->item_id);
 		unit_items_data_t* items_data = unit_manager_get_items(item_id);
 		if ((items_data->group == UNIT_ITEM_GROUP_STOCK) && (items_data->sub_id == UNIT_STOCK_SUB_ID_CHARGE)) {
 			unit_manager_items_set_val(item_id, ref_node->val1, 1);
@@ -263,11 +293,16 @@ void stage_manager_create_all_stock_item()
 
 void stage_manager_delete_all_stock_item()
 {
+	node_buffer_info_t* node_buffer_info = g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item;
+	if (node_buffer_info == NULL) return;
+
 	int max_count = 0;
-	section_stock_item_t* node = g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item;
-	while ((max_count < SECTION_STOCK_ITEM_SIZE) && (node != NULL)) {
-		section_stock_item_t* del_node = node;
+	node_data_t* node = node_buffer_info->start_node;
+	while (node != NULL) {
+		section_stock_item_t* del_node = (section_stock_item_t*)node;
 		node = del_node->next;
+
+		game_utils_node_delete((node_data_t*)del_node, node_buffer_info);
 		memset(del_node, 0, sizeof(section_stock_item_t));
 
 		max_count++;
@@ -278,21 +313,6 @@ void stage_manager_delete_all_stock_item()
 	}
 
 	g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item = NULL;
-}
-
-void stage_manager_delete_stock_item(section_stock_item_t* stock_item)
-{
-	section_stock_item_t* tmp1 = stock_item->prev;
-	section_stock_item_t* tmp2 = stock_item->next;
-	if (tmp1) tmp1->next = tmp2;
-	if (tmp2) tmp2->prev = tmp1;
-
-	if (g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item == stock_item) {
-		// replace head node
-		g_stage_data->stage_map[g_stage_data->current_stage_map_index].stock_item = tmp2;
-	}
-
-	memset(stock_item, 0, sizeof(section_stock_item_t));
 }
 
 void stage_manager_set_stat(int stat)
@@ -329,10 +349,11 @@ int stage_manager_load(std::string path)
 
 		// init section 0
 		{
+			current_section_id = 0;
 			current_section_data = new_section_data();
 			current_section_data->id = 0;
 			current_section_data->section_type = SECTION_TYPE_NORMAL;
-			g_stage_data->section_list.push_back(current_section_data);
+			g_stage_data->section_list[current_section_id] = current_section_data;
 			current_section_data->item_drop_rate = 4;
 			current_section_data->map_path = "map/common/n_empty.tmx";
 			current_section_data->bgm_path = "";
@@ -464,6 +485,7 @@ static void load_section(std::string& line) {
 	game_utils_split_key_value(line, key, value);
 
 	if (key == "section") {
+		current_section_id += 1;
 		current_section_data = new_section_data();
 		current_section_data->id = atoi(value.c_str());
 		current_section_data->section_type = SECTION_TYPE_NORMAL;
@@ -473,7 +495,7 @@ static void load_section(std::string& line) {
 		current_section_data->trap_path = "";
 		current_section_data->items_path = "";
 
-		g_stage_data->section_list.push_back(current_section_data);
+		g_stage_data->section_list[current_section_id] = current_section_data;
 		tmp_current_enemy_phase = -1;
 	}
 	if (key == "type") {
@@ -489,9 +511,9 @@ static void load_section(std::string& line) {
 	if (key == "map_path")  current_section_data->map_path = value;
 	if (key == "bgm_path") {
 		current_section_data->bgm_path = value;
-		BGM_data_t* new_bgm = new BGM_data_t();
+		BGM_data_t* new_bgm = (BGM_data_t*)game_utils_node_new(&bgm_list_buffer_info[current_section_id]);
 		new_bgm->res_chunk = resource_manager_getChunkFromPath(value);
-		current_section_data->bgm_list.push_back(new_bgm);
+		current_section_data->bgm_list = &bgm_list_buffer_info[current_section_id];
 	}
 
 	if (key == "enemy_path") {
@@ -509,8 +531,10 @@ static void load_section(std::string& line) {
 
 static int stage_manager_load_section_files()
 {
-	for (int sec_i = 0; sec_i < g_stage_data->section_list.size(); sec_i++) {
+	for (int sec_i = 0; sec_i < SECTION_DATA_BUFFER_SIZE; sec_i++) {
+		current_section_id = sec_i;
 		current_section_data = g_stage_data->section_list[sec_i];
+		if (current_section_data == NULL) break;
 
 		for (int phase = 0; phase < SECTION_ENEMY_PHASE_SIZE; phase++) {
 			tmp_current_enemy_phase = phase;
@@ -575,36 +599,38 @@ static void load_items(std::string& line) {
 	std::string value;
 	game_utils_split_key_value(line, key, value);
 	if (key == "type") {
-		items_data_t* new_item = new items_data_t();
-		new_item->type = value;
+		items_data_t* new_item = (items_data_t*)game_utils_node_new(&items_list_buffer_info[current_section_id]);
+		new_item->path = value;
 		new_item->x = -1; // disable
 		new_item->y = -1; // disable
-		current_section_data->items_list.push_back(new_item);
+		current_section_data->items_list = &items_list_buffer_info[current_section_id];
 
-		tmp_start_index = (int)current_section_data->items_list.size() - 1;
+		tmp_new_node = (node_data_t*)new_item;
 		return;
 	}
 
-	std::string type = current_section_data->items_list[tmp_start_index]->type;
+	std::string item_type = ((items_data_t*)tmp_new_node)->path;
 	if (key == "x") {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
 
-		current_section_data->items_list[tmp_start_index]->x = val_list[0];
+		((items_data_t*)tmp_new_node)->x = val_list[0];
 		for (int i = 1; i < val_list.size(); i++) {
-			items_data_t* new_item = new items_data_t();
-			new_item->type = type;
-			new_item->x = -1; // disable
+			items_data_t* new_item = (items_data_t*)game_utils_node_new(current_section_data->items_list);
+			new_item->path = item_type;
+			new_item->x = val_list[i];
 			new_item->y = -1; // disable
-			current_section_data->items_list.push_back(new_item);
-			current_section_data->items_list[(size_t)tmp_start_index + i]->x = val_list[i];
 		}
 	}
 	if (key == "y") {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
+
+		node_data_t* node = tmp_new_node;
 		for (int i = 0; i < val_list.size(); i++) {
-			current_section_data->items_list[(size_t)tmp_start_index + i]->y = val_list[i];
+			if (node == NULL) break;
+			((items_data_t*)node)->y = val_list[i];
+			node = node->next;
 		}
 	}
 }
@@ -622,36 +648,38 @@ static void load_trap(std::string& line) {
 	std::string value;
 	game_utils_split_key_value(line, key, value);
 	if (key == "type") {
-		trap_data_t* new_trap = new trap_data_t();
-		new_trap->type = value;
+		trap_data_t* new_trap = (trap_data_t*)game_utils_node_new(&trap_list_buffer_info[current_section_id]);
+		new_trap->path = value;
 		new_trap->x = -1; // disable
 		new_trap->y = -1; // disable
-		current_section_data->trap_list.push_back(new_trap);
+		current_section_data->trap_list = &trap_list_buffer_info[current_section_id];
 
-		tmp_start_index = (int)current_section_data->trap_list.size() - 1;
+		tmp_new_node = (node_data_t*)new_trap;
 		return;
 	}
 
-	std::string type = current_section_data->trap_list[tmp_start_index]->type;
+	std::string trap_type = ((trap_data_t*)tmp_new_node)->path;
 	if (key == "x") {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
 
-		current_section_data->trap_list[tmp_start_index]->x = val_list[0];
+		((trap_data_t*)tmp_new_node)->x = val_list[0];
 		for (int i = 1; i < val_list.size(); i++) {
-			trap_data_t* new_trap = new trap_data_t();
-			new_trap->type = type;
-			new_trap->x = -1; // disable
+			trap_data_t* new_trap = (trap_data_t*)game_utils_node_new(current_section_data->trap_list);
+			new_trap->path = trap_type;
+			new_trap->x = val_list[i];
 			new_trap->y = -1; // disable
-			current_section_data->trap_list.push_back(new_trap);
-			current_section_data->trap_list[(size_t)tmp_start_index + i]->x = val_list[i];
 		}
 	}
 	if (key == "y") {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
+
+		node_data_t* node = tmp_new_node;
 		for (int i = 0; i < val_list.size(); i++) {
-			current_section_data->trap_list[(size_t)tmp_start_index + i]->y = val_list[i];
+			if (node == NULL) break;
+			((trap_data_t*)node)->y = val_list[i];
+			node = node->next;
 		}
 	}
 }
@@ -671,85 +699,110 @@ static void load_enemy(std::string& line) {
 	std::string value;
 	game_utils_split_key_value(line, key, value);
 	if (key == "type") {
-		enemy_data_t* new_enemy = new enemy_data_t();
+		int enemy_list_buffer_index = current_section_id * SECTION_ENEMY_PHASE_SIZE + tmp_current_enemy_phase;
+		enemy_data_t* new_enemy = (enemy_data_t*)game_utils_node_new(&enemy_list_buffer_info[enemy_list_buffer_index]);
 		clear_enemy(new_enemy);
 
-		new_enemy->type = value;
-		current_section_data->enemy_list[tmp_current_enemy_phase].push_back(new_enemy);
+		new_enemy->path = value;
+		current_section_data->enemy_list[tmp_current_enemy_phase] = &enemy_list_buffer_info[enemy_list_buffer_index];
 
-		tmp_start_index = (int)current_section_data->enemy_list[tmp_current_enemy_phase].size() - 1;
+		tmp_new_node = (node_data_t*)new_enemy;
 		return;
 	}
 
-	std::string type = current_section_data->enemy_list[tmp_current_enemy_phase][tmp_start_index]->type;
+	std::string enemy_type = ((enemy_data_t*)tmp_new_node)->path;
 	if (key == "x") {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
 
-		current_section_data->enemy_list[tmp_current_enemy_phase][tmp_start_index]->x = val_list[0];
+		((enemy_data_t*)tmp_new_node)->x = val_list[0];
 		for (int i = 1; i < val_list.size(); i++) {
-			enemy_data_t* new_enemy = new enemy_data_t();
+			enemy_data_t* new_enemy = (enemy_data_t*)game_utils_node_new(current_section_data->enemy_list[tmp_current_enemy_phase]);
 			clear_enemy(new_enemy);
 
-			new_enemy->type = type;
-			current_section_data->enemy_list[tmp_current_enemy_phase].push_back(new_enemy);
-			current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->x = val_list[i];
+			new_enemy->path = enemy_type;
+			new_enemy->x = val_list[i];
 		}
 	}
 	if (key == "y") {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
+
+		node_data_t* node = tmp_new_node;
 		for (int i = 0; i < val_list.size(); i++) {
-			current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->y = val_list[i];
+			if (node == NULL) break;
+			((enemy_data_t*)node)->y = val_list[i];
+			node = node->next;
 		}
 	}
 	if (key == "vec_x") {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
+
+		node_data_t* node = tmp_new_node;
 		for (int i = 0; i < val_list.size(); i++) {
-			current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->vec_x = val_list[i];
+			if (node == NULL) break;
+			((enemy_data_t*)node)->vec_x = val_list[i];
+			node = node->next;
 		}
 	}
 	if (key == "vec_y") {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
+
+		node_data_t* node = tmp_new_node;
 		for (int i = 0; i < val_list.size(); i++) {
-			current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->vec_y = val_list[i];
+			if (node == NULL) break;
+			((enemy_data_t*)node)->vec_y = val_list[i];
+			node = node->next;
 		}
 	}
 	if (key == "delay") {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
+
+		node_data_t* node = tmp_new_node;
 		for (int i = 0; i < val_list.size(); i++) {
-			current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->delay = val_list[i];
+			if (node == NULL) break;
+			((enemy_data_t*)node)->delay = val_list[i];
+			node = node->next;
 		}
 	}
 	if (key == "face") {
 		std::vector<std::string> val_list;
 		game_utils_split_conmma(value, val_list);
+
+		node_data_t* node = tmp_new_node;
 		for (int i = 0; i < val_list.size(); i++) {
+			if (node == NULL) break;
+
 			if (val_list[i] == "N") {
-				current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->face = UNIT_FACE_N;
+				((enemy_data_t*)node)->face = UNIT_FACE_N;
 			}
 			else if (val_list[i] == "E") {
-				current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->face = UNIT_FACE_E;
+				((enemy_data_t*)node)->face = UNIT_FACE_E;
 			}
 			else if (val_list[i] == "W") {
-				current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->face = UNIT_FACE_W;
+				((enemy_data_t*)node)->face = UNIT_FACE_W;
 			}
 			else if (val_list[i] == "S") {
-				current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->face = UNIT_FACE_S;
+				((enemy_data_t*)node)->face = UNIT_FACE_S;
 			}
 			else {
-				current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->face = UNIT_FACE_NONE;
+				((enemy_data_t*)node)->face = UNIT_FACE_NONE;
 			}
+			node = node->next;
 		}
 	}
 	if (key == "ai_step") {
 		std::vector<int> val_list;
 		game_utils_split_conmma(value, val_list);
+
+		node_data_t* node = tmp_new_node;
 		for (int i = 0; i < val_list.size(); i++) {
-			current_section_data->enemy_list[tmp_current_enemy_phase][(size_t)tmp_start_index + i]->ai_step = val_list[i];
+			if (node == NULL) break;
+			((enemy_data_t*)node)->ai_step = val_list[i];
+			node = node->next;
 		}
 	}
 }

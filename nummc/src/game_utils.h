@@ -19,6 +19,11 @@ extern std::string game_utils_upper_folder(std::string path);
 extern int game_utils_create_folder(std::string path);
 extern int game_utils_backup_file(std::string path, int max_size = GAME_UTILS_BACKUP_FILE_SIZE);
 
+// node
+extern void game_utils_node_init(node_buffer_info_t* node_buffer_info, node_data_t* node_data, int node_size, int buffer_size);
+extern node_data_t* game_utils_node_new(node_buffer_info_t* node_buffer_info);
+extern void game_utils_node_delete(node_data_t* node_data, node_buffer_info_t* node_buffer_info);
+
 // char buffer
 #define GAME_UTILS_STRING_TYPE_NONE      0
 #define GAME_UTILS_STRING_TYPE_CHAR_BUF  1

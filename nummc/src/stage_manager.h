@@ -107,24 +107,44 @@ typedef struct _stage_map_data_t stage_map_data_t;
 typedef struct _stage_data_t stage_data_t;
 
 struct _BGM_data_t {
+	int type;
+	int id;
+	node_data_t* prev;
+	node_data_t* next;
+
 	ResourceChunk* res_chunk;
 	Uint32 time;       // start time[msec]
 };
 
 struct _items_data_t {
-	std::string type;
+	int type;
+	int id;
+	node_data_t* prev;
+	node_data_t* next;
+
+	std::string path;
 	int x;
 	int y;
 };
 
 struct _trap_data_t {
-	std::string type;
+	int type;
+	int id;
+	node_data_t* prev;
+	node_data_t* next;
+
+	std::string path;
 	int x;
 	int y;
 };
 
 struct _enemy_data_t {
-	std::string type;
+	int type;
+	int id;
+	node_data_t* prev;
+	node_data_t* next;
+
+	std::string path;
 	int x;
 	int y;
 	int vec_x;
@@ -145,11 +165,11 @@ struct _section_data_t {
 	std::string trap_path;
 	std::string items_path;
 
-	std::vector<BGM_data_t*> bgm_list;
-	std::vector<enemy_data_t*> enemy_list[SECTION_ENEMY_PHASE_SIZE];
-	std::vector<trap_data_t*> trap_list;
+	node_buffer_info_t* bgm_list;
+	node_buffer_info_t* enemy_list[SECTION_ENEMY_PHASE_SIZE];
+	node_buffer_info_t* trap_list;
 
-	std::vector<items_data_t*> items_list;
+	node_buffer_info_t* items_list;
 	std::vector<std::string> drop_items_list;
 	std::vector<std::string> goal_items_list;
 
@@ -161,13 +181,14 @@ struct _section_data_t {
 struct _section_stock_item_t {
 	int type;
 	int id;
+	node_data_t* prev;
+	node_data_t* next;
+
+	int item_id;
 	int x;
 	int y;
 	int val1;
 	int val2;
-
-	section_stock_item_t* prev;
-	section_stock_item_t* next;
 };
 
 struct _stage_map_data_t {
@@ -176,7 +197,7 @@ struct _stage_map_data_t {
 	int stat;                   // none/win/goal/hint
 	int mini_map_icon;          // STAGE_MINI_MAP_ICON_XXX
 
-	section_stock_item_t* stock_item;   // node head
+	node_buffer_info_t* stock_item;  // node buffer
 	int stock_item_count;
 
 	char section_map[MAP_TYPE_END][MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX];
@@ -205,7 +226,7 @@ struct _stage_data_t {
 	std::vector<std::string> common_items_list;
 
 	// section values
-	std::vector<section_data_t*> section_list;
+	section_data_t** section_list;  // section_list[STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM] head data pointer
 	int current_section_index;
 	section_data_t* current_section_data;
 
@@ -229,7 +250,6 @@ extern void stage_manager_unload();
 extern section_stock_item_t* stage_manager_register_stock_item(void* unit_data);
 extern void stage_manager_create_all_stock_item();
 extern void stage_manager_delete_all_stock_item();
-extern void stage_manager_delete_stock_item(section_stock_item_t* stock_item);
 extern void stage_manager_set_stat(int stat);
 extern void stage_manager_set_result(int result);
 extern void stage_manager_set_next_load(int stat);
