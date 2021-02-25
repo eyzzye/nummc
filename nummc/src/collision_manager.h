@@ -4,7 +4,7 @@
 //#define COLLISION_DEBUG
 
 #ifdef _COLLISION_ENABLE_BOX_2D_
-#include "Box2D/Box2d.h"
+#include "Box2D/Box2D.h"
 
 #define PIX2MET(x)  ((x)/20.0f)
 #define MET2PIX(x)  ((x)*20.0f + 0.5f)

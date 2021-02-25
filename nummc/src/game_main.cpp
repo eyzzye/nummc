@@ -45,7 +45,7 @@ static void quit_sdl2()
 	SDL_Quit();
 }
 
-int SDL_main(int argc, char** argv)
+int main(int argc, char** argv)
 {
 	int error = 0;
 	if (init_sdl2() != 0) {
