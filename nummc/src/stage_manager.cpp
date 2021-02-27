@@ -343,7 +343,15 @@ int stage_manager_load(std::string path)
 {
 	bool read_flg[STAGE_ID_END] = { false };
 
-	std::ifstream inFile(g_base_path + "data/" + path);
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("stage_manager_load failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		std::string line;
 
@@ -417,58 +425,94 @@ int stage_manager_load(std::string path)
 }
 
 static void load_basic_info(std::string& line) {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
-	if (key == "id") g_stage_data->id = value;
-	if (key == "bonus_exp") g_stage_data->bonus_exp = atoi(value.c_str());
-	if (key == "friction_denominator") {
-		float denominator = (float)atoi(value.c_str());
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
+
+	if (STRCMP_EQ(key, "id")) {
+		g_stage_data->id = value;
+		return;
+	}
+	if (STRCMP_EQ(key, "bonus_exp")) {
+		g_stage_data->bonus_exp = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key,"friction_denominator")) {
+		float denominator = (float)atoi(value);
 		g_stage_data->friction_coef = 1.0f / denominator;
+		return;
 	}
 }
 
 static void load_daytime(std::string& line) {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
-	if (key == "stat") {
-		if (value == "MORNING") {
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
+
+	if (STRCMP_EQ(key,"stat")) {
+		if (STRCMP_EQ(value,"MORNING")) {
 			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_MORNING;
 		}
-		else if (value == "AFTERNOON") {
+		else if (STRCMP_EQ(value,"AFTERNOON")) {
 			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_AFTERNOON;
 		}
-		else if (value == "EVENING") {
+		else if (STRCMP_EQ(value,"EVENING")) {
 			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_EVENING;
 		}
-		else if (value == "LATE_NIGHT") {
+		else if (STRCMP_EQ(value,"LATE_NIGHT")) {
 			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_LATE_NIGHT;
 		}
 		else {
 			g_stage_data->daytime_stat = STAGE_DAYTIME_STAT_NONE;
 		}
+		return;
 	}
-	if (key == "frame_time") g_stage_data->daytime_frame_time = atoi(value.c_str());
-	if (key == "default_timer") g_stage_data->daytime_timer = atoi(value.c_str());
+	if (STRCMP_EQ(key, "frame_time")) {
+		g_stage_data->daytime_frame_time = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "default_timer")) {
+		g_stage_data->daytime_timer = atoi(value);
+		return;
+	}
 }
 
 static void load_player_start(std::string& line) {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
-	if (key == "x") g_stage_data->start_x = atoi(value.c_str());
-	if (key == "y") g_stage_data->start_y = atoi(value.c_str());
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
+
+	if (STRCMP_EQ(key, "x")) {
+		g_stage_data->start_x = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "y")) {
+		g_stage_data->start_y = atoi(value);
+		return;
+	}
 }
 
 static void load_goal(std::string& line) {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
-	if (key == "x") g_stage_data->goal_x = atoi(value.c_str());
-	if (key == "y") g_stage_data->goal_y = atoi(value.c_str());
-	if (key == "w") g_stage_data->goal_w = atoi(value.c_str());
-	if (key == "h") g_stage_data->goal_h = atoi(value.c_str());
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
+
+	if (STRCMP_EQ(key, "x")) {
+		g_stage_data->goal_x = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "y")) {
+		g_stage_data->goal_y = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "w")) {
+		g_stage_data->goal_w = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "h")) {
+		g_stage_data->goal_h = atoi(value);
+		return;
+	}
 }
 
 static void load_next_stage(std::string& line) {
@@ -480,14 +524,14 @@ static void load_items_def(std::string& line) {
 }
 
 static void load_section(std::string& line) {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
-	if (key == "section") {
+	if (STRCMP_EQ(key,"section")) {
 		current_section_id += 1;
 		current_section_data = new_section_data();
-		current_section_data->id = atoi(value.c_str());
+		current_section_data->id = atoi(value);
 		current_section_data->section_type = SECTION_TYPE_NORMAL;
 		current_section_data->map_path = "";
 		current_section_data->bgm_path = "";
@@ -497,26 +541,36 @@ static void load_section(std::string& line) {
 
 		g_stage_data->section_list[current_section_id] = current_section_data;
 		tmp_current_enemy_phase = -1;
+		return;
 	}
-	if (key == "type") {
-		if (value == "BOSS") current_section_data->section_type = SECTION_TYPE_BOSS;
-		else if (value == "HIDE") current_section_data->section_type = SECTION_TYPE_HIDE;
-		else if (value == "ITEM") current_section_data->section_type = SECTION_TYPE_ITEM;
-		else if (value == "NEST") current_section_data->section_type = SECTION_TYPE_NEST;
-		else if (value == "NORMAL") current_section_data->section_type = SECTION_TYPE_NORMAL;
+	if (STRCMP_EQ(key,"type")) {
+		if (STRCMP_EQ(value,"BOSS")) current_section_data->section_type = SECTION_TYPE_BOSS;
+		else if (STRCMP_EQ(value,"HIDE")) current_section_data->section_type = SECTION_TYPE_HIDE;
+		else if (STRCMP_EQ(value,"ITEM")) current_section_data->section_type = SECTION_TYPE_ITEM;
+		else if (STRCMP_EQ(value,"NEST")) current_section_data->section_type = SECTION_TYPE_NEST;
+		else if (STRCMP_EQ(value,"NORMAL")) current_section_data->section_type = SECTION_TYPE_NORMAL;
 		else current_section_data->section_type = SECTION_TYPE_NONE;
-	}
-	if (key == "item_drop_rate") current_section_data->item_drop_rate = atoi(value.c_str());
 
-	if (key == "map_path")  current_section_data->map_path = value;
-	if (key == "bgm_path") {
+		return;
+	}
+	if (STRCMP_EQ(key, "item_drop_rate")) {
+		current_section_data->item_drop_rate = atoi(value);
+		return;
+	}
+
+	if (STRCMP_EQ(key, "map_path")) {
+		current_section_data->map_path = value;
+		return;
+	}
+	if (STRCMP_EQ(key,"bgm_path")) {
 		current_section_data->bgm_path = value;
 		BGM_data_t* new_bgm = (BGM_data_t*)game_utils_node_new(&bgm_list_buffer_info[current_section_id]);
 		new_bgm->res_chunk = resource_manager_getChunkFromPath(value);
 		current_section_data->bgm_list = &bgm_list_buffer_info[current_section_id];
+		return;
 	}
 
-	if (key == "enemy_path") {
+	if (STRCMP_EQ(key,"enemy_path")) {
 		tmp_current_enemy_phase += 1;
 		if (tmp_current_enemy_phase >= SECTION_ENEMY_PHASE_SIZE) {
 			LOG_ERROR("ERROR: section %d enemy_path overflow", current_section_data->id);
@@ -524,9 +578,16 @@ static void load_section(std::string& line) {
 		else {
 			current_section_data->enemy_path[tmp_current_enemy_phase] = value;
 		}
+		return;
 	}
-	if (key == "trap_path")  current_section_data->trap_path = value;
-	if (key == "items_path")  current_section_data->items_path = value;
+	if (STRCMP_EQ(key, "trap_path")) {
+		current_section_data->trap_path = value;
+		return;
+	}
+	if (STRCMP_EQ(key, "items_path")) {
+		current_section_data->items_path = value;
+		return;
+	}
 }
 
 static int stage_manager_load_section_files()
@@ -550,7 +611,15 @@ static int load_section_file(std::string path)
 {
 	bool read_flg[SECTION_ID_END] = { false };
 
-	std::ifstream inFile(g_base_path + "data/" + path);
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("load_section_file failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		std::string line;
 		while (std::getline(inFile, line)) {
@@ -595,10 +664,13 @@ static int load_section_file(std::string path)
 }
 
 static void load_items(std::string& line) {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
-	if (key == "type") {
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_LINE_BUF_SIZE];
+	int val_list[GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX];
+	int val_list_size;
+	game_utils_split_key_value((char*)line.c_str(), key, value);
+
+	if (STRCMP_EQ(key,"type")) {
 		items_data_t* new_item = (items_data_t*)game_utils_node_new(&items_list_buffer_info[current_section_id]);
 		new_item->path = value;
 		new_item->x = -1; // disable
@@ -610,28 +682,28 @@ static void load_items(std::string& line) {
 	}
 
 	std::string item_type = ((items_data_t*)tmp_new_node)->path;
-	if (key == "x") {
-		std::vector<int> val_list;
-		game_utils_split_conmma(value, val_list);
+	if (STRCMP_EQ(key,"x")) {
+		val_list_size = game_utils_split_conmma_int(value, val_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX);
 
 		((items_data_t*)tmp_new_node)->x = val_list[0];
-		for (int i = 1; i < val_list.size(); i++) {
+		for (int i = 1; i < val_list_size; i++) {
 			items_data_t* new_item = (items_data_t*)game_utils_node_new(current_section_data->items_list);
 			new_item->path = item_type;
 			new_item->x = val_list[i];
 			new_item->y = -1; // disable
 		}
+		return;
 	}
-	if (key == "y") {
-		std::vector<int> val_list;
-		game_utils_split_conmma(value, val_list);
+	if (STRCMP_EQ(key,"y")) {
+		val_list_size = game_utils_split_conmma_int(value, val_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX);
 
 		node_data_t* node = tmp_new_node;
-		for (int i = 0; i < val_list.size(); i++) {
+		for (int i = 0; i < val_list_size; i++) {
 			if (node == NULL) break;
 			((items_data_t*)node)->y = val_list[i];
 			node = node->next;
 		}
+		return;
 	}
 }
 
@@ -644,10 +716,13 @@ static void load_goal_items(std::string& line) {
 }
 
 static void load_trap(std::string& line) {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
-	if (key == "type") {
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_LINE_BUF_SIZE];
+	int val_list[GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX];
+	int val_list_size;
+	game_utils_split_key_value((char*)line.c_str(), key, value);
+
+	if (STRCMP_EQ(key,"type")) {
 		trap_data_t* new_trap = (trap_data_t*)game_utils_node_new(&trap_list_buffer_info[current_section_id]);
 		new_trap->path = value;
 		new_trap->x = -1; // disable
@@ -659,28 +734,28 @@ static void load_trap(std::string& line) {
 	}
 
 	std::string trap_type = ((trap_data_t*)tmp_new_node)->path;
-	if (key == "x") {
-		std::vector<int> val_list;
-		game_utils_split_conmma(value, val_list);
+	if (STRCMP_EQ(key,"x")) {
+		val_list_size = game_utils_split_conmma_int(value, val_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX);
 
 		((trap_data_t*)tmp_new_node)->x = val_list[0];
-		for (int i = 1; i < val_list.size(); i++) {
+		for (int i = 1; i < val_list_size; i++) {
 			trap_data_t* new_trap = (trap_data_t*)game_utils_node_new(current_section_data->trap_list);
 			new_trap->path = trap_type;
 			new_trap->x = val_list[i];
 			new_trap->y = -1; // disable
 		}
+		return;
 	}
-	if (key == "y") {
-		std::vector<int> val_list;
-		game_utils_split_conmma(value, val_list);
+	if (STRCMP_EQ(key,"y")) {
+		val_list_size = game_utils_split_conmma_int(value, val_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX);
 
 		node_data_t* node = tmp_new_node;
-		for (int i = 0; i < val_list.size(); i++) {
+		for (int i = 0; i < val_list_size; i++) {
 			if (node == NULL) break;
 			((trap_data_t*)node)->y = val_list[i];
 			node = node->next;
 		}
+		return;
 	}
 }
 
@@ -695,10 +770,15 @@ static void clear_enemy(enemy_data_t* enemy_data) {
 }
 
 static void load_enemy(std::string& line) {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
-	if (key == "type") {
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_LINE_BUF_SIZE];
+	char str_list[GAME_UTILS_STRING_NAME_BUF_SIZE * GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX];
+	int str_list_size;
+	int val_list[GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX];
+	int val_list_size;
+	game_utils_split_key_value((char*)line.c_str(), key, value);
+
+	if (STRCMP_EQ(key,"type")) {
 		int enemy_list_buffer_index = current_section_id * SECTION_ENEMY_PHASE_SIZE + tmp_current_enemy_phase;
 		enemy_data_t* new_enemy = (enemy_data_t*)game_utils_node_new(&enemy_list_buffer_info[enemy_list_buffer_index]);
 		clear_enemy(new_enemy);
@@ -711,81 +791,81 @@ static void load_enemy(std::string& line) {
 	}
 
 	std::string enemy_type = ((enemy_data_t*)tmp_new_node)->path;
-	if (key == "x") {
-		std::vector<int> val_list;
-		game_utils_split_conmma(value, val_list);
+	if (STRCMP_EQ(key,"x")) {
+		val_list_size = game_utils_split_conmma_int(value, val_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX);
 
 		((enemy_data_t*)tmp_new_node)->x = val_list[0];
-		for (int i = 1; i < val_list.size(); i++) {
+		for (int i = 1; i < val_list_size; i++) {
 			enemy_data_t* new_enemy = (enemy_data_t*)game_utils_node_new(current_section_data->enemy_list[tmp_current_enemy_phase]);
 			clear_enemy(new_enemy);
 
 			new_enemy->path = enemy_type;
 			new_enemy->x = val_list[i];
 		}
+		return;
 	}
-	if (key == "y") {
-		std::vector<int> val_list;
-		game_utils_split_conmma(value, val_list);
+	if (STRCMP_EQ(key,"y")) {
+		val_list_size = game_utils_split_conmma_int(value, val_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX);
 
 		node_data_t* node = tmp_new_node;
-		for (int i = 0; i < val_list.size(); i++) {
+		for (int i = 0; i < val_list_size; i++) {
 			if (node == NULL) break;
 			((enemy_data_t*)node)->y = val_list[i];
 			node = node->next;
 		}
+		return;
 	}
-	if (key == "vec_x") {
-		std::vector<int> val_list;
-		game_utils_split_conmma(value, val_list);
+	if (STRCMP_EQ(key,"vec_x")) {
+		val_list_size = game_utils_split_conmma_int(value, val_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX);
 
 		node_data_t* node = tmp_new_node;
-		for (int i = 0; i < val_list.size(); i++) {
+		for (int i = 0; i < val_list_size; i++) {
 			if (node == NULL) break;
 			((enemy_data_t*)node)->vec_x = val_list[i];
 			node = node->next;
 		}
+		return;
 	}
-	if (key == "vec_y") {
-		std::vector<int> val_list;
-		game_utils_split_conmma(value, val_list);
+	if (STRCMP_EQ(key,"vec_y")) {
+		val_list_size = game_utils_split_conmma_int(value, val_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX);
 
 		node_data_t* node = tmp_new_node;
-		for (int i = 0; i < val_list.size(); i++) {
+		for (int i = 0; i < val_list_size; i++) {
 			if (node == NULL) break;
 			((enemy_data_t*)node)->vec_y = val_list[i];
 			node = node->next;
 		}
+		return;
 	}
-	if (key == "delay") {
-		std::vector<int> val_list;
-		game_utils_split_conmma(value, val_list);
+	if (STRCMP_EQ(key,"delay")) {
+		val_list_size = game_utils_split_conmma_int(value, val_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX);
 
 		node_data_t* node = tmp_new_node;
-		for (int i = 0; i < val_list.size(); i++) {
+		for (int i = 0; i < val_list_size; i++) {
 			if (node == NULL) break;
 			((enemy_data_t*)node)->delay = val_list[i];
 			node = node->next;
 		}
+		return;
 	}
-	if (key == "face") {
-		std::vector<std::string> val_list;
-		game_utils_split_conmma(value, val_list);
+	if (STRCMP_EQ(key,"face")) {
+		str_list_size = game_utils_split_conmma(value, str_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX, GAME_UTILS_STRING_NAME_BUF_SIZE);
 
 		node_data_t* node = tmp_new_node;
-		for (int i = 0; i < val_list.size(); i++) {
+		for (int i = 0; i < str_list_size; i++) {
 			if (node == NULL) break;
 
-			if (val_list[i] == "N") {
+			char* face_str = &str_list[i * GAME_UTILS_STRING_NAME_BUF_SIZE];
+			if (STRCMP_EQ(face_str,"N")) {
 				((enemy_data_t*)node)->face = UNIT_FACE_N;
 			}
-			else if (val_list[i] == "E") {
+			else if (STRCMP_EQ(face_str,"E")) {
 				((enemy_data_t*)node)->face = UNIT_FACE_E;
 			}
-			else if (val_list[i] == "W") {
+			else if (STRCMP_EQ(face_str,"W")) {
 				((enemy_data_t*)node)->face = UNIT_FACE_W;
 			}
-			else if (val_list[i] == "S") {
+			else if (STRCMP_EQ(face_str,"S")) {
 				((enemy_data_t*)node)->face = UNIT_FACE_S;
 			}
 			else {
@@ -793,17 +873,18 @@ static void load_enemy(std::string& line) {
 			}
 			node = node->next;
 		}
+		return;
 	}
-	if (key == "ai_step") {
-		std::vector<int> val_list;
-		game_utils_split_conmma(value, val_list);
+	if (STRCMP_EQ(key,"ai_step")) {
+		val_list_size = game_utils_split_conmma_int(value, val_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX);
 
 		node_data_t* node = tmp_new_node;
-		for (int i = 0; i < val_list.size(); i++) {
+		for (int i = 0; i < val_list_size; i++) {
 			if (node == NULL) break;
 			((enemy_data_t*)node)->ai_step = val_list[i];
 			node = node->next;
 		}
+		return;
 	}
 }
 

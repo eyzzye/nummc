@@ -598,7 +598,7 @@ static void dialog_message_delete_ok() {
 	dialog_message_ret = DIALOG_MESSAGE_RET_OK;
 
 	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_click1.ogg"), SOUND_MANAGER_CH_SFX2);
-	if (game_save_set_config_slot(cursor_index, "", "", "") == 0) {
+	if (game_save_set_config_slot(cursor_index, "", "", true) == 0) {
 		game_save_config_save();
 
 		// reload delete slot

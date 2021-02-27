@@ -661,29 +661,29 @@ shape_round_data* collision_manager_new_shape_round(int static_or_dynamic)
 	return tmp;
 }
 
-int collision_manager_set_group(shape_data* shape, std::string& group) {
-	if (group == "NONE") {
+int collision_manager_set_group(shape_data* shape, char* group) {
+	if (STRCMP_EQ(group,"NONE")) {
 		shape->group = COLLISION_GROUP_NONE;
 	}
-	else if (group == "PLAYER") {
+	else if (STRCMP_EQ(group,"PLAYER")) {
 		shape->group = COLLISION_GROUP_PLAYER;
 	}
-	else if (group == "ENEMY") {
+	else if (STRCMP_EQ(group,"ENEMY")) {
 		shape->group = COLLISION_GROUP_ENEMY;
 	}
-	else if (group == "ITEMS") {
+	else if (STRCMP_EQ(group,"ITEMS")) {
 		shape->group = COLLISION_GROUP_ITEMS;
 	}
-	else if (group == "PLAYER_BULLET") {
+	else if (STRCMP_EQ(group,"PLAYER_BULLET")) {
 		shape->group = COLLISION_GROUP_PLAYER_BULLET;
 	}
-	else if (group == "ENEMY_BULLET") {
+	else if (STRCMP_EQ(group,"ENEMY_BULLET")) {
 		shape->group = COLLISION_GROUP_ENEMY_BULLET;
 	}
-	else if (group == "MAP") {
+	else if (STRCMP_EQ(group,"MAP")) {
 		shape->group = COLLISION_GROUP_MAP;
 	}
-	else if (group == "TRAP") {
+	else if (STRCMP_EQ(group,"TRAP")) {
 		shape->group = COLLISION_GROUP_TRAP;
 	}
 	else {
@@ -693,8 +693,8 @@ int collision_manager_set_group(shape_data* shape, std::string& group) {
 	return 0;
 }
 
-int collision_manager_set_group_option(shape_data* shape, std::string& group_option) {
-	if (group_option == "THROUGH_MAP") {
+int collision_manager_set_group_option(shape_data* shape, char* group_option) {
+	if (STRCMP_EQ(group_option,"THROUGH_MAP")) {
 		shape->group |= COLLISION_GROUP_U_THROUGH_MAP;
 	}
 	return 0;

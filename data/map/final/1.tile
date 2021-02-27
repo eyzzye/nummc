@@ -12,7 +12,7 @@ duration=*
 
 [img]
 layer=1
-dir_path=images/map/final
+dir_path=images/map/final/
 path=1.png
 effect=tile_clip(0:0:32:32)
 [/img]

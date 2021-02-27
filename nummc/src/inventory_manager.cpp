@@ -162,9 +162,9 @@ static int inventory_manager_register_charge(unit_items_data_t* item_data, int l
 	if (drop_item >= 0)
 	{
 		int x, y;
-		std::string drop_item_path = charge_list[drop_item].path;
+		const char* drop_item_path = charge_list[drop_item].path;
 		unit_manager_get_spawn_items_pos((unit_data_t*)&g_player, (unit_data_t*)&g_player, 1, &x, &y);
-		int id = unit_manager_create_items(x, y, unit_manager_search_items(drop_item_path));
+		int id = unit_manager_create_items(x, y, unit_manager_search_items((char*)drop_item_path));
 		unit_manager_items_set_val(id, g_stocker.charge_item->charge_val, 1);
 		unit_manager_items_set_val(id, g_stocker.charge_item->charge_timer, 2);
 
@@ -192,9 +192,9 @@ static int inventory_manager_register_special(unit_items_data_t* item_data, int 
 	if (drop_item >= 0)
 	{
 		int x, y;
-		std::string drop_item_path = special_list[drop_item].path;
+		const char* drop_item_path = special_list[drop_item].path;
 		unit_manager_get_spawn_items_pos((unit_data_t*)&g_player, (unit_data_t*)&g_player, 1, &x, &y);
-		unit_manager_create_items(x, y, unit_manager_search_items(drop_item_path));
+		unit_manager_create_items(x, y, unit_manager_search_items((char*)drop_item_path));
 
 		// init info
 		g_stocker.special_item->item_list_idx = INVENTORY_ITEM_NONE;
@@ -268,8 +268,8 @@ unit_items_data_t* inventory_manager_get_charge_item()
 {
 	int item_list_idx = g_stocker.charge_item->item_list_idx;
 	if (item_list_idx >= 0) {
-		std::string item_path = charge_list[item_list_idx].path;
-		int item_base_index = unit_manager_search_items(item_path);
+		const char* item_path = charge_list[item_list_idx].path;
+		int item_base_index = unit_manager_search_items((char*)item_path);
 		if (item_base_index >= 0) {
 			return unit_manager_get_items_base(item_base_index);
 		}
@@ -282,8 +282,8 @@ unit_items_data_t* inventory_manager_get_special_item()
 {
 	int item_list_idx = g_stocker.special_item->item_list_idx;
 	if (item_list_idx >= 0) {
-		std::string item_path = special_list[item_list_idx].path;
-		int item_base_index = unit_manager_search_items(item_path);
+		const char* item_path = special_list[item_list_idx].path;
+		int item_base_index = unit_manager_search_items((char*)item_path);
 		if (item_base_index >= 0) {
 			return unit_manager_get_items_base(item_base_index);
 		}

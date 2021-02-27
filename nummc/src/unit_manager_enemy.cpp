@@ -29,7 +29,7 @@ const unit_effect_stat_data_t enemy_effect_default[UNIT_EFFECT_ID_E_END] = {
 	{   0, 1000,   0,        0,           0       }, // FREEZE_UP
 };
 
-static std::string enemy_effect_path[ANIM_BASE_SIZE_END][UNIT_EFFECT_ID_E_END] = {
+static const char* enemy_effect_path[ANIM_BASE_SIZE_END][UNIT_EFFECT_ID_E_END] = {
 	// 32x32
 	{	"",
 		"units/effect/fire_up/fire_up.unit",
@@ -47,13 +47,13 @@ static std::string enemy_effect_path[ANIM_BASE_SIZE_END][UNIT_EFFECT_ID_E_END] =
 	},
 };
 
-static std::string enemy_damage_path[ANIM_BASE_SIZE_END] = {
+static const char* enemy_damage_path[ANIM_BASE_SIZE_END] = {
 	"units/effect/damage/damage.unit",
 	"units/effect/damage/48x48/damage.unit",
 	"units/effect/damage/64x64/damage.unit",
 };
 
-static std::string enemy_star_path = "units/effect/star/star.unit";
+static const char* enemy_star_path = "units/effect/star/star.unit";
 
 // rank tables
 #define UNIT_ENEMY_BULLET_CURVING_RANK_MIN    3
@@ -147,7 +147,7 @@ void unit_manager_unload_enemy()
 	}
 }
 
-int unit_manager_search_enemy(std::string& path)
+int unit_manager_search_enemy(char* path)
 {
 	int ei = 0;
 	bool enemy_found = false;
@@ -338,10 +338,19 @@ void unit_manager_set_ai_step(int index, int step) {
 
 int unit_manager_load_enemy(std::string path)
 {
-	if (unit_manager_search_enemy(path) >= 0) return 0; // regist already
+	if (unit_manager_search_enemy((char*)path.c_str()) >= 0) return 0; // regist already
 
 	bool read_flg[UNIT_TAG_END] = { false };
-	std::ifstream inFile(g_base_path + "data/" + path);
+
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("unit_manager_load_enemy failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		std::string line;
 		while (std::getline(inFile, line)) {
@@ -440,47 +449,80 @@ int unit_manager_load_enemy(std::string path)
 
 static void load_unit_enemy(std::string& line, unit_enemy_data_t* enemy_data)
 {
-	std::string key, value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
-	if (value == "") value = "0";
-	if (key == "hp") enemy_data->hp = atoi(value.c_str());
-	if (key == "bullet_life_timer") enemy_data->bullet_life_timer = atoi(value.c_str());
-	if (key == "bullet_curving") enemy_data->bullet_curving = atoi(value.c_str());
-	if (key == "speed") enemy_data->speed = atoi(value.c_str());
-	if (key == "strength") enemy_data->strength = atoi(value.c_str());
-	if (key == "exp") enemy_data->exp = atoi(value.c_str());
-	if (key == "hp_max") enemy_data->hp_max = atoi(value.c_str());
-	if (key == "exp_max") enemy_data->exp_max = atoi(value.c_str());
-	if (key == "level") enemy_data->level = atoi(value.c_str());
-	if (key == "next_level") {
+	if (STRCMP_EQ(key, "hp")) {
+		enemy_data->hp = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "bullet_life_timer")) {
+		enemy_data->bullet_life_timer = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "bullet_curving")) {
+		enemy_data->bullet_curving = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "speed")) {
+		enemy_data->speed = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "strength")) {
+		enemy_data->strength = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "exp")) {
+		enemy_data->exp = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "hp_max")) {
+		enemy_data->hp_max = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "exp_max")) {
+		enemy_data->exp_max = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "level")) {
+		enemy_data->level = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key,"next_level")) {
 		char* next_level_c_str = game_utils_string_new();
-		game_utils_string_copy(next_level_c_str, value.c_str());
+		game_utils_string_copy(next_level_c_str, value);
 		enemy_data->next_level = next_level_c_str;
+		return;
 	}
 
-	if (key == "drop_item") {
+	if (STRCMP_EQ(key,"drop_item")) {
 		enemy_data->drop_item = unit_manager_search_items(value);
+		return;
 	}
-	if (key == "resistance") {
-		std::vector<std::string> stat_list;
-		game_utils_split_conmma(value, stat_list);
+	if (STRCMP_EQ(key,"resistance")) {
+		char stat_list[GAME_UTILS_STRING_NAME_BUF_SIZE * UNIT_EFFECT_FLAG_E_NUM_MAX];
+		int stat_list_size;
+
+		stat_list_size = game_utils_split_conmma(value, stat_list, UNIT_EFFECT_FLAG_E_NUM_MAX, GAME_UTILS_STRING_NAME_BUF_SIZE);
 		int resistance_val = UNIT_EFFECT_FLAG_E_NONE;
-		for (int i = 0; i < stat_list.size(); i++) {
-			if (stat_list[i] == "FIRE_UP") {
+		for (int i = 0; i < stat_list_size; i++) {
+			char* stat_str = &stat_list[i * GAME_UTILS_STRING_CHAR_BUF_SIZE];
+			if (STRCMP_EQ(stat_str,"FIRE_UP")) {
 				resistance_val |= UNIT_EFFECT_FLAG_E_FIRE_UP;
 			}
-			else if (stat_list[i] == "FREEZE_UP") {
+			else if (STRCMP_EQ(stat_str,"FREEZE_UP")) {
 				resistance_val |= UNIT_EFFECT_FLAG_E_FREEZE_UP;
 			}
-			else if (stat_list[i] == "NO_FRICTION") {
+			else if (STRCMP_EQ(stat_str,"NO_FRICTION")) {
 				resistance_val |= UNIT_EFFECT_FLAG_E_NO_FRICTION;
 			}
-			else if (stat_list[i] == "NO_TRAP_DAMAGE") {
+			else if (STRCMP_EQ(stat_str,"NO_TRAP_DAMAGE")) {
 				resistance_val |= UNIT_EFFECT_FLAG_E_NO_TRAP_DAMAGE;
 			}
 		}
 		enemy_data->resistance_stat |= resistance_val;
+		return;
 	}
 }
 
@@ -606,8 +648,8 @@ struct _unit_hell_enemy_t {
 	int x;
 	int y;
 	int face;
-	std::string path;
-	std::string trap_path;
+	const char* path;
+	const char* trap_path;
 };
 static struct _unit_hell_enemy_t hell_enemy_list[] = {
 	{  48, 112, UNIT_FACE_W, "units/enemy/1/boss/one.unit",   "" },
@@ -624,11 +666,12 @@ void unit_manager_create_hell()
 
 	for (int i = 0; i < LENGTH_OF(hell_enemy_list); i++) {
 		// load ghost trap
-		if (hell_enemy_list[i].trap_path.size() > 0) unit_manager_load_trap(hell_enemy_list[i].trap_path);
+		if (strlen(hell_enemy_list[i].trap_path) > 0) unit_manager_load_trap(hell_enemy_list[i].trap_path);
 
 		// create enemy
 		unit_manager_load_enemy(hell_enemy_list[i].path);
-		unit_manager_create_enemy(hell_enemy_list[i].x, hell_enemy_list[i].y, hell_enemy_list[i].face, unit_manager_search_enemy(hell_enemy_list[i].path));
+		unit_manager_create_enemy(hell_enemy_list[i].x, hell_enemy_list[i].y, hell_enemy_list[i].face,
+			unit_manager_search_enemy((char*)hell_enemy_list[i].path));
 	}
 
 	sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_bom.ogg"));
@@ -678,7 +721,8 @@ int unit_manager_load_enemy_effects(int unit_id, int base_w)
 			enemy_effect[unit_id][i].id = UNIT_EFFECT_ID_IGNORE;
 		}
 		else {
-			enemy_effect[unit_id][i].id = unit_manager_create_effect(0, 0, unit_manager_search_effect(enemy_effect_path[base_size_index][i]));
+			enemy_effect[unit_id][i].id = unit_manager_create_effect(0, 0,
+				unit_manager_search_effect((char*)enemy_effect_path[base_size_index][i]));
 			unit_manager_effect_set_anim_stat(enemy_effect[unit_id][i].id, ANIM_STAT_FLAG_HIDE);
 		}
 	}
@@ -811,7 +855,8 @@ void unit_manager_enemy_drop_item(unit_enemy_data_t* unit_data) {
 
 			// star effect
 			unit_items_data_t* new_item = unit_manager_get_items(spawn_id);
-			int effect_id = unit_manager_create_effect(new_item->col_shape->x, new_item->col_shape->y, unit_manager_search_effect(enemy_star_path));
+			int effect_id = unit_manager_create_effect(new_item->col_shape->x, new_item->col_shape->y,
+				unit_manager_search_effect((char*)enemy_star_path));
 			unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)new_item);
 
 			g_stage_data->drop_judge_count = 0;
@@ -995,7 +1040,8 @@ void unit_manager_enemy_update()
 							// damage 5 hp
 							if (unit_manager_enemy_get_damage_force(&enemy[ei], -enemy[ei].effect_param[ef_i].damage) == 0) {
 								int base_size_index = animation_manager_get_base_size_index(enemy[ei].base->anim->base_w);
-								int effect_id = unit_manager_create_effect(enemy[ei].col_shape->x, enemy[ei].col_shape->y, unit_manager_search_effect(enemy_damage_path[base_size_index]));
+								int effect_id = unit_manager_create_effect(enemy[ei].col_shape->x, enemy[ei].col_shape->y,
+									unit_manager_search_effect((char*)enemy_damage_path[base_size_index]));
 								unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&enemy[ei]);
 							}
 

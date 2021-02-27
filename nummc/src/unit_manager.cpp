@@ -16,6 +16,8 @@
 #include "ai_manager.h"
 #include "scene_play_stage.h"
 
+static char tmp_char_buf[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+
 int unit_manager_init()
 {
 	unit_manager_init_player();
@@ -42,42 +44,51 @@ void unit_manager_unload()
 
 void load_collision(std::string& line, shape_data** col_shape)
 {
-	std::string key, value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
-	if (value == "") value = "0";
-	if (key == "type") {
-		if (value == "BOX") {
+	if (STRCMP_EQ(key,"type")) {
+		if (STRCMP_EQ(value,"BOX")) {
 			*col_shape = (shape_data *)collision_manager_new_shape_box();
 		}
-		else if (value == "ROUND") {
+		else if (STRCMP_EQ(value,"ROUND")) {
 			*col_shape = (shape_data *)collision_manager_new_shape_round();
 		}
-		else if (value == "BOX_S") {
+		else if (STRCMP_EQ(value,"BOX_S")) {
 			*col_shape = (shape_data*)collision_manager_new_shape_box(COLLISION_ID_STATIC_SHAPE);
 		}
-		else if (value == "ROUND_S") {
+		else if (STRCMP_EQ(value,"ROUND_S")) {
 			*col_shape = (shape_data*)collision_manager_new_shape_round(COLLISION_ID_STATIC_SHAPE);
 		}
+		return;
 	}
-	if (key == "group") collision_manager_set_group(*col_shape, value);
-	if (key == "group_option") collision_manager_set_group_option(*col_shape, value);
+	if (STRCMP_EQ(key, "group")) {
+		collision_manager_set_group(*col_shape, value);
+		return;
+	}
+	if (STRCMP_EQ(key, "group_option")) {
+		collision_manager_set_group_option(*col_shape, value);
+		return;
+	}
 
-	if (key == "x") {
-		(*col_shape)->offset_x = atoi(value.c_str());
+	if (STRCMP_EQ(key,"x")) {
+		(*col_shape)->offset_x = atoi(value);
+		return;
 	}
-	if (key == "y") {
-		(*col_shape)->offset_y = atoi(value.c_str());
+	if (STRCMP_EQ(key,"y")) {
+		(*col_shape)->offset_y = atoi(value);
+		return;
 	}
 
-	if (key == "face_type") {
-		if (value == "LR") {
+	if (STRCMP_EQ(key,"face_type")) {
+		if (STRCMP_EQ(value,"LR")) {
 			(*col_shape)->face_type = UNIT_FACE_TYPE_LR;
 		}
-		else if (value == "UD") {
+		else if (STRCMP_EQ(value,"UD")) {
 			(*col_shape)->face_type = UNIT_FACE_TYPE_UD;
 		}
-		else if (value == "ALL") {
+		else if (STRCMP_EQ(value,"ALL")) {
 			(*col_shape)->face_type = UNIT_FACE_TYPE_ALL;
 		}
 		else {
@@ -86,25 +97,29 @@ void load_collision(std::string& line, shape_data** col_shape)
 		return;
 	}
 
-	if (key == "vec_x_max") {
-		(*col_shape)->vec_x_max = (float)atof(value.c_str());
+	if (STRCMP_EQ(key,"vec_x_max")) {
+		(*col_shape)->vec_x_max = (float)atof(value);
+		return;
 	}
-	if (key == "vec_y_max") {
-		(*col_shape)->vec_y_max = (float)atof(value.c_str());
+	if (STRCMP_EQ(key,"vec_y_max")) {
+		(*col_shape)->vec_y_max = (float)atof(value);
+		return;
 	}
-	if (key == "vec_x_delta") {
-		(*col_shape)->vec_x_delta = (float)atof(value.c_str());
+	if (STRCMP_EQ(key,"vec_x_delta")) {
+		(*col_shape)->vec_x_delta = (float)atof(value);
+		return;
 	}
-	if (key == "vec_y_delta") {
-		(*col_shape)->vec_y_delta = (float)atof(value.c_str());
+	if (STRCMP_EQ(key,"vec_y_delta")) {
+		(*col_shape)->vec_y_delta = (float)atof(value);
+		return;
 	}
 
 	// joint
-	if (key == "joint_type") {
-		if (value == "PIN") {
+	if (STRCMP_EQ(key,"joint_type")) {
+		if (STRCMP_EQ(value,"PIN")) {
 			(*col_shape)->joint_type = COLLISION_JOINT_TYPE_PIN;
 		}
-		else if (value == "PIN_ROUND") {
+		else if (STRCMP_EQ(value,"PIN_ROUND")) {
 			(*col_shape)->joint_type = COLLISION_JOINT_TYPE_PIN_ROUND;
 		}
 		else {
@@ -112,25 +127,45 @@ void load_collision(std::string& line, shape_data** col_shape)
 		}
 		return;
 	}
-	if (key == "joint_x") (*col_shape)->joint_x = atoi(value.c_str());
-	if (key == "joint_y") (*col_shape)->joint_y = atoi(value.c_str());
-	if (key == "joint_val1") (*col_shape)->joint_val1 = atoi(value.c_str());
+	if (STRCMP_EQ(key, "joint_x")) {
+		(*col_shape)->joint_x = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "joint_y")) {
+		(*col_shape)->joint_y = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "joint_val1")) {
+		(*col_shape)->joint_val1 = atoi(value);
+		return;
+	}
 
-	if (key == "w") ((shape_box_data*) *col_shape)->w = atoi(value.c_str());
-	if (key == "h") ((shape_box_data*) *col_shape)->h = atoi(value.c_str());
-	if (key == "r") ((shape_round_data*) *col_shape)->r = atoi(value.c_str());
+	if (STRCMP_EQ(key, "w")) {
+		((shape_box_data*)*col_shape)->w = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "h")) {
+		((shape_box_data*)*col_shape)->h = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "r")) {
+		((shape_round_data*)*col_shape)->r = atoi(value);
+		return;
+	}
 }
 
 void load_anim(std::string& line, anim_data_t* anim)
 {
-	std::string key, value;
-	game_utils_split_key_value(line, key, value);
-	if (key == "base_w") {
-		anim->base_w = atoi(value.c_str());
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
+
+	if (STRCMP_EQ(key,"base_w")) {
+		anim->base_w = atoi(value);
 		return;
 	}
-	if (key == "base_h") {
-		anim->base_h = atoi(value.c_str());
+	if (STRCMP_EQ(key,"base_h")) {
+		anim->base_h = atoi(value);
 		return;
 	}
 
@@ -148,30 +183,35 @@ void load_anim(std::string& line, anim_data_t* anim)
 		}
 	}
 
-	std::string stat_str = line.substr(index_start, index_end - index_start);
+	//std::string stat_str = line.substr(index_start, index_end - index_start);
+	if (game_utils_string_copy_n(tmp_char_buf, &line[index_start], index_end - index_start) != 0) {
+		LOG_ERROR("Error: load_anim() failed copy stat\n");
+		return;
+	}
+
 	int stat_val;
-	if (stat_str == "IDLE") {
+	if (STRCMP_EQ(tmp_char_buf,"IDLE")) {
 		stat_val = ANIM_STAT_IDLE;
 	}
-	else if (stat_str == "MOVE") {
+	else if (STRCMP_EQ(tmp_char_buf,"MOVE")) {
 		stat_val = ANIM_STAT_MOVE;
 	}
-	else if ((stat_str == "ATTACK") || (stat_str == "ATTACK1")) {
+	else if (STRCMP_EQ(tmp_char_buf,"ATTACK") || STRCMP_EQ(tmp_char_buf,"ATTACK1")) {
 		stat_val = ANIM_STAT_ATTACK1;
 	}
-	else if (stat_str == "ATTACK2") {
+	else if (STRCMP_EQ(tmp_char_buf,"ATTACK2")) {
 		stat_val = ANIM_STAT_ATTACK2;
 	}
-	else if (stat_str == "DEFENCE") {
+	else if (STRCMP_EQ(tmp_char_buf,"DEFENCE")) {
 		stat_val = ANIM_STAT_DEFENCE;
 	}
-	else if (stat_str == "DIE") {
+	else if (STRCMP_EQ(tmp_char_buf,"DIE")) {
 		stat_val = ANIM_STAT_DIE;
 	}
-	else if (stat_str == "SPAWN") {
+	else if (STRCMP_EQ(tmp_char_buf,"SPAWN")) {
 		stat_val = ANIM_STAT_SPAWN;
 	}
-	else if (stat_str == "HIDE") {
+	else if (STRCMP_EQ(tmp_char_buf,"HIDE")) {
 		stat_val = ANIM_STAT_HIDE;
 	}
 	else {
@@ -187,49 +227,56 @@ void load_anim(std::string& line, anim_data_t* anim)
 
 void load_ai(std::string& line, ai_data_t* ai_data)
 {
-	std::string key, value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
-	if (value == "") value = "0";
-	if (key == "type") {
+	if (STRCMP_EQ(key,"type")) {
 		ai_data->type = ai_manager_get_ai_type(value);
+		return;
 	}
 
-	if (key == "val1") {
-		ai_data->val1 = atoi(value.c_str());
+	if (STRCMP_EQ(key,"val1")) {
+		ai_data->val1 = atoi(value);
+		return;
 	}
-	else if (key == "val2") {
-		ai_data->val2 = atoi(value.c_str());
+	if (STRCMP_EQ(key,"val2")) {
+		ai_data->val2 = atoi(value);
+		return;
 	}
-	else if (key == "val3") {
-		ai_data->val3 = atoi(value.c_str());
+	if (STRCMP_EQ(key,"val3")) {
+		ai_data->val3 = atoi(value);
+		return;
 	}
-	else if (key == "val4") {
-		ai_data->val4 = atoi(value.c_str());
+	if (STRCMP_EQ(key,"val4")) {
+		ai_data->val4 = atoi(value);
+		return;
 	}
 }
 
 void load_bullet(std::string& line, ai_data_t** bullet_data)
 {
-	std::string key, value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
-	if (value == "") value = "0";
-	if (key == "bullet1_ai") {
+	if (STRCMP_EQ(key,"bullet1_ai")) {
 		bullet_data[0] = ai_manager_new_ai_base_data();
 		bullet_data[0]->type = AI_TYPE_BULLET;
 
 		char* path_c_str = game_utils_string_new();
-		game_utils_string_copy(path_c_str, value.c_str());
+		game_utils_string_copy(path_c_str, value);
 		((ai_bullet_t*)bullet_data[0])->obj = (void*)path_c_str;
+		return;
 	}
-	if (key == "bullet2_ai") {
+	if (STRCMP_EQ(key,"bullet2_ai")) {
 		bullet_data[1] = ai_manager_new_ai_base_data();
 		bullet_data[1]->type = AI_TYPE_BULLET;
 
 		char* path_c_str = game_utils_string_new();
-		game_utils_string_copy(path_c_str, value.c_str());
+		game_utils_string_copy(path_c_str, value);
 		((ai_bullet_t*)bullet_data[1])->obj = (void*)path_c_str;
+		return;
 	}
 }
 

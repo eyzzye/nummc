@@ -30,6 +30,8 @@ static const char* special_items_path[] = {
 	"units/items/special/strength_up/strength_up.unit",
 };
 
+static const char* smoke_effect_path = "units/effect/smoke/smoke.unit";
+
 static void load_items_unit(std::string& line);
 
 // fire bom callback
@@ -43,12 +45,12 @@ public:
 		unit_data_t* unit_data = (unit_data_t*)body->GetUserData();
 
 		if (unit_data) {
-			std::string effect_path = "units/effect/smoke/smoke.unit";
 			if (unit_data->type == UNIT_TYPE_PLAYER) {
 				bool overlap = b2TestOverlap(shape, 0, &m_circle, 0, body->GetTransform(), m_transform);
 				if (overlap) {
 					if (unit_manager_player_get_damage(-m_item_data->hp) == 0) {
-						unit_manager_create_effect(unit_data->col_shape->x, unit_data->col_shape->y, unit_manager_search_effect(effect_path));
+						unit_manager_create_effect(unit_data->col_shape->x, unit_data->col_shape->y,
+							unit_manager_search_effect((char*)smoke_effect_path));
 					}
 				}
 			}
@@ -56,7 +58,8 @@ public:
 				bool overlap = b2TestOverlap(shape, 0, &m_circle, 0, body->GetTransform(), m_transform);
 				if (overlap) {
 					unit_manager_enemy_get_damage((unit_enemy_data_t*)unit_data, -m_item_data->hp);
-					unit_manager_create_effect(unit_data->col_shape->x, unit_data->col_shape->y, unit_manager_search_effect(effect_path));
+					unit_manager_create_effect(unit_data->col_shape->x, unit_data->col_shape->y,
+						unit_manager_search_effect((char*)smoke_effect_path));
 				}
 			}
 			else if ((unit_data->type == UNIT_TYPE_ITEMS) && (unit_data->col_shape->stat == COLLISION_STAT_ENABLE)) {
@@ -69,7 +72,8 @@ public:
 				}
 				if (overlap) {
 					unit_manager_items_set_anim_stat(unit_data->id, ANIM_STAT_FLAG_DIE);
-					unit_manager_create_effect(unit_data->col_shape->x, unit_data->col_shape->y, unit_manager_search_effect(effect_path));
+					unit_manager_create_effect(unit_data->col_shape->x, unit_data->col_shape->y,
+						unit_manager_search_effect((char*)smoke_effect_path));
 				}
 			}
 		}
@@ -105,7 +109,7 @@ void unit_manager_unload_items()
 	}
 }
 
-int unit_manager_search_items(std::string& path)
+int unit_manager_search_items(char* path)
 {
 	int ii = 0;
 	bool items_found = false;
@@ -236,7 +240,16 @@ void unit_manager_items_bom_event(unit_items_data_t* item_data)
 int unit_manager_load_items_def(std::string path)
 {
 	bool read_flg = false;
-	std::ifstream inFile(g_base_path + "data/" + path);
+
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("ai_manager_load_bullet_file failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		std::string line;
 		while (std::getline(inFile, line)) {
@@ -261,10 +274,19 @@ int unit_manager_load_items_def(std::string path)
 
 int unit_manager_load_items(std::string path)
 {
-	if (unit_manager_search_items(path) >= 0) return 0;
+	if (unit_manager_search_items((char*)path.c_str()) >= 0) return 0;
 
 	bool read_flg[UNIT_TAG_END] = { false };
-	std::ifstream inFile(g_base_path + "data/" + path);
+
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("unit_manager_load_items failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		std::string line;
 		while (std::getline(inFile, line)) {
@@ -332,53 +354,84 @@ int unit_manager_load_items(std::string path)
 
 static void load_items_unit(std::string& line)
 {
-	std::string key, value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
-	if (value == "") value = "0";
-	if (key == "group") {
-		if (value == "NONE") {
+	if (STRCMP_EQ(key,"group")) {
+		if (STRCMP_EQ(value,"NONE")) {
 			items_base[items_base_index_end].group = UNIT_ITEM_GROUP_NONE;
 		}
-		else if (value == "DAMAGE") {
+		else if (STRCMP_EQ(value,"DAMAGE")) {
 			items_base[items_base_index_end].group = UNIT_ITEM_GROUP_DAMAGE;
 		}
-		else if (value == "RECOVERY") {
+		else if (STRCMP_EQ(value,"RECOVERY")) {
 			items_base[items_base_index_end].group = UNIT_ITEM_GROUP_RECOVERY;
 		}
-		else if (value == "SPECIAL") {
+		else if (STRCMP_EQ(value,"SPECIAL")) {
 			items_base[items_base_index_end].group = UNIT_ITEM_GROUP_SPECIAL;
 		}
-		else if (value == "INVINCIBLE") {
+		else if (STRCMP_EQ(value,"INVINCIBLE")) {
 			items_base[items_base_index_end].group = UNIT_ITEM_GROUP_INVINCIBLE;
 		}
-		else if (value == "BULLET") {
+		else if (STRCMP_EQ(value,"BULLET")) {
 			items_base[items_base_index_end].group = UNIT_ITEM_GROUP_BULLET;
 		}
-		else if (value == "ARMOR") {
+		else if (STRCMP_EQ(value,"ARMOR")) {
 			items_base[items_base_index_end].group = UNIT_ITEM_GROUP_ARMOR;
 		}
-		else if (value == "STOCK") {
+		else if (STRCMP_EQ(value,"STOCK")) {
 			items_base[items_base_index_end].group = UNIT_ITEM_GROUP_STOCK;
 		}
-		else if (value == "TBOX") {
+		else if (STRCMP_EQ(value,"TBOX")) {
 			items_base[items_base_index_end].group = UNIT_ITEM_GROUP_TBOX;
 		}
-		else if (value == "BOM") {
+		else if (STRCMP_EQ(value,"BOM")) {
 			items_base[items_base_index_end].group = UNIT_ITEM_GROUP_BOM;
 		}
+		return;
 	}
-	if (key == "hp") items_base[items_base_index_end].hp = atoi(value.c_str());
-	if (key == "time") items_base[items_base_index_end].time = atoi(value.c_str());
-	if (key == "item_id") items_base[items_base_index_end].item_id = atoi(value.c_str());
-	if (key == "sub_id") items_base[items_base_index_end].sub_id = atoi(value.c_str());
+	if (STRCMP_EQ(key, "hp")) {
+		items_base[items_base_index_end].hp = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "time")) {
+		items_base[items_base_index_end].time = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "item_id")) {
+		items_base[items_base_index_end].item_id = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "sub_id")) {
+		items_base[items_base_index_end].sub_id = atoi(value);
+		return;
+	}
 
-	if (key == "val1") items_base[items_base_index_end].val1 = atoi(value.c_str());
-	if (key == "val2") items_base[items_base_index_end].val2 = atoi(value.c_str());
-	if (key == "val3") items_base[items_base_index_end].val3 = atoi(value.c_str());
-	if (key == "val4") items_base[items_base_index_end].val4 = atoi(value.c_str());
-	if (key == "val5") items_base[items_base_index_end].val5 = atoi(value.c_str());
-	if (key == "val6") items_base[items_base_index_end].val6 = atoi(value.c_str());
+	if (STRCMP_EQ(key, "val1")) {
+		items_base[items_base_index_end].val1 = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "val2")) {
+		items_base[items_base_index_end].val2 = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "val3")) {
+		items_base[items_base_index_end].val3 = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "val4")) {
+		items_base[items_base_index_end].val4 = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "val5")) {
+		items_base[items_base_index_end].val5 = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "val6")) {
+		items_base[items_base_index_end].val6 = atoi(value);
+		return;
+	}
 }
 
 int unit_manager_create_items(int x, int y, int base_index)

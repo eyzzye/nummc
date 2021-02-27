@@ -8,9 +8,8 @@
 #define GAME_SAVE_CONFIG_MUSIC_VOLUME_DEFAULT   100
 #define GAME_SAVE_CONFIG_SFX_VOLUME_DEFAULT     100
 
-extern std::string g_save_folder;
-extern std::string g_save_path;
-extern std::string g_save_player_path[];
+extern int g_save_folder_size;
+extern char g_save_folder[GAME_FULL_PATH_MAX];
 
 extern int game_save_init();
 extern int game_save_config_save();
@@ -31,4 +30,4 @@ extern void game_save_get_config_stocker(int slot_index, inventory_stocker_data_
 extern int  game_save_set_config_stocker(int slot_index, inventory_stocker_data_t* stocker);
 extern void game_save_get_config_player_backup(int slot_index);
 extern void game_save_get_config_slot(int slot_index, std::string& player, std::string& stage, std::string& timestamp);
-extern int  game_save_set_config_slot(int slot_index, std::string player, std::string stage, std::string timestamp = "");
+extern int  game_save_set_config_slot(int slot_index, std::string player, std::string stage, bool init_flag = false);

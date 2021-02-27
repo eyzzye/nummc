@@ -425,7 +425,7 @@ extern void unit_manager_player_update();
 extern void unit_manager_player_display(int layer);
 
 // enemy
-extern int unit_manager_search_enemy(std::string& path);
+extern int unit_manager_search_enemy(char* path);
 extern void unit_manager_set_enemy_slowed(int index);
 extern void unit_manager_set_all_enemy_slowed();
 extern unit_enemy_data_t* unit_manager_get_enemy(int index);
@@ -455,7 +455,7 @@ extern void unit_manager_enemy_ai_update();
 extern void unit_manager_enemy_display(int layer);
 
 // items
-extern int unit_manager_search_items(std::string& path);
+extern int unit_manager_search_items(char* path);
 extern const char* unit_manager_get_special_item(int index);
 extern int unit_manager_items_get_val(int unit_id, int index);
 extern void unit_manager_items_set_val(int unit_id, int val, int index);
@@ -473,7 +473,7 @@ extern void unit_manager_items_update();
 extern void unit_manager_items_display(int layer);
 
 // trap
-extern int unit_manager_search_trap(std::string& path);
+extern int unit_manager_search_trap(char* path);
 extern unit_trap_data_t* unit_manager_get_trap(int index);
 extern bool unit_manager_trap_within(int x, int y);
 extern int unit_manager_load_trap(std::string path);
@@ -483,7 +483,7 @@ extern void unit_manager_trap_update();
 extern void unit_manager_trap_display(int layer);
 
 // effect
-extern int unit_manager_search_effect(std::string& path);
+extern int unit_manager_search_effect(char* path);
 extern void unit_manager_effect_set_trace_unit(int unit_id, unit_data_t* unit_data);
 extern void unit_manager_effect_set_b2position(int unit_id, float x, float y);
 extern unit_effect_data_t* unit_manager_get_effect(int index);

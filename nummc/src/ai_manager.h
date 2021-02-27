@@ -212,7 +212,7 @@ extern void ai_manager_unload();
 // ai data control
 extern void ai_manager_copy(ai_data_t* dst, ai_data_t* src);
 extern void ai_manager_bullet_copy(ai_bullet_t* dst, ai_bullet_t* src);
-extern int ai_manager_get_ai_type(std::string& value);
+extern int ai_manager_get_ai_type(char* value);
 extern int ai_manager_load_bullet_file(std::string path, ai_bullet_t* bullet_base);
 extern void ai_manager_delete_ai_data(ai_data_t* delete_data);
 extern int ai_manager_delete_ghost(ai_data_t* ai_data);

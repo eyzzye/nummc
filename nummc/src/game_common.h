@@ -18,6 +18,9 @@
 #define LOWER_BIT(a) (a & 0x0000FFFF)
 #define FLOAT_NEAR_ZERO  (0.0005f)
 
+// file
+#define GAME_FULL_PATH_MAX  256
+
 // map
 #define TILE_TEX_NUM  16
 
@@ -89,6 +92,19 @@ struct _node_buffer_info_t {
 	node_data_t* end_node;    // next=NULL data
 };
 
+// char buffer
+#define GAME_UTILS_STRING_TYPE_NONE      0
+#define GAME_UTILS_STRING_TYPE_CHAR_BUF  1
+
+#define GAME_UTILS_STRING_LINE_BUF_SIZE  256
+#define GAME_UTILS_STRING_CHAR_BUF_SIZE  128
+#define GAME_UTILS_STRING_NAME_BUF_SIZE   32
+typedef struct _game_utils_string_t game_utils_string_t;
+struct _game_utils_string_t {
+	int type;        // NONE:0, CHAR_BUF:1
+	char buffer[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+};
+
 // function pointers
 typedef void void_func();
 typedef void void_p_func(void*);
@@ -96,4 +112,5 @@ typedef void event_func(SDL_Event*);
 typedef void int_func(int);
 typedef int ret_int_func();
 
-extern std::string g_base_path;
+extern int g_base_path_size;
+extern char g_base_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];

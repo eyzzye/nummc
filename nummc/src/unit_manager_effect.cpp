@@ -40,7 +40,7 @@ void unit_manager_unload_effect()
 	}
 }
 
-int unit_manager_search_effect(std::string& path)
+int unit_manager_search_effect(char* path)
 {
 	int ii = 0;
 	bool effect_found = false;
@@ -89,10 +89,19 @@ unit_effect_data_t* unit_manager_get_effect(int index)
 
 int unit_manager_load_effect(std::string path)
 {
-	if (unit_manager_search_effect(path) > 0) return 0;
+	if (unit_manager_search_effect((char*)path.c_str()) > 0) return 0;
 
 	bool read_flg[UNIT_TAG_END] = { false };
-	std::ifstream inFile(g_base_path + "data/" + path);
+
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("unit_manager_load_effect failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		std::string line;
 		while (std::getline(inFile, line)) {
@@ -161,25 +170,29 @@ int unit_manager_load_effect(std::string path)
 
 static void load_effect_unit(std::string& line)
 {
-	std::string key, value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
-	if (value == "") value = "0";
-	if (key == "group") {
-		if (value == "NONE") {
+	if (STRCMP_EQ(key,"group")) {
+		if (STRCMP_EQ(value,"NONE")) {
 			effect_base[effect_base_index_end].group = UNIT_EFFECT_GROUP_NONE;
 		}
-		else if (value == "STATIC") {
+		else if (STRCMP_EQ(value,"STATIC")) {
 			effect_base[effect_base_index_end].group = UNIT_EFFECT_GROUP_STATIC;
 		}
-		else if (value == "DYNAMIC") {
+		else if (STRCMP_EQ(value,"DYNAMIC")) {
 			effect_base[effect_base_index_end].group = UNIT_EFFECT_GROUP_DYNAMIC;
 		}
-		else if (value == "DIE_AUTO") {
+		else if (STRCMP_EQ(value,"DIE_AUTO")) {
 			effect_base[effect_base_index_end].group = UNIT_EFFECT_GROUP_DIE_AUTO;
 		}
+		return;
 	}
-	if (key == "life_timer") effect_base[effect_base_index_end].life_timer = atoi(value.c_str());
+	if (STRCMP_EQ(key, "life_timer")) {
+		effect_base[effect_base_index_end].life_timer = atoi(value);
+		return;
+	}
 }
 
 int unit_manager_create_effect(int x, int y, int base_index)

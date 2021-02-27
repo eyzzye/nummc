@@ -13,8 +13,8 @@
 #define AI_BULLET_TAG_BASIC      0
 #define AI_BULLET_TAG_END        1
 
-static std::string high_light_line_path = "units/effect/high_light_line/high_light_line.unit";
-static std::string bom_path             = "units/items/bom/simple/bom.unit";
+static const char* high_light_line_path = "units/effect/high_light_line/high_light_line.unit";
+static const char* bom_path             = "units/items/bom/simple/bom.unit";
 
 #define AI_BASE_DATA_LIST_SIZE (UNIT_ENEMY_LIST_SIZE * 3 + UNIT_ENEMY_BULLET_BASE_LIST_SIZE)
 static ai_data_t ai_base_data_list[AI_BASE_DATA_LIST_SIZE];
@@ -95,33 +95,33 @@ void ai_manager_bullet_copy(ai_bullet_t* dst, ai_bullet_t* src)
 	dst->val4              = src->val4;
 }
 
-int ai_manager_get_ai_type(std::string& value)
+int ai_manager_get_ai_type(char* value)
 {
 	int ret = AI_TYPE_NONE;
-	if (value == "SIMPLE") ret = AI_TYPE_SIMPLE;
-	else if (value == "LEFT_RIGHT")  ret = AI_TYPE_LEFT_RIGHT;
-	else if (value == "UP_DOWN")     ret = AI_TYPE_UP_DOWN;
-	else if (value == "STAY")        ret = AI_TYPE_STAY;
-	else if (value == "FACE_ROUND")  ret = AI_TYPE_FACE_ROUND;
-	else if (value == "ROUND")       ret = AI_TYPE_ROUND;
-	else if (value == "ROUND_LR")    ret = AI_TYPE_ROUND_LR;
-	else if (value == "ROUND_MOVE")  ret = AI_TYPE_ROUND_MOVE;
-	else if (value == "RANDOM")      ret = AI_TYPE_RANDOM;
-	else if (value == "RANDOM_GRID") ret = AI_TYPE_RANDOM_GRID;
-	else if (value == "GO_TO_BOM")   ret = AI_TYPE_GO_TO_BOM;
+	if (STRCMP_EQ(value,"SIMPLE")) ret = AI_TYPE_SIMPLE;
+	else if (STRCMP_EQ(value,"LEFT_RIGHT"))  ret = AI_TYPE_LEFT_RIGHT;
+	else if (STRCMP_EQ(value,"UP_DOWN"))     ret = AI_TYPE_UP_DOWN;
+	else if (STRCMP_EQ(value,"STAY"))        ret = AI_TYPE_STAY;
+	else if (STRCMP_EQ(value,"FACE_ROUND"))  ret = AI_TYPE_FACE_ROUND;
+	else if (STRCMP_EQ(value,"ROUND"))       ret = AI_TYPE_ROUND;
+	else if (STRCMP_EQ(value,"ROUND_LR"))    ret = AI_TYPE_ROUND_LR;
+	else if (STRCMP_EQ(value,"ROUND_MOVE"))  ret = AI_TYPE_ROUND_MOVE;
+	else if (STRCMP_EQ(value,"RANDOM"))      ret = AI_TYPE_RANDOM;
+	else if (STRCMP_EQ(value,"RANDOM_GRID")) ret = AI_TYPE_RANDOM_GRID;
+	else if (STRCMP_EQ(value,"GO_TO_BOM"))   ret = AI_TYPE_GO_TO_BOM;
 	// boss
-	else if (value == "BOSS_ONE")   ret = AI_TYPE_BOSS_ONE;
-	else if (value == "BOSS_TWO")   ret = AI_TYPE_BOSS_TWO;
-	else if (value == "BOSS_THREE") ret = AI_TYPE_BOSS_THREE;
-	else if (value == "BOSS_FOUR")  ret = AI_TYPE_BOSS_FOUR;
-	else if (value == "BOSS_FIVE")  ret = AI_TYPE_BOSS_FIVE;
-	else if (value == "BOSS_SIX")   ret = AI_TYPE_BOSS_SIX;
-	else if (value == "BOSS_SEVEN") ret = AI_TYPE_BOSS_SEVEN;
-	else if (value == "BOSS_EIGHT") ret = AI_TYPE_BOSS_EIGHT;
-	else if (value == "BOSS_NINE")  ret = AI_TYPE_BOSS_NINE;
-	else if (value == "BOSS_X")     ret = AI_TYPE_BOSS_X;
-	else if (value == "BOSS_Y")     ret = AI_TYPE_BOSS_Y;
-	else if (value == "BOSS_Z")     ret = AI_TYPE_BOSS_Z;
+	else if (STRCMP_EQ(value,"BOSS_ONE"))   ret = AI_TYPE_BOSS_ONE;
+	else if (STRCMP_EQ(value,"BOSS_TWO"))   ret = AI_TYPE_BOSS_TWO;
+	else if (STRCMP_EQ(value,"BOSS_THREE")) ret = AI_TYPE_BOSS_THREE;
+	else if (STRCMP_EQ(value,"BOSS_FOUR"))  ret = AI_TYPE_BOSS_FOUR;
+	else if (STRCMP_EQ(value,"BOSS_FIVE"))  ret = AI_TYPE_BOSS_FIVE;
+	else if (STRCMP_EQ(value,"BOSS_SIX"))   ret = AI_TYPE_BOSS_SIX;
+	else if (STRCMP_EQ(value,"BOSS_SEVEN")) ret = AI_TYPE_BOSS_SEVEN;
+	else if (STRCMP_EQ(value,"BOSS_EIGHT")) ret = AI_TYPE_BOSS_EIGHT;
+	else if (STRCMP_EQ(value,"BOSS_NINE"))  ret = AI_TYPE_BOSS_NINE;
+	else if (STRCMP_EQ(value,"BOSS_X"))     ret = AI_TYPE_BOSS_X;
+	else if (STRCMP_EQ(value,"BOSS_Y"))     ret = AI_TYPE_BOSS_Y;
+	else if (STRCMP_EQ(value,"BOSS_Z"))     ret = AI_TYPE_BOSS_Z;
 
 	return ret;
 }
@@ -130,7 +130,15 @@ int ai_manager_load_bullet_file(std::string path, ai_bullet_t* bullet_base)
 {
 	bool read_flg[AI_BULLET_TAG_END] = { false };
 
-	std::ifstream inFile(g_base_path + "data/" + path);
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("ai_manager_load_bullet_file failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		std::string line;
 		while (std::getline(inFile, line)) {
@@ -155,94 +163,102 @@ int ai_manager_load_bullet_file(std::string path, ai_bullet_t* bullet_base)
 
 static void load_basic(std::string& line, ai_bullet_t* bullet_data)
 {
-	std::string key, value;
-	game_utils_split_key_value(line, key, value);
-	if (value == "") value = "0";
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
-	if (key == "bullet_unit") {
-		const char* bullet_path = value.c_str();
+	if (STRCMP_EQ(key, "bullet_unit")) {
+		char* bullet_path = value;
 		for (int i = 0; i < UNIT_BULLET_ID_END; i++) {
-			if (strcmp(bullet_path, g_enemy_bullet_path[i]) == 0) {
+			if (STRCMP_EQ(bullet_path, (char*)g_enemy_bullet_path[i])) {
 				((ai_bullet_t*)bullet_data)->bullet_path_index = i;
 				break;
 			}
 		}
+		return;
 	}
 
 	int bullet_track_type = UNIT_BULLET_TRACK_NONE;
-	if (key == "bullet_track_type") {
-		const char* bullet_track_str = value.c_str();
-		if (strcmp(bullet_track_str, "LINE") == 0) {
+	if (STRCMP_EQ(key,"bullet_track_type")) {
+		char* bullet_track_str = value;
+		if (STRCMP_EQ(bullet_track_str, "LINE")) {
 			bullet_track_type = UNIT_BULLET_TRACK_LINE;
 		}
-		else if (strcmp(bullet_track_str, "RADIAL") == 0) {
+		else if (STRCMP_EQ(bullet_track_str, "RADIAL")) {
 			bullet_track_type = UNIT_BULLET_TRACK_RADIAL;
 		}
-		else if (strcmp(bullet_track_str, "WAVE") == 0) {
+		else if (STRCMP_EQ(bullet_track_str, "WAVE")) {
 			bullet_track_type = UNIT_BULLET_TRACK_WAVE;
 		}
-		else if (strcmp(bullet_track_str, "CROSS") == 0) {
+		else if (STRCMP_EQ(bullet_track_str, "CROSS")) {
 			bullet_track_type = UNIT_BULLET_TRACK_CROSS;
 		}
-		else if (strcmp(bullet_track_str, "XCROSS") == 0) {
+		else if (STRCMP_EQ(bullet_track_str, "XCROSS")) {
 			bullet_track_type = UNIT_BULLET_TRACK_XCROSS;
 		}
-		else if (strcmp(bullet_track_str, "RANDOM") == 0) {
+		else if (STRCMP_EQ(bullet_track_str, "RANDOM")) {
 			bullet_track_type = UNIT_BULLET_TRACK_RANDOM;
 		}
 		bullet_data->bullet_track_type = bullet_track_type;
+		return;
 	}
 
 	int bullet_num = UNIT_BULLET_NUM_NONE;
-	if (key == "bullet_num") {
-		const char* bullet_path = value.c_str();
-		if (strcmp(bullet_path, "SINGLE") == 0) {
+	if (STRCMP_EQ(key,"bullet_num")) {
+		char* bullet_path = value;
+		if (STRCMP_EQ(bullet_path, "SINGLE")) {
 			bullet_num = UNIT_BULLET_NUM_SINGLE;
 		}
-		else if (strcmp(bullet_path, "DOUBLE") == 0) {
+		else if (STRCMP_EQ(bullet_path, "DOUBLE")) {
 			bullet_num = UNIT_BULLET_NUM_DOUBLE;
 		}
-		else if (strcmp(bullet_path, "TRIPLE") == 0) {
+		else if (STRCMP_EQ(bullet_path, "TRIPLE")) {
 			bullet_num = UNIT_BULLET_NUM_TRIPLE;
 		}
-		else if (strcmp(bullet_path, "QUADRUPLE") == 0) {
+		else if (STRCMP_EQ(bullet_path, "QUADRUPLE")) {
 			bullet_num = UNIT_BULLET_NUM_QUADRUPLE;
 		}
 		else {
 			bullet_num = atoi(bullet_path);
 		}
 		bullet_data->bullet_num = bullet_num;
+		return;
 	}
 
 	int bullet_face = UNIT_FACE_NONE;
-	if (key == "bullet_face") {
-		const char* bullet_face_str = value.c_str();
-		if (strcmp(bullet_face_str, "N") == 0) {
+	if (STRCMP_EQ(key,"bullet_face")) {
+		char* bullet_face_str = value;
+		if (STRCMP_EQ(bullet_face_str, "N")) {
 			bullet_face = UNIT_FACE_N;
 		}
-		else if (strcmp(bullet_face_str, "E") == 0) {
+		else if (STRCMP_EQ(bullet_face_str, "E")) {
 			bullet_face = UNIT_FACE_E;
 		}
-		else if (strcmp(bullet_face_str, "W") == 0) {
+		else if (STRCMP_EQ(bullet_face_str, "W")) {
 			bullet_face = UNIT_FACE_W;
 		}
-		else if (strcmp(bullet_face_str, "S") == 0) {
+		else if (STRCMP_EQ(bullet_face_str, "S")) {
 			bullet_face = UNIT_FACE_S;
 		}
 		bullet_data->bullet_face = bullet_face;
+		return;
 	}
 
-	if (key == "val1") {
-		bullet_data->val1 = atoi(value.c_str());
+	if (STRCMP_EQ(key,"val1")) {
+		bullet_data->val1 = atoi(value);
+		return;
 	}
-	else if (key == "val2") {
-		bullet_data->val2 = atoi(value.c_str());
+	else if (STRCMP_EQ(key,"val2")) {
+		bullet_data->val2 = atoi(value);
+		return;
 	}
-	else if (key == "val3") {
-		bullet_data->val3 = atoi(value.c_str());
+	else if (STRCMP_EQ(key,"val3")) {
+		bullet_data->val3 = atoi(value);
+		return;
 	}
-	else if (key == "val4") {
-		bullet_data->val4 = atoi(value.c_str());
+	else if (STRCMP_EQ(key,"val4")) {
+		bullet_data->val4 = atoi(value);
+		return;
 	}
 }
 
@@ -875,13 +891,13 @@ static void update_simple(ai_data_t* ai_data)
 
 			// create high_light_line
 			if ((unit_data->col_shape->face == UNIT_FACE_N) || (unit_data->col_shape->face == UNIT_FACE_S)) {
-				int unit_id = unit_manager_create_effect(attack_region.x, 0, unit_manager_search_effect(high_light_line_path));
+				int unit_id = unit_manager_create_effect(attack_region.x, 0, unit_manager_search_effect((char*)high_light_line_path));
 				unit_effect_data_t* effect_data = unit_manager_get_effect(unit_id);
 				((shape_box_data*)effect_data->col_shape)->w = attack_region.w;
 				((shape_box_data*)effect_data->col_shape)->h = g_map_y_max * g_tile_height;
 			}
 			else { // (unit_data->col_shape->face == UNIT_FACE_E) || (unit_data->col_shape->face == UNIT_FACE_W)
-				int unit_id = unit_manager_create_effect(0, attack_region.y, unit_manager_search_effect(high_light_line_path));
+				int unit_id = unit_manager_create_effect(0, attack_region.y, unit_manager_search_effect((char*)high_light_line_path));
 				unit_effect_data_t* effect_data = unit_manager_get_effect(unit_id);
 				((shape_box_data*)effect_data->col_shape)->w = g_map_x_max * g_tile_width;
 				((shape_box_data*)effect_data->col_shape)->h = attack_region.h;
@@ -1246,7 +1262,7 @@ static void update_go_to_bom(ai_data_t* ai_data)
 		// drop bom
 		int x, y;
 		unit_manager_get_spawn_items_pos_for_target(unit_data, (unit_data_t*)&g_player, 1, &x, &y);
-		int id = unit_manager_create_items(x, y, unit_manager_search_items(bom_path));
+		int id = unit_manager_create_items(x, y, unit_manager_search_items((char*)bom_path));
 		unit_manager_items_set_anim_stat(id, ANIM_STAT_FLAG_ATTACK);
 
 		// run away from player pos

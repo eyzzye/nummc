@@ -66,14 +66,17 @@ static int game_start_wait_timer;
 static int game_next_stage_wait_timer;
 
 // player info
-static std::string player_path;
+static char player_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 static bool reload_player;
 
 // goal info
-static std::string goal_path = "units/trap/goal/goal.unit";
-static std::string go_next_path = "units/trap/go_next/go_next.unit";
-static std::string smoke_effect_path = "units/effect/smoke/smoke.unit";
+static const char* goal_path = "units/trap/goal/goal.unit";
+static const char* go_next_path = "units/trap/go_next/go_next.unit";
+static const char* smoke_effect_path = "units/effect/smoke/smoke.unit";
 static int game_next_stage_dark_alpha;
+
+// tmp region
+static char tmp_char_buf[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 
 // event func
 static void pre_event() {
@@ -94,7 +97,8 @@ static void main_event_section_boss() {
 		// create trap (already have get goal)
 		if (g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat & STAGE_MAP_STAT_GOAL) {
 			// unset SPAWN stat
-			int unit_id = unit_manager_create_trap(g_stage_data->goal_x, g_stage_data->goal_y, unit_manager_search_trap(goal_path));
+			int unit_id = unit_manager_create_trap(g_stage_data->goal_x, g_stage_data->goal_y,
+				unit_manager_search_trap((char*)goal_path));
 			unit_manager_trap_set_anim_stat(unit_id, ANIM_STAT_FLAG_IDLE);
 		}
 		// create trap (goal)
@@ -107,10 +111,12 @@ static void main_event_section_boss() {
 			unit_manager_player_get_exp(g_stage_data->bonus_exp);
 
 			drop_goal_items();
-			unit_manager_create_trap(g_stage_data->goal_x, g_stage_data->goal_y, unit_manager_search_trap(goal_path));
+			unit_manager_create_trap(g_stage_data->goal_x, g_stage_data->goal_y,
+				unit_manager_search_trap((char*)goal_path));
 
 			// create smoke effect
-			unit_manager_create_effect(g_stage_data->goal_x - g_tile_width / 2, g_stage_data->goal_y - g_tile_height / 2, unit_manager_search_effect(smoke_effect_path));
+			unit_manager_create_effect(g_stage_data->goal_x - g_tile_width / 2, g_stage_data->goal_y - g_tile_height / 2,
+				unit_manager_search_effect((char*)smoke_effect_path));
 
 			stage_manager_set_result(STAGE_RESULT_WIN);
 			g_stage_data->stage_map[g_stage_data->current_stage_map_index].stat |= STAGE_MAP_STAT_GOAL;
@@ -621,8 +627,8 @@ static void pre_load_event(void* null) {
 		game_save_get_config_default_slot(&cursor_index);
 
 		std::string start_stage = g_stage_data->id;
-		std::string start_player = game_utils_get_filename(player_path);
-		if (game_save_set_config_slot(cursor_index, start_player, start_stage) == 0) {
+		game_utils_get_filename(player_path, tmp_char_buf);
+		if (game_save_set_config_slot(cursor_index, tmp_char_buf, start_stage) == 0) {
 			game_save_config_save();
 		}
 	}
@@ -709,10 +715,10 @@ static void main_event_next_load()
 				// auto save
 				int load_slot_index;
 				game_save_get_config_default_slot(&load_slot_index);
-				std::string slot_player = game_utils_get_filename(player_path);
+				game_utils_get_filename(player_path, tmp_char_buf);
 				if (load_slot_index >= 0) {
 					// save current stage
-					if (game_save_set_config_slot(load_slot_index, slot_player, g_stage_data->next_stage_id) == 0) {
+					if (game_save_set_config_slot(load_slot_index, tmp_char_buf, g_stage_data->next_stage_id) == 0) {
 						game_save_config_save();
 					}
 				}
@@ -782,8 +788,8 @@ static void dialog_message_ok()
 {
 	unload_event();
 
-	sound_manager_set(resource_manager_getChunkFromPath("sounds/sfx_click1.ogg"), SOUND_MANAGER_CH_SFX2);
-	scene_stat = SCENE_STAT_IDLE;
+	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_click1.ogg"), SOUND_MANAGER_CH_SFX2);
+	//scene_stat = SCENE_STAT_NONE;
 	scene_manager_load(SCENE_ID_TOP_MENU);
 
 	dialog_message_set_enable(false);
@@ -856,7 +862,8 @@ static void section_init()
 			trap_data_t* spawn_trap_data = (trap_data_t*)node;
 			unit_manager_load_trap(spawn_trap_data->path);
 			if ((spawn_trap_data->x >= 0) && (spawn_trap_data->y >= 0)) {
-				unit_manager_create_trap(spawn_trap_data->x, spawn_trap_data->y, unit_manager_search_trap(spawn_trap_data->path));
+				unit_manager_create_trap(spawn_trap_data->x, spawn_trap_data->y,
+					unit_manager_search_trap((char*)spawn_trap_data->path.c_str()));
 			}
 			node = node->next;
 		}
@@ -871,7 +878,8 @@ static void section_init()
 			trap_data_t* spawn_trap_data = (trap_data_t*)node;
 			unit_manager_load_trap(spawn_trap_data->path);
 			if ((spawn_trap_data->x >= 0) && (spawn_trap_data->y >= 0)) {
-				unit_manager_create_trap(spawn_trap_data->x, spawn_trap_data->y, unit_manager_search_trap(spawn_trap_data->path));
+				unit_manager_create_trap(spawn_trap_data->x, spawn_trap_data->y,
+					unit_manager_search_trap((char*)spawn_trap_data->path.c_str()));
 			}
 			node = node->next;
 		}
@@ -884,20 +892,20 @@ static void section_init()
 			items_data_t* spawn_items_data = (items_data_t*)node;
 			unit_manager_load_items(spawn_items_data->path);
 			if ((spawn_items_data->x >= 0) && (spawn_items_data->y >= 0)) {
-				unit_manager_create_items(spawn_items_data->x, spawn_items_data->y, unit_manager_search_items(spawn_items_data->path));
+				unit_manager_create_items(spawn_items_data->x, spawn_items_data->y, unit_manager_search_items((char*)spawn_items_data->path.c_str()));
 			}
 			node = node->next;
 		}
 
 		// load drop items
 		for (int i = 0; i < p_section->drop_items_list.size(); i++) {
-			int drop_item_id = unit_manager_search_items(p_section->drop_items_list[i]);
+			int drop_item_id = unit_manager_search_items((char*)p_section->drop_items_list[i].c_str());
 			p_section->drop_items_id_list.push_back(drop_item_id);
 		}
 
 		// load goal items
 		for (int i = 0; i < p_section->goal_items_list.size(); i++) {
-			int goal_item_id = unit_manager_search_items(p_section->goal_items_list[i]);
+			int goal_item_id = unit_manager_search_items((char*)p_section->goal_items_list[i].c_str());
 			p_section->goal_items_id_list.push_back(goal_item_id);
 		}
 
@@ -907,7 +915,8 @@ static void section_init()
 			trap_data_t* spawn_trap_data = (trap_data_t*)node;
 			unit_manager_load_trap(spawn_trap_data->path);
 			if ((spawn_trap_data->x >= 0) && (spawn_trap_data->y >= 0)) {
-				unit_manager_create_trap(spawn_trap_data->x, spawn_trap_data->y, unit_manager_search_trap(spawn_trap_data->path));
+				unit_manager_create_trap(spawn_trap_data->x, spawn_trap_data->y,
+					unit_manager_search_trap((char*)spawn_trap_data->path.c_str()));
 			}
 			node = node->next;
 		}
@@ -917,14 +926,16 @@ static void section_init()
 		while (node != NULL) {
 			enemy_data_t* spawn_enemy_data = (enemy_data_t*)node;
 			unit_manager_load_enemy(spawn_enemy_data->path);
-			int enemy_id = unit_manager_create_enemy(spawn_enemy_data->x, spawn_enemy_data->y, spawn_enemy_data->face, unit_manager_search_enemy(spawn_enemy_data->path));
+			int enemy_id = unit_manager_create_enemy(spawn_enemy_data->x, spawn_enemy_data->y, spawn_enemy_data->face,
+				unit_manager_search_enemy((char*)spawn_enemy_data->path.c_str()));
 			if (spawn_enemy_data->ai_step != 0) {
 				unit_manager_set_ai_step(enemy_id, spawn_enemy_data->ai_step);
 			}
 
 			if (g_stage_data->current_section_index != 0) {
 				// create smoke effect
-				unit_manager_create_effect(spawn_enemy_data->x - g_tile_width / 2, spawn_enemy_data->y - g_tile_height / 2, unit_manager_search_effect(smoke_effect_path));
+				unit_manager_create_effect(spawn_enemy_data->x - g_tile_width / 2, spawn_enemy_data->y - g_tile_height / 2,
+					unit_manager_search_effect((char*)smoke_effect_path));
 			}
 
 			node = node->next;
@@ -946,14 +957,16 @@ static void load_next_enemy_phase()
 	while (node != NULL) {
 		enemy_data_t* spawn_enemy_data = (enemy_data_t*)node;
 		unit_manager_load_enemy(spawn_enemy_data->path);
-		int enemy_id = unit_manager_create_enemy(spawn_enemy_data->x, spawn_enemy_data->y, spawn_enemy_data->face, unit_manager_search_enemy(spawn_enemy_data->path));
+		int enemy_id = unit_manager_create_enemy(spawn_enemy_data->x, spawn_enemy_data->y, spawn_enemy_data->face,
+			unit_manager_search_enemy((char*)spawn_enemy_data->path.c_str()));
 		if (spawn_enemy_data->ai_step != 0) {
 			unit_manager_set_ai_step(enemy_id, spawn_enemy_data->ai_step);
 		}
 
 		if (g_stage_data->current_section_index != 0) {
 			// create smoke effect
-			unit_manager_create_effect(spawn_enemy_data->x - g_tile_width / 2, spawn_enemy_data->y - g_tile_height / 2, unit_manager_search_effect(smoke_effect_path));
+			unit_manager_create_effect(spawn_enemy_data->x - g_tile_width / 2, spawn_enemy_data->y - g_tile_height / 2,
+				unit_manager_search_effect((char*)smoke_effect_path));
 		}
 
 		node = node->next;
@@ -1293,7 +1306,10 @@ void scene_play_stage_set_stage_id(std::string& id) {
 }
 
 void scene_play_stage_set_player(std::string& path, bool reload_on) {
-	player_path = path;
+	//player_path = path;
+	if (game_utils_string_copy(player_path, path.c_str()) != 0) {
+		LOG_ERROR("Error: scene_play_stage_set_player() failed copying path\n");
+	}
 	reload_player = reload_on;
 }
 

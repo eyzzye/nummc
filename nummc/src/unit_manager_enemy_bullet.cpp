@@ -120,7 +120,16 @@ int unit_manager_load_enemy_bullet(std::string path)
 	if (unit_manager_search_enemy_bullet(path) > 0) return 0;
 
 	bool read_flg[UNIT_TAG_END] = { false };
-	std::ifstream inFile(g_base_path + "data/" + path);
+
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("unit_manager_load_enemy_bullet failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		std::string line;
 		while (std::getline(inFile, line)) {
@@ -188,24 +197,34 @@ int unit_manager_load_enemy_bullet(std::string path)
 
 static void load_bullet_unit(std::string& line)
 {
-	std::string key, value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
-	if (value == "") value = "0";
-	if (key == "hp") enemy_bullet_base[enemy_bullet_base_index_end].hp = atoi(value.c_str());
-	if (key == "speed") enemy_bullet_base[enemy_bullet_base_index_end].speed = atoi(value.c_str());
-	if (key == "special") {
-		if (value == "NONE") {
+	if (STRCMP_EQ(key, "hp")) {
+		enemy_bullet_base[enemy_bullet_base_index_end].hp = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "speed")) {
+		enemy_bullet_base[enemy_bullet_base_index_end].speed = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key,"special")) {
+		if (STRCMP_EQ(value,"NONE")) {
 			enemy_bullet_base[enemy_bullet_base_index_end].special = UNIT_BULLET_TYPE_NONE;
 		}
-		else if (value == "FIRE") {
+		else if (STRCMP_EQ(value,"FIRE")) {
 			enemy_bullet_base[enemy_bullet_base_index_end].special = UNIT_BULLET_TYPE_FIRE;
 		}
-		else if (value == "ICE") {
+		else if (STRCMP_EQ(value,"ICE")) {
 			enemy_bullet_base[enemy_bullet_base_index_end].special = UNIT_BULLET_TYPE_ICE;
 		}
+		return;
 	}
-	if (key == "special_value") enemy_bullet_base[enemy_bullet_base_index_end].special_value = atoi(value.c_str());
+	if (STRCMP_EQ(key, "special_value")) {
+		enemy_bullet_base[enemy_bullet_base_index_end].special_value = atoi(value);
+		return;
+	}
 }
 
 int unit_manager_create_enemy_bullet(int x, int y, float vec_x, float vec_y, int face, int owner_base_id, int base_index, ai_data_t* ai_bullet)

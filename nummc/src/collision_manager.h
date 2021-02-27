@@ -234,8 +234,8 @@ extern shape_data* collision_manager_create_dynamic_shape(shape_data* base_shape
 	int* x = NULL, int* y = NULL, float* vec_x = NULL, float* vec_y = NULL, int* face = NULL);
 extern shape_data* collision_manager_create_static_wall(int wall_type, void* unit_data, int x, int y, int w, int h);
 
-extern int collision_manager_set_group(shape_data* shape, std::string& group);
-extern int collision_manager_set_group_option(shape_data* shape, std::string& group_option);
+extern int collision_manager_set_group(shape_data* shape, char* group);
+extern int collision_manager_set_group_option(shape_data* shape, char* group_option);
 extern void collision_manager_set_face(shape_data* shape, shape_data* base_shape, int img_w, int img_h, int new_face);
 extern int collision_manager_set_mass(shape_data* shape, float weight);
 extern void collision_manager_set_angle(shape_data* shape, float angle /* rad */);

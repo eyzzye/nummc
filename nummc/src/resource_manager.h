@@ -7,6 +7,11 @@
 #define RESOURCE_MANAGER_TYPE_STATIC  1
 #define RESOURCE_MANAGER_TYPE_DYNAMIC 2
 
+#define RESOURCE_MANAGER_IMG_OPT_NONE        0
+#define RESOURCE_MANAGER_IMG_OPT_SCALE_MODE  1
+#define RESOURCE_MANAGER_IMG_OPT_COLOR       2
+#define RESOURCE_MANAGER_IMG_OPT_END         3
+
 typedef struct _ResourceImg ResourceImg;
 typedef struct _ResourceMusic ResourceMusic;
 typedef struct _ResourceChunk ResourceChunk;

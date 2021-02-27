@@ -80,15 +80,16 @@ static tile_instance_data_t map_raw_data_buffer[MAP_RAW_DATA_BUFFER_SIZE];
 static tile_data_t tile_tex[TILE_TEX_NUM];
 
 // unit path
-static std::string trush_effect_path     = "units/effect/trash/trash.unit";
-static std::string door_boss_effect_path = "units/effect/door/boss.unit";
-static std::string door_nest_effect_path = "units/effect/door/nest.unit";
-static std::string smoke_effect_path     = "units/effect/smoke/smoke.unit";
-static std::string bom_event_item_path   = "units/items/bom/event/event.unit";
-static std::string go_next_path          = "units/trap/go_next/go_next.unit";
+static const char* trush_effect_path     = "units/effect/trash/trash.unit";
+static const char* door_boss_effect_path = "units/effect/door/boss.unit";
+static const char* door_nest_effect_path = "units/effect/door/nest.unit";
+static const char* smoke_effect_path     = "units/effect/smoke/smoke.unit";
+static const char* bom_event_item_path   = "units/items/bom/event/event.unit";
+static const char* go_next_path          = "units/trap/go_next/go_next.unit";
 
 // tmp variables
-static std::string dir_path;
+static char dir_path[GAME_FULL_PATH_MAX];
+static int dir_path_size;
 static int read_tile_type;
 static int read_tile_index;
 static int write_section_map_index;
@@ -326,10 +327,18 @@ void map_manager_create_stage_map()
 		std::string path = g_stage_data->section_list[1]->map_path;
 		map_manager_load(path);
 
+		//full_path = g_base_path + "data/" + game_utils_upper_folder(path) + "/*.tile";
+		char full_path[GAME_FULL_PATH_MAX];
+		std::string tile_files = game_utils_upper_folder(path) + "/*.tile";
+		int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)tile_files.c_str());
+		if (tmp_path_size == 0) {
+			LOG_ERROR("map_manager_create_stage_map failed get %s\n", path.c_str());
+			return;
+		}
+
 		// load *.tile
-		std::string tile_files = g_base_path + "data/" + game_utils_upper_folder(path) + "/*.tile";
 		WIN32_FIND_DATAA find_file_data;
-		HANDLE h_find = FindFirstFileA(tile_files.c_str(), &find_file_data);
+		HANDLE h_find = FindFirstFileA(full_path, &find_file_data);
 		if (h_find == INVALID_HANDLE_VALUE) {
 			LOG_ERROR("map_manager_load FindFirstFileA() error\n", path.c_str());
 			return;
@@ -590,7 +599,7 @@ void map_manager_create_door()
 		}
 
 		// create bom_event item
-		int item_id = unit_manager_create_items(center_x * g_tile_width, 0, unit_manager_search_items(bom_event_item_path));
+		int item_id = unit_manager_create_items(center_x * g_tile_width, 0, unit_manager_search_items((char*)bom_event_item_path));
 		unit_items_data_t* items_data = unit_manager_get_items(item_id);
 		items_data->val1 = STAGE_MAP_FACE_N;
 	}
@@ -612,10 +621,11 @@ void map_manager_create_door()
 		}
 
 		// door overlay effect
-		std::string* effect_path = NULL;
+		const char** effect_path = NULL;
 		if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_BOSS) effect_path = &door_boss_effect_path;
 		else if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_NEST) effect_path = &door_nest_effect_path;
-		if (effect_path != NULL) unit_manager_create_effect(center_x * g_tile_width, 0, unit_manager_search_effect(*effect_path));
+		if (effect_path != NULL) unit_manager_create_effect(center_x * g_tile_width, 0,
+			unit_manager_search_effect((char*)*effect_path));
 	}
 
 	int map_maskBits = COLLISION_GROUP_MASK_PLAYER | COLLISION_GROUP_MASK_ENEMY | COLLISION_GROUP_MASK_ITEMS | COLLISION_GROUP_MASK_PLAYER_BULLET | COLLISION_GROUP_MASK_ENEMY_BULLET;
@@ -645,7 +655,7 @@ void map_manager_create_door()
 		}
 
 		// create bom_event item
-		int item_id = unit_manager_create_items(center_x * g_tile_width, (MAP_HEIGHT_NUM_MAX - 1) * g_tile_height, unit_manager_search_items(bom_event_item_path));
+		int item_id = unit_manager_create_items(center_x * g_tile_width, (MAP_HEIGHT_NUM_MAX - 1) * g_tile_height, unit_manager_search_items((char*)bom_event_item_path));
 		unit_items_data_t* items_data = unit_manager_get_items(item_id);
 		items_data->val1 = STAGE_MAP_FACE_S;
 	}
@@ -667,10 +677,11 @@ void map_manager_create_door()
 		}
 
 		// door overlay effect
-		std::string* effect_path = NULL;
+		const char** effect_path = NULL;
 		if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_BOSS) effect_path = &door_boss_effect_path;
 		else if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_NEST) effect_path = &door_nest_effect_path;
-		if (effect_path != NULL) unit_manager_create_effect(center_x * g_tile_width, (MAP_HEIGHT_NUM_MAX - 1) * g_tile_height, unit_manager_search_effect(*effect_path));
+		if (effect_path != NULL) unit_manager_create_effect(center_x * g_tile_width, (MAP_HEIGHT_NUM_MAX - 1) * g_tile_height,
+			unit_manager_search_effect((char*)*effect_path));
 	}
 
 	if (map_wall[COLLISION_STATIC_WALL_BOTTOM_DOOR].col_shape == NULL) {
@@ -703,7 +714,7 @@ void map_manager_create_door()
 		}
 
 		// create bom_event item
-		int item_id = unit_manager_create_items(0, center_y * g_tile_height, unit_manager_search_items(bom_event_item_path));
+		int item_id = unit_manager_create_items(0, center_y * g_tile_height, unit_manager_search_items((char*)bom_event_item_path));
 		unit_items_data_t* items_data = unit_manager_get_items(item_id);
 		items_data->val1 = STAGE_MAP_FACE_W;
 	}
@@ -725,10 +736,11 @@ void map_manager_create_door()
 		}
 
 		// door overlay effect
-		std::string* effect_path = NULL;
+		const char** effect_path = NULL;
 		if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_BOSS) effect_path = &door_boss_effect_path;
 		else if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_NEST) effect_path = &door_nest_effect_path;
-		if (effect_path != NULL) unit_manager_create_effect(0, center_y * g_tile_height, unit_manager_search_effect(*effect_path));
+		if (effect_path != NULL) unit_manager_create_effect(0, center_y * g_tile_height,
+			unit_manager_search_effect((char*)*effect_path));
 	}
 
 	if (map_wall[COLLISION_STATIC_WALL_LEFT_DOOR].col_shape == NULL) {
@@ -757,7 +769,7 @@ void map_manager_create_door()
 		}
 
 		// create bom_event item
-		int item_id = unit_manager_create_items((MAP_WIDTH_NUM_MAX - 1) * g_tile_width, center_y * g_tile_height, unit_manager_search_items(bom_event_item_path));
+		int item_id = unit_manager_create_items((MAP_WIDTH_NUM_MAX - 1) * g_tile_width, center_y * g_tile_height, unit_manager_search_items((char*)bom_event_item_path));
 		unit_items_data_t* items_data = unit_manager_get_items(item_id);
 		items_data->val1 = STAGE_MAP_FACE_E;
 	}
@@ -779,10 +791,11 @@ void map_manager_create_door()
 		}
 
 		// door overlay effect
-		std::string* effect_path = NULL;
+		const char** effect_path = NULL;
 		if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_BOSS) effect_path = &door_boss_effect_path;
 		else if (g_stage_data->stage_map[next_stage_map_index].section_type == SECTION_TYPE_NEST) effect_path = &door_nest_effect_path;
-		if (effect_path != NULL) unit_manager_create_effect((MAP_WIDTH_NUM_MAX - 1) * g_tile_width, center_y * g_tile_height, unit_manager_search_effect(*effect_path));
+		if (effect_path != NULL) unit_manager_create_effect((MAP_WIDTH_NUM_MAX - 1) * g_tile_width, center_y * g_tile_height,
+			unit_manager_search_effect((char*)*effect_path));
 	}
 
 	if (map_wall[COLLISION_STATIC_WALL_RIGHT_DOOR].col_shape == NULL) {
@@ -817,7 +830,7 @@ void map_manager_open_door()
 		(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n)->id = TILE_ID_NONE;
 		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n);
 
-		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap((char*)go_next_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
 		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_N;
 		open_snd_flag = true;
@@ -830,7 +843,7 @@ void map_manager_open_door()
 		(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s)->id = TILE_ID_NONE;
 		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s);
 
-		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap((char*)go_next_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
 		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_S;
 		open_snd_flag = true;
@@ -843,7 +856,7 @@ void map_manager_open_door()
 		(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w)->id = TILE_ID_NONE;
 		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w);
 
-		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap((char*)go_next_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
 		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_W;
 		open_snd_flag = true;
@@ -856,7 +869,7 @@ void map_manager_open_door()
 		(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e)->id = TILE_ID_NONE;
 		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e);
 
-		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap((char*)go_next_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
 		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_E;
 		open_snd_flag = true;
@@ -885,12 +898,12 @@ void map_manager_open_hide_door(int stage_map_face)
 		}
 		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_n);
 
-		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap((char*)go_next_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
 		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_N;
 
 		// create trush item
-		unit_manager_create_effect(x, y, unit_manager_search_effect(trush_effect_path));
+		unit_manager_create_effect(x, y, unit_manager_search_effect((char*)trush_effect_path));
 
 		// open mini map
 		int next_stage_map_index = g_stage_data->current_stage_map_index - STAGE_MAP_WIDTH_NUM;
@@ -910,12 +923,12 @@ void map_manager_open_hide_door(int stage_map_face)
 		}
 		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_s);
 
-		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap((char*)go_next_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
 		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_S;
 
 		// create trush item
-		unit_manager_create_effect(x, y, unit_manager_search_effect(trush_effect_path));
+		unit_manager_create_effect(x, y, unit_manager_search_effect((char*)trush_effect_path));
 
 		// open mini map
 		int next_stage_map_index = g_stage_data->current_stage_map_index + STAGE_MAP_WIDTH_NUM;
@@ -935,12 +948,12 @@ void map_manager_open_hide_door(int stage_map_face)
 		}
 		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_w);
 
-		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap((char*)go_next_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
 		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_W;
 
 		// create trush item
-		unit_manager_create_effect(x, y, unit_manager_search_effect(trush_effect_path));
+		unit_manager_create_effect(x, y, unit_manager_search_effect((char*)trush_effect_path));
 
 		// open mini map
 		int next_stage_map_index = g_stage_data->current_stage_map_index - 1;
@@ -960,12 +973,12 @@ void map_manager_open_hide_door(int stage_map_face)
 		}
 		map_manager_delete_tile_instance_col(map_raw_data[MAP_TYPE_BLOCK] + section_map_index_e);
 
-		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap(go_next_path));
+		int trap_id = unit_manager_create_trap(x, y, unit_manager_search_trap((char*)go_next_path));
 		unit_trap_data_t* trap_data = unit_manager_get_trap(trap_id);
 		trap_data->sub_id = UNIT_TRAP_GATE_ID_GO_NEXT_E;
 
 		// create trush item
-		unit_manager_create_effect(x, y, unit_manager_search_effect(trush_effect_path));
+		unit_manager_create_effect(x, y, unit_manager_search_effect((char*)trush_effect_path));
 
 		// open mini map
 		int next_stage_map_index = g_stage_data->current_stage_map_index + 1;
@@ -1070,10 +1083,10 @@ void map_manager_break_block(int x, int y, int w /* block */, int h /* block */)
 				}
 
 				// create trush item
-				unit_manager_create_effect(x_pos, y_pos, unit_manager_search_effect(trush_effect_path));
+				unit_manager_create_effect(x_pos, y_pos, unit_manager_search_effect((char*)trush_effect_path));
 
 				// create smoke effect
-				unit_manager_create_effect(x_pos, y_pos, unit_manager_search_effect(smoke_effect_path));
+				unit_manager_create_effect(x_pos, y_pos, unit_manager_search_effect((char*)smoke_effect_path));
 			}
 			map_index++;
 		}
@@ -1084,7 +1097,15 @@ static int map_manager_load_tile(std::string path, tile_data_t* tile)
 {
 	bool read_flg[TILE_TAG_END] = { false };
 
-	std::ifstream inFile(g_base_path + "data/" + path);
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("map_manager_load_tile failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		std::string line;
 		while (std::getline(inFile, line)) {
@@ -1135,21 +1156,24 @@ static int map_manager_load_tile(std::string path, tile_data_t* tile)
 }
 
 static void load_tile_basic(std::string& line, tile_data_t* tile) {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
-	if (key == "breakable") tile->breakable = value == "yes" ? TILE_BREAKABLE_TRUE : TILE_BREAKABLE_FALSE;
+	if (STRCMP_EQ(key, "breakable")) {
+		tile->breakable = STRCMP_EQ(value,"yes") ? TILE_BREAKABLE_TRUE : TILE_BREAKABLE_FALSE;
+		return;
+	}
 }
 
 static void load_tile_frame(std::string& line, tile_data_t* tile) {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
 	tile_base_data_t* tile_base = (tile_base_data_t*)tile;
-	if (key == "duration") {
-		if (value == "*") {
+	if (STRCMP_EQ(key,"duration")) {
+		if (STRCMP_EQ(value,"*")) {
 			tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->type = ANIM_TYPE_STATIC;
 			anim_frame_data_t* anim_frame_data = animation_manager_new_anim_frame();
 			tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->frame_list[0] = anim_frame_data;
@@ -1158,59 +1182,76 @@ static void load_tile_frame(std::string& line, tile_data_t* tile) {
 			tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->frame_size = 1;
 		}
 		else {
-			std::vector<int> int_list;
-			game_utils_split_conmma(value, int_list);
+			int int_list[ANIM_FRAME_NUM_MAX];
+			int int_list_size = game_utils_split_conmma_int(value, int_list, ANIM_FRAME_NUM_MAX);
 
 			tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->type = ANIM_TYPE_DYNAMIC;
 			tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->total_time = 0;
-			for (int i = 0; i < int_list.size(); i++) {
+			for (int i = 0; i < int_list_size; i++) {
 				anim_frame_data_t* anim_frame_data = animation_manager_new_anim_frame();
 				tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->frame_list[i] = anim_frame_data;
 				anim_frame_data->frame_time = int_list[i];
 				tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->total_time += int_list[i];
 			}
-			tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->frame_size = (int)int_list.size();
+			tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->frame_size = int_list_size;
 		}
+		return;
 	}
 }
 
 static void load_tile_img(std::string& line, tile_data_t* tile) {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char image_filename[GAME_FULL_PATH_MAX];
+	char str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * ANIM_FRAME_NUM_MAX];
+	int str_list_size;
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
 	tile_base_data_t* tile_base = (tile_base_data_t*)tile;
-	if (key == "layer") {
-		tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->tex_layer = atoi(value.c_str());
+	if (STRCMP_EQ(key,"layer")) {
+		tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->tex_layer = atoi(value);
+		return;
 	}
-	if (key == "dir_path") {
-		dir_path = value;
-	}
-	if (key == "path") {
-		std::vector<std::string> str_list;
-		game_utils_split_conmma(value, str_list);
-
-		std::string image_filename = dir_path + "/";
-		for (int i = 0; i < str_list.size(); i++) {
-			anim_frame_data_t* anim_frame_data = tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->frame_list[i];
-			anim_frame_data->res_img = resource_manager_getTextureFromPath(image_filename + str_list[i]);
+	if (STRCMP_EQ(key,"dir_path")) {
+		//dir_path = value;
+		if (game_utils_string_copy(dir_path, value) != 0) {
+			dir_path_size = 0;
+			LOG_ERROR("Error: load_tile_img() failed copy dir_path %s\n", value);
 		}
+		dir_path_size = (int)strlen(dir_path);
+		return;
 	}
-	if (key == "effect") {
-		std::vector<std::string> str_list;
-		game_utils_split_conmma(value, str_list);
+	if (STRCMP_EQ(key,"path")) {
+		str_list_size = game_utils_split_conmma(value, str_list, ANIM_FRAME_NUM_MAX);
 
-		for (int fi = 0; fi < str_list.size(); fi++) {
-			if (str_list[fi].substr(0, 10) == "tile_clip(") {
+		//std::string image_filename = dir_path;
+		for (int i = 0; i < str_list_size; i++) {
+			anim_frame_data_t* anim_frame_data = tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->frame_list[i];
+			game_utils_string_cat(image_filename, dir_path, &str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * i]);
+			anim_frame_data->res_img = resource_manager_getTextureFromPath(image_filename);
+		}
+		return;
+	}
+	if (STRCMP_EQ(key,"effect")) {
+		str_list_size = game_utils_split_conmma(value, str_list, ANIM_FRAME_NUM_MAX);
+
+		char keyword_str[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		for (int fi = 0; fi < str_list_size; fi++) {
+			char* frame_effect_str = &str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * fi];
+			int element_size = (int)strlen(&str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * fi]);
+
+			int keyword_size = 10;
+			game_utils_string_copy_n(keyword_str, frame_effect_str, keyword_size);
+			if (STRCMP_EQ(keyword_str, "tile_clip(")) {
 				int sep_index[4] = { 0 };
 				int sep_i = 0;
-				for (int i = 10; i < str_list[fi].size(); i++) {
-					if (str_list[fi][i] == ':') {
+				for (int i = keyword_size; i < element_size; i++) {
+					if (frame_effect_str[i] == ':') {
 						sep_index[sep_i] = i;
 						sep_i++;
 						continue;
 					}
-					if (str_list[fi][i] == ')') {
+					if (frame_effect_str[i] == ')') {
 						sep_index[sep_i] = i;
 						sep_i++;
 						break;
@@ -1221,15 +1262,28 @@ static void load_tile_img(std::string& line, tile_data_t* tile) {
 					return; // format error
 				}
 
-				int x = atoi(str_list[fi].substr(10, sep_index[0] - 10).c_str());
-				int y = atoi(str_list[fi].substr(sep_index[0] + 1, sep_index[1] - sep_index[0]).c_str());
-				int w = atoi(str_list[fi].substr(sep_index[1] + 1, sep_index[2] - sep_index[1]).c_str());
-				int h = atoi(str_list[fi].substr(sep_index[2] + 1, sep_index[3] - sep_index[2]).c_str());
+				//int x = atoi(str_list[fi].substr(10, sep_index[0] - 10).c_str());
+				game_utils_string_copy_n(keyword_str, &frame_effect_str[keyword_size], sep_index[0] - keyword_size);
+				int x = atoi(keyword_str);
+
+				//int y = atoi(str_list[fi].substr(sep_index[0] + 1, sep_index[1] - sep_index[0]).c_str());
+				game_utils_string_copy_n(keyword_str, &frame_effect_str[sep_index[0] + 1], sep_index[1] - (sep_index[0] + 1));
+				int y = atoi(keyword_str);
+
+				//int w = atoi(str_list[fi].substr(sep_index[1] + 1, sep_index[2] - sep_index[1]).c_str());
+				game_utils_string_copy_n(keyword_str, &frame_effect_str[sep_index[1] + 1], sep_index[2] - (sep_index[1] + 1));
+				int w = atoi(keyword_str);
+
+				//int h = atoi(str_list[fi].substr(sep_index[2] + 1, sep_index[3] - sep_index[2]).c_str());
+				game_utils_string_copy_n(keyword_str, &frame_effect_str[sep_index[2] + 1], sep_index[3] - (sep_index[2] + 1));
+				int h = atoi(keyword_str);
 
 				anim_frame_data_t* anim_frame_data = tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->frame_list[fi];
 				anim_frame_data->src_rect = { x, y, w, h };
+				continue;
 			}
 		}
+		return;
 	}
 }
 
@@ -1247,7 +1301,15 @@ int map_manager_load(std::string path)
 
 	bool read_flg[MAP_TAG_END] = { false };
 
-	std::ifstream inFile(g_base_path + "data/" + path);
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("map_manager_load failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		std::string line;
 		while (std::getline(inFile, line)) {
@@ -1348,7 +1410,15 @@ static int map_manager_load_data_element(std::string path)
 
 	bool read_flg[MAP_TAG_END] = { false };
 
-	std::ifstream inFile(g_base_path + "data/" + path);
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("map_manager_load_data_element failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		std::string line;
 		while (std::getline(inFile, line)) {
@@ -1563,20 +1633,20 @@ static void load_layer(std::string& line, std::string& name, int* width, int* he
 }
 
 static void load_data(std::string& line) {
-	std::vector<int> int_list;
-	game_utils_split_conmma(line, int_list);
+	int int_list[MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX];
+	int int_list_size = game_utils_split_conmma_int((char*)line.c_str(), int_list, MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX);
 
-	for (int i = 0; i < int_list.size(); i++) {
+	for (int i = 0; i < int_list_size; i++) {
 		(map_raw_data[read_tile_type] + read_tile_index)->id = int_list[i];
 		read_tile_index++;
 	}
 }
 
 static void load_data_to_stage_data(std::string& line, int tile_type) {
-	std::vector<int> int_list;
-	game_utils_split_conmma(line, int_list);
+	int int_list[MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX];
+	int int_list_size = game_utils_split_conmma_int((char*)line.c_str(), int_list, MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX);
 
-	for (int i = 0; i < int_list.size(); i++) {
+	for (int i = 0; i < int_list_size; i++) {
 		g_stage_data->stage_map[write_section_map_index].section_map[tile_type][read_tile_index] = (char)int_list[i];
 		read_tile_index++;
 	}

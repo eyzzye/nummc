@@ -30,10 +30,14 @@ struct _game_config_data_t {
 };
 static game_config_data_t game_config_data;
 
+// tmp region
+static char g_save_path[GAME_FULL_PATH_MAX];
+static char save_template_path[GAME_FULL_PATH_MAX];
+static char tmp_char_buf[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+
 // extern variables
-std::string g_save_folder;
-std::string g_save_path;
-std::string g_save_player_path[GAME_SAVE_SLOT_NUM];
+int g_save_folder_size;
+char g_save_folder[GAME_FULL_PATH_MAX];
 
 static int game_config_data_alloc()
 {
@@ -91,6 +95,8 @@ static int game_save_load_ini_file(std::string path)
 	std::ifstream inFile(path);
 	if (inFile.is_open()) {
 		std::string line;
+		char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 		while (std::getline(inFile, line)) {
 			if (line == "") { continue; }
 
@@ -165,17 +171,13 @@ static int game_save_load_ini_file(std::string path)
 			}
 
 			if (read_flg) {
-				std::string key;
-				std::string value;
-				if (game_utils_split_key_value(line, key, value) == 0) {
+				if (game_utils_split_key_value((char*)line.c_str(), key, value) == 0) {
 					game_config_data.settings->values.insert(std::pair<std::string, std::string>(key, value));
 				}
 			}
 			for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
 				if (read_slot_flg[i]) {
-					std::string key;
-					std::string value;
-					if (game_utils_split_key_value(line, key, value) == 0) {
+					if (game_utils_split_key_value((char*)line.c_str(), key, value) == 0) {
 						game_config_data.slot[i]->values.insert(std::pair<std::string, std::string>(key, value));
 					}
 					break;
@@ -183,9 +185,7 @@ static int game_save_load_ini_file(std::string path)
 			}
 			for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
 				if (read_player_flg[i]) {
-					std::string key;
-					std::string value;
-					if (game_utils_split_key_value(line, key, value) == 0) {
+					if (game_utils_split_key_value((char*)line.c_str(), key, value) == 0) {
 						game_config_data.player[i]->values.insert(std::pair<std::string, std::string>(key, value));
 					}
 					break;
@@ -193,9 +193,7 @@ static int game_save_load_ini_file(std::string path)
 			}
 			for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
 				if (read_stocker_flg[i]) {
-					std::string key;
-					std::string value;
-					if (game_utils_split_key_value(line, key, value) == 0) {
+					if (game_utils_split_key_value((char*)line.c_str(), key, value) == 0) {
 						game_config_data.stocker[i]->values.insert(std::pair<std::string, std::string>(key, value));
 					}
 					break;
@@ -264,17 +262,22 @@ static int game_save_save_ini_file(std::string path) {
 int game_save_init()
 {
 	int ret = 0;
-	char* tmp_path = SDL_GetBasePath();
+	char* tmp_path = NULL;
 	size_t tmp_path_len;
 
 	errno_t std_error = _dupenv_s(&tmp_path, &tmp_path_len, "USERPROFILE");
 	if ((!std_error) && (tmp_path_len > 0)) {
-		g_save_folder = tmp_path;
-		g_save_folder = g_save_folder + "/Documents/My Games/nummc/";
-		g_save_folder = game_utils_replace_string(g_save_folder, '\\', '/');
+		// g_save_folder = tmp_path + "/Documents/My Games/nummc/"
+		if (game_utils_string_copy(g_save_folder, tmp_path) != 0) return 1;
+		g_save_folder_size = (int)strlen(g_save_folder);
+		if (game_utils_string_copy(&g_save_folder[g_save_folder_size], "/Documents/My Games/nummc/") != 0) return 1;
+		game_utils_replace_string(g_save_folder, '\\', '/');
+		g_save_folder_size = (int)strlen(g_save_folder);
 
-		g_save_path = g_save_folder + "save_data.ini";
-		g_save_path = game_utils_replace_string(g_save_path, '\\', '/');
+		//g_save_path = g_save_folder + "save_data.ini";
+		if (game_utils_string_copy(g_save_path, g_save_folder) != 0) return 1;
+		if (game_utils_string_copy(&g_save_path[g_save_folder_size], "save_data.ini") != 0) return 1;
+		game_utils_replace_string(g_save_path, '\\', '/');
 		//LOG_DEBUG("SavePath: %s\n", g_save_path.c_str());
 		free(tmp_path);
 		tmp_path = NULL;
@@ -285,11 +288,13 @@ int game_save_init()
 		}
 
 		// check file exist & load
-		if (_access(g_save_path.c_str(), 6) != -1) {
+		if (_access(g_save_path, 6) != -1) {
 			if (game_save_load_ini_file(g_save_path) != 0) return 1;
 		}
 		else {
-			std::string save_template_path = g_base_path + "data/_temp/save_data_template.ini";
+			//save_template_path = g_base_path + "data/_temp/save_data_template.ini";
+			if (game_utils_string_copy(save_template_path, g_base_path) != 0) return 1;
+			if (game_utils_string_copy(&save_template_path[g_base_path_size], "data/_temp/save_data_template.ini") != 0) return 1;
 			if (game_save_load_ini_file(save_template_path) != 0) return 1;
 			if (game_save_save_ini_file(g_save_path) != 0) return 1;
 		}
@@ -550,15 +555,10 @@ void game_save_get_config_slot(int slot_index, std::string& player, std::string&
 	timestamp = game_config_data.slot[slot_index]->values["timestamp"];
 }
 
-int game_save_set_config_slot(int slot_index, std::string player, std::string stage, std::string timestamp)
+int game_save_set_config_slot(int slot_index, std::string player, std::string stage, bool init_flag)
 {
-	// set current timestamp
-	if ((player != "") && (stage != "") && (timestamp == "")) {
-		timestamp = game_utils_get_localtime();
-	}
-
 	// clear default slot
-	if ((player == "") && (stage == "") && (timestamp == "")) {
+	if (init_flag) {
 		int default_slot_index;
 		game_save_get_config_default_slot(&default_slot_index);
 		if (default_slot_index == slot_index) {
@@ -566,12 +566,15 @@ int game_save_set_config_slot(int slot_index, std::string player, std::string st
 		}
 	}
 
+	// set current timestamp
+	game_utils_get_localtime(tmp_char_buf, sizeof(tmp_char_buf));
+
 	// save values for save menu display
 	game_config_data.slot[slot_index]->values["player"] = player;
 	game_config_data.slot[slot_index]->values["stage"] = stage;
-	game_config_data.slot[slot_index]->values["timestamp"] = timestamp;
+	game_config_data.slot[slot_index]->values["timestamp"] = tmp_char_buf;
 
-	if ((player == "") && (stage == "") && (timestamp == "")) {
+	if (init_flag) {
 		// don't need to clear player & stacker
 		return 0;
 	}

@@ -126,10 +126,10 @@ static int player_luck_rank[UNIT_PLAYER_LUCK_RANK_SIZE] = {
 };
 
 // unit path
-static std::string damage_effect_path = "units/effect/damage/damage.unit";
-static std::string star_effect_path = "units/effect/star/star.unit";
-static std::string heart_item_path = "units/items/recovery/heart/heart.unit";
-static std::string bom_item_path = "units/items/bom/simple/bom.unit";
+static const char* damage_effect_path = "units/effect/damage/damage.unit";
+static const char* star_effect_path = "units/effect/star/star.unit";
+static const char* heart_item_path = "units/items/recovery/heart/heart.unit";
+static const char* bom_item_path = "units/items/bom/simple/bom.unit";
 
 static void load_unit(std::string& line);
 static void unit_manager_player_change_bullet_curving(int bullet_curving);
@@ -199,7 +199,7 @@ void unit_manager_clear_player_backup()
 
 int unit_manager_load_player_effects()
 {
-	std::string effect_path[UNIT_EFFECT_ID_P_END] = {
+	const char* effect_path[UNIT_EFFECT_ID_P_END] = {
 		"",
 		"units/effect/fire_up/fire_up.unit",
 		"units/effect/freeze_up/freeze_up.unit",
@@ -214,7 +214,8 @@ int unit_manager_load_player_effects()
 			player_base_effect[i].id = UNIT_EFFECT_ID_IGNORE;
 		}
 		else {
-			player_base_effect[i].id = unit_manager_create_effect(0, 0, unit_manager_search_effect(effect_path[i]));
+			player_base_effect[i].id = unit_manager_create_effect(0, 0,
+				unit_manager_search_effect((char*)effect_path[i]));
 			unit_effect_data_t* effect_data = unit_manager_get_effect(player_base_effect[i].id);
 			effect_data->clear_type = UNIT_EFFECT_CLEAR_TYPE_KEEP_ON_STAGE;
 			unit_manager_effect_set_anim_stat(player_base_effect[i].id, ANIM_STAT_FLAG_HIDE);
@@ -227,7 +228,16 @@ int unit_manager_load_player_effects()
 int unit_manager_load_player(std::string path)
 {
 	bool read_flg[UNIT_TAG_END] = { false };
-	std::ifstream inFile(g_base_path + "data/" + path);
+
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("unit_manager_load_player failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		std::string line;
 		while (std::getline(inFile, line)) {
@@ -297,41 +307,82 @@ int unit_manager_load_player(std::string path)
 
 static void load_unit(std::string& line)
 {
-	std::string key, value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
-	if (value == "") value = "0";
-	if (key == "hp") player_base[player_base_index_end].hp = atoi(value.c_str());
-	if (key == "attack_wait_timer") player_base[player_base_index_end].attack_wait_timer = atoi(value.c_str());
-	if (key == "bullet_life_timer") player_base[player_base_index_end].bullet_life_timer = atoi(value.c_str());
-	if (key == "bullet_num") UNIT_BULLET_SPEC_SET_NUM(&player_base[player_base_index_end], atoi(value.c_str()));
-	if (key == "bullet_curving") UNIT_BULLET_SPEC_SET_CURVING(&player_base[player_base_index_end], atoi(value.c_str()));
-	if (key == "bullet_strength") UNIT_BULLET_SPEC_SET_STRENGTH(&player_base[player_base_index_end], atoi(value.c_str()));
-	if (key == "speed") player_base[player_base_index_end].speed = atoi(value.c_str());
-	if (key == "weapon") player_base[player_base_index_end].weapon = atoi(value.c_str());
-	if (key == "armor") player_base[player_base_index_end].armor = atoi(value.c_str());
-	if (key == "luck") UNIT_SPEC_SET_LUCK(&player_base[player_base_index_end], atoi(value.c_str()));
-	if (key == "hp_max") player_base[player_base_index_end].hp_max = atoi(value.c_str());
-	if (key == "exp_max") player_base[player_base_index_end].exp_max = atoi(value.c_str());
-	if (key == "next_level") {
+	if (STRCMP_EQ(key,"hp")) {
+		player_base[player_base_index_end].hp = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key,"attack_wait_timer")) {
+		player_base[player_base_index_end].attack_wait_timer = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key,"bullet_life_timer")) {
+		player_base[player_base_index_end].bullet_life_timer = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key,"bullet_num")) {
+		UNIT_BULLET_SPEC_SET_NUM(&player_base[player_base_index_end], atoi(value));
+		return;
+	}
+	if (STRCMP_EQ(key,"bullet_curving")) {
+		UNIT_BULLET_SPEC_SET_CURVING(&player_base[player_base_index_end], atoi(value));
+		return;
+	}
+	if (STRCMP_EQ(key,"bullet_strength")) {
+		UNIT_BULLET_SPEC_SET_STRENGTH(&player_base[player_base_index_end], atoi(value));
+		return;
+	}
+	if (STRCMP_EQ(key,"speed")) {
+		player_base[player_base_index_end].speed = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key,"weapon")) {
+		player_base[player_base_index_end].weapon = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key,"armor")) {
+		player_base[player_base_index_end].armor = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key,"luck")) {
+		UNIT_SPEC_SET_LUCK(&player_base[player_base_index_end], atoi(value));
+		return;
+	}
+	if (STRCMP_EQ(key,"hp_max")) {
+		player_base[player_base_index_end].hp_max = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key,"exp_max")) {
+		player_base[player_base_index_end].exp_max = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key,"next_level")) {
 		char* next_level_c_str = game_utils_string_new();
-		game_utils_string_copy(next_level_c_str, value.c_str());
+		game_utils_string_copy(next_level_c_str, value);
 		player_base[player_base_index_end].next_level = next_level_c_str;
+		return;
 	}
 
-	if (key == "resistance") {
-		std::vector<std::string> stat_list;
-		game_utils_split_conmma(value, stat_list);
+	if (STRCMP_EQ(key,"resistance")) {
+		char stat_list[GAME_UTILS_STRING_NAME_BUF_SIZE * UNIT_EFFECT_FLAG_P_NUM_MAX];
+		int stat_list_size;
+
+		stat_list_size = game_utils_split_conmma(value, stat_list, UNIT_EFFECT_FLAG_P_NUM_MAX, GAME_UTILS_STRING_NAME_BUF_SIZE);
 		int resistance_val = UNIT_EFFECT_FLAG_P_NONE;
-		for (int i = 0; i < stat_list.size(); i++) {
-			if (stat_list[i] == "FIRE_UP") {
+		for (int i = 0; i < stat_list_size; i++) {
+			char* stat_str = &stat_list[i * GAME_UTILS_STRING_NAME_BUF_SIZE];
+			if (STRCMP_EQ(stat_str,"FIRE_UP")) {
 				resistance_val |= UNIT_EFFECT_FLAG_P_FIRE_UP;
 			}
-			else if (stat_list[i] == "FREEZE_UP") {
+			else if (STRCMP_EQ(stat_str,"FREEZE_UP")) {
 				resistance_val |= UNIT_EFFECT_FLAG_P_FREEZE_UP;
 			}
 		}
 		player_base[player_base_index_end].resistance_stat = resistance_val;
+		return;
 	}
 }
 
@@ -751,7 +802,8 @@ int unit_manager_player_get_special_item(int item_id)
 			unit_manager_player_set_effect_stat(UNIT_EFFECT_FLAG_P_BOOST, true);
 			quest_log_manager_message("player boost");
 
-			int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y, unit_manager_search_effect(star_effect_path));
+			int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y,
+				unit_manager_search_effect((char*)star_effect_path));
 			unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&g_player);
 		}
 	}
@@ -815,7 +867,8 @@ int unit_manager_player_get_special_item(int item_id)
 			unit_manager_player_set_effect_stat(UNIT_EFFECT_FLAG_P_SHIELD, true);
 			quest_log_manager_message("player shield");
 
-			int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y, unit_manager_search_effect(star_effect_path));
+			int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y,
+				unit_manager_search_effect((char*)star_effect_path));
 			unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&g_player);
 		}
 	}
@@ -844,7 +897,7 @@ int unit_manager_player_get_special_item(int item_id)
 		unit_manager_player_change_bullet_strength(1);
 	}
 	else if (item_id == UNIT_SPECIAL_ID_HEART) {
-		unit_items_data_t* item_data = unit_manager_get_items_base(unit_manager_search_items(heart_item_path));
+		unit_items_data_t* item_data = unit_manager_get_items_base(unit_manager_search_items((char*)heart_item_path));
 		if (unit_manager_player_recovery(item_data->hp) != 0) {
 			return 1;
 		}
@@ -863,7 +916,7 @@ int unit_manager_player_get_special_item(int item_id)
 		for (int effect_num = 0; effect_num < 8; effect_num++) {
 			int pos_x = game_utils_random_gen((g_map_x_max - 2) * g_tile_width, g_tile_width);
 			int pos_y = game_utils_random_gen((g_map_y_max - 2) * g_tile_height, g_tile_height);
-			unit_manager_create_effect(pos_x, pos_y, unit_manager_search_effect(star_effect_path));
+			unit_manager_create_effect(pos_x, pos_y, unit_manager_search_effect((char*)star_effect_path));
 		}
 		quest_log_manager_message("open all map");
 	}
@@ -894,7 +947,8 @@ int unit_manager_player_get_special_item(int item_id)
 			unit_manager_player_set_effect_stat(UNIT_EFFECT_FLAG_P_RAMPAGE, true);
 			quest_log_manager_message("player rampage");
 
-			int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y, unit_manager_search_effect(star_effect_path));
+			int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y,
+				unit_manager_search_effect((char*)star_effect_path));
 			unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&g_player);
 		}
 	}
@@ -912,7 +966,8 @@ void unit_manager_player_get_item(unit_items_data_t* item_data)
 	}
 	else if (item_data->group == UNIT_ITEM_GROUP_DAMAGE) {
 		if (unit_manager_player_get_damage(-item_data->base->hp) == 0) {
-			int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y, unit_manager_search_effect(damage_effect_path));
+			int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y,
+				unit_manager_search_effect((char*)damage_effect_path));
 			unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&g_player);
 		}
 		unit_manager_items_set_anim_stat(item_data->id, ANIM_STAT_FLAG_DIE);
@@ -930,7 +985,8 @@ void unit_manager_player_get_item(unit_items_data_t* item_data)
 		}
 		else if (item_data->item_id == UNIT_RECOVERY_ID_HEART_DOWN) {
 			if (unit_manager_player_get_damage(-item_data->hp) == 0) {
-				int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y, unit_manager_search_effect(damage_effect_path));
+				int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y,
+					unit_manager_search_effect((char*)damage_effect_path));
 				unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&g_player);
 
 				unit_manager_items_set_anim_stat(item_data->id, ANIM_STAT_FLAG_DIE);
@@ -941,11 +997,11 @@ void unit_manager_player_get_item(unit_items_data_t* item_data)
 	else if (item_data->group == UNIT_ITEM_GROUP_SPECIAL) {
 		if (item_data->item_id == UNIT_SPECIAL_ID_UNKNOWN) {
 			int special_item_index = game_utils_random_gen(UNIT_SPECIAL_ID_BULLET_STRENGTH_UP, UNIT_SPECIAL_ID_BOOSTER);
-			std::string random_item_path = unit_manager_get_special_item(special_item_index);
+			const char* random_item_path = unit_manager_get_special_item(special_item_index);
 
 			int x, y;
 			unit_manager_get_spawn_items_pos((unit_data_t*)item_data, (unit_data_t*)&g_player, 1, &x, &y);
-			unit_manager_create_items(x, y, unit_manager_search_items(random_item_path));
+			unit_manager_create_items(x, y, unit_manager_search_items((char*)random_item_path));
 			unit_manager_items_set_anim_stat(item_data->id, ANIM_STAT_FLAG_DIE);
 		}
 		else if (unit_manager_player_get_special_item(item_data->item_id) == 0) {
@@ -980,7 +1036,7 @@ static void use_bom_item()
 {
 	int x, y;
 	unit_manager_get_spawn_items_pos_under_foot((unit_data_t*)&g_player, 1, &x, &y);
-	int id = unit_manager_create_items(x, y, unit_manager_search_items(bom_item_path));
+	int id = unit_manager_create_items(x, y, unit_manager_search_items((char*)bom_item_path));
 	unit_manager_items_set_anim_stat(id, ANIM_STAT_FLAG_ATTACK);
 	quest_log_manager_message("player drop bom");
 }
@@ -1091,7 +1147,8 @@ void unit_manager_player_trap(unit_trap_data_t* trap_data)
 		}
 
 		if (unit_manager_player_get_damage(-trap_data->base->hp) == 0) {
-			int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y, unit_manager_search_effect(damage_effect_path));
+			int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y,
+				unit_manager_search_effect((char*)damage_effect_path));
 			unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&g_player);
 		}
 	}
@@ -1206,7 +1263,8 @@ void unit_manager_player_update()
 				if (g_player.effect_param[ei].timer < g_player.effect_param[ei].delta_time * damage_count) {
 					// damage 5 hp
 					if (unit_manager_player_get_damage_force(-g_player.effect_param[ei].damage) == 0) {
-						int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y, unit_manager_search_effect(damage_effect_path));
+						int effect_id = unit_manager_create_effect(g_player.col_shape->x, g_player.col_shape->y,
+							unit_manager_search_effect((char*)damage_effect_path));
 						unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&g_player);
 					}
 

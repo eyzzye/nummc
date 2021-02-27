@@ -237,6 +237,9 @@ void game_utils_node_delete(node_data_t* node_data, node_buffer_info_t* node_buf
 static game_utils_string_t game_utils_string[GAME_UTILS_STRING_SIZE];
 static int game_utils_string_index_end;
 
+#define TMP_CHAR_BUF_SIZE  32
+static char tmp_char_buf[TMP_CHAR_BUF_SIZE];
+
 int game_utils_string_init()
 {
 	memset(game_utils_string, 0, sizeof(game_utils_string));
@@ -286,19 +289,70 @@ void game_utils_string_delete(char* ptr)
 	game_utils_string[index].type = GAME_UTILS_STRING_TYPE_NONE;
 }
 
+// return: success(0), error(1)
 int game_utils_string_copy(char* dst, const char* src)
 {
-	int ret = strcpy_s(dst, GAME_UTILS_STRING_CHAR_BUF_SIZE - 1, src);
+#ifdef _WIN32
+	int src_size = (int)strlen(src);
+	int ret = strcpy_s(dst, (size_t)(src_size + 1), src);
 	if (ret != 0) {
 		LOG_ERROR("ERROR: game_utils_string_copy() failed\n");
 		return 1;
 	}
+	dst[src_size] = '\0';
+#else
+	int src_size = (int)strlen(src);
+	char* ret = strcpy(dst, src);
+	if (ret == NULL) {
+		LOG_ERROR("ERROR: game_utils_string_copy() failed\n");
+		return 1;
+	}
+	dst[src_size] = '\0';
+#endif
+	return 0;
+}
+
+// return: success(0), error(1)
+int game_utils_string_copy_n(char* dst, const char* src, int str_size)
+{
+#ifdef _WIN32
+	int ret = strncpy_s(dst, (size_t)(str_size + 1), src, str_size);
+	if (ret != 0) {
+		LOG_ERROR("ERROR: game_utils_string_copy(str_size) failed\n");
+		return 1;
+	}
+	dst[str_size] = '\0';
+#else
+	char* ret = strncpy(dst, src, str_size);
+	if (ret == NULL) {
+		LOG_ERROR("ERROR: game_utils_string_copy(str_size) failed\n");
+		return 1;
+	}
+	dst[str_size] = '\0';
+#endif
+	return 0;
+}
+
+// return: equal(0), src1<src2(-N), src1>src2(N)
+int game_utils_string_cmp(char* src1, char* src2)
+{
+	return strcmp(src1, src2);
+}
+
+int game_utils_string_itoa(int src, char* dst, int dst_size, int base)
+{
+#if 0
+	_itoa_s(src, dst, dst_size, base);
+#else
+	snprintf(dst, dst_size, "%d", src);
+#endif
 	return 0;
 }
 
 //
 // string utils
 //
+#if 0
 std::string game_utils_replace_string(std::string src_str, const char old_c, const char new_c)
 {
 	std::string new_str;
@@ -589,6 +643,387 @@ int game_utils_split_colon(std::string str, std::vector<std::string>& str_list)
 	return game_utils_split_keyword(str, str_list, ':');
 }
 
+#else // char_buf utils
+// return: success(dst_str_size), error(0)
+int game_utils_string_cat(char* dst_str, char* src_str1, char* src_str2, char* src_str3)
+{
+	int ret = 0;
+	int dst_str_size = 0;
+
+	if (ret == 0) {
+		ret = game_utils_string_copy(dst_str, src_str1);
+		dst_str_size += (int)strlen(src_str1);
+	}
+	if (ret == 0) {
+		ret = game_utils_string_copy(&dst_str[dst_str_size], src_str2);
+		dst_str_size += (int)strlen(src_str2);
+	}
+	if ((ret == 0) && (src_str3 != NULL)) {
+		ret = game_utils_string_copy(&dst_str[dst_str_size], src_str3);
+		dst_str_size += (int)strlen(src_str3);
+	}
+	if (ret != 0) {
+		LOG_ERROR("game_utils_string_cat failed %s, %s, %s\n", src_str1, src_str2, src_str3);
+		return 0;
+	}
+	return dst_str_size;
+}
+
+void game_utils_replace_string(char* src_str, const char old_c, const char new_c)
+{
+	int i = 0;
+	while (src_str[i] != '\0') {
+		src_str[i] = (src_str[i] == old_c) ? new_c : src_str[i];
+		i++;
+	}
+	return;
+}
+
+void game_utils_get_extention(char* src_str, char* dst_str)
+{
+	bool found_flg = false;
+	size_t head_index = 0;
+	int src_str_size = (int)strlen(src_str);
+	for (int i = (int)src_str_size - 1; i >= 0; i--) {
+		if (src_str[i] == '.') {
+			head_index = (size_t)i;
+			found_flg = true;
+			break;
+		}
+		else if (src_str[i] == '/') {
+			break;
+		}
+	}
+
+	if (found_flg) {
+		size_t new_size = src_str_size - head_index;
+		size_t ext_i = 0;
+		for (size_t i = head_index; i < src_str_size; i++, ext_i++) {
+			dst_str[ext_i] = src_str[i];
+		}
+		dst_str[ext_i] = '\0';
+	}
+	return;
+}
+
+void game_utils_get_filename(char* path, char* dst_str)
+{
+	bool found_flg = false;
+	int path_size = (int)strlen(path);
+	int start_index = path_size - 1;
+	size_t split_index = 0;
+	size_t extention_index = start_index;
+
+	for (int i = start_index; i >= 0; i--) {
+		if (path[i] == '.') {
+			extention_index = (size_t)i;
+		}
+		else if (path[i] == '/') {
+			split_index = (size_t)i;
+			found_flg = true;
+			break;
+		}
+	}
+
+	// error return
+	if (!found_flg) return;
+	if (split_index < 3) return;
+
+	game_utils_string_copy_n(dst_str, &path[split_index + 1], (int)(extention_index - (split_index + 1)));
+
+	return;
+}
+
+void game_utils_get_localtime(char* dst_str, int dst_str_size)
+{
+	struct tm current_localtime;
+	time_t current_time = time(NULL);
+
+#ifdef _WIN32
+	localtime_s(&current_localtime, &current_time);
+#else
+	localtime_r(&current_time, &current_localtime);
+#endif
+	if (strftime(dst_str, dst_str_size, "%Y/%m/%d_%H:%M:%S", &current_localtime) == 0) {
+		game_utils_string_copy(dst_str, GAME_UTILS_LOCALTIME_FORMAT);
+	}
+	return;
+}
+
+int game_utils_split_key_value(char* str, char* key, char* val)
+{
+	int str_size = (int)strlen(str);
+	if (str_size == 0) return 1;
+
+	// search =
+	int head_index = -1;
+	for (int i = 0; i < str_size; i++) {
+		if (str[i] == '=') {
+			head_index = i;
+			break;
+		}
+	}
+
+	// not found
+	if (head_index == -1) {
+		key[0] = '\0';
+		val[0] = '\0';
+		return 1;
+	}
+
+	// key
+	size_t length = str_size - ((size_t)head_index + 1);
+	if (head_index == 0) key[0] = '\0';
+	else game_utils_string_copy_n(key, &str[0], head_index);
+
+	// value
+	if (length <= 0) val[0] = '\0';
+	else game_utils_string_copy_n(val, &str[head_index + 1], (int)length);
+
+	return 0;
+}
+
+// return: expand_str size or error(-1)
+#define EXPAND_NUM_STR_SIZE  4
+int game_utils_expand_value(char* str, char* expand_str)
+{
+	int str_size = (int)strlen(str);
+	if (str_size == 0) return 0;
+
+	// local char buf
+	char prefix[TMP_CHAR_BUF_SIZE];
+	char extention[TMP_CHAR_BUF_SIZE];
+	char expand_num_str[EXPAND_NUM_STR_SIZE];
+
+	// search ,.*[.+].*,
+	int comma_list[16];  int comma_list_size = 0;
+	int head_list[16];   int head_list_size = 0;
+	int end_list[16];    int end_list_size = 0;
+	int hyphen_list[16]; int hyphen_list_size = 0;
+	for (int i = 0; i < str_size; i++) {
+		if (str[i] == ',') { comma_list[comma_list_size] = i; comma_list_size++; }
+		else if (str[i] == '[') { head_list[head_list_size] = i;  head_list_size++; }
+		else if (str[i] == '-') { hyphen_list[hyphen_list_size] = i;  hyphen_list_size++; }
+		else if (str[i] == ']') { end_list[end_list_size] = i;  end_list_size++; }
+	}
+
+	// not found bracket
+	if (head_list_size == 0) {
+		return 0;
+	}
+
+	// exist irregular set
+	if (head_list_size != end_list_size) {
+		printf("expand_value Error: not match bracket count \n");
+		return -1;
+	}
+
+	// expand [] set
+	expand_str[0] = '\0';
+	int expand_str_index = 0;
+	int start_index, end_index;
+	int hyphen_cursor = 0;
+	int latest_end_index = 0;
+	int length = 0;
+	for (int i = 0; i < head_list_size; i++) {
+		// error check
+		if (head_list[i] >= end_list[i]) {
+			printf("expand_value Error: not match bracket position \n");
+			return -1;
+		}
+
+		// split [n1-n2]
+		bool hyphen_found = false;
+		int start_num = 0;
+		int end_num = 0;
+		for (; hyphen_cursor < hyphen_list_size; hyphen_cursor++) {
+			if ((hyphen_list[hyphen_cursor] > head_list[i]) && (hyphen_list[hyphen_cursor] < end_list[i])) {
+				// get first number
+				int length = (hyphen_list[hyphen_cursor] - 1) - (head_list[i] + 1) + 1;
+				game_utils_string_copy_n(tmp_char_buf, &str[head_list[i] + 1], length);
+				start_num = atoi(tmp_char_buf);
+
+				// get second number
+				length = (end_list[i] - 1) - (hyphen_list[hyphen_cursor] + 1) + 1;
+				game_utils_string_copy_n(tmp_char_buf, &str[hyphen_list[hyphen_cursor] + 1], length);
+				end_num = atoi(tmp_char_buf);
+
+				hyphen_found = true;
+				break;
+			}
+		}
+
+		// not found hyphen
+		if (!hyphen_found) {
+			printf("expand_value Error: not found hyphen \n");
+			return -1;
+		}
+
+		// get comma set
+		start_index = 0; end_index = 0;
+		for (int comma_list_i = 0; comma_list_i < comma_list_size; comma_list_i++) {
+			if (comma_list[comma_list_i] > end_list[i]) {
+				end_index = comma_list[comma_list_i];
+				break;
+			}
+			start_index = comma_list[comma_list_i];
+		}
+
+		bool start_comma_none = false;
+		bool end_comma_none = false;
+		// start comma
+		if (str[0] != ',') {
+			start_comma_none = true;
+		}
+		// end comma
+		if (end_index == 0) {
+			end_index = str_size - 1;
+			end_comma_none = true;
+		}
+
+		// copy comma before  ("a.png,b[1-4].png,c.png" => ""a.png")
+		int length = start_index - latest_end_index;
+		if (length > 0) {
+			game_utils_string_copy_n(&expand_str[expand_str_index], &str[latest_end_index], length);
+			expand_str_index += length;
+		}
+
+		// get prefix "(,.*)["
+		if (start_comma_none) {
+			length = (head_list[i] - 1) - start_index + 1;
+			if (length > 0) game_utils_string_copy_n(prefix, &str[start_index], length);
+		}
+		else {
+			length = (head_list[i] - 1) - (start_index + 1) + 1;
+			if (length > 0) game_utils_string_copy_n(prefix, &str[start_index + 1], length);
+		}
+
+		// get extention "](.*),"
+		if (end_comma_none) {
+			length = end_index - (end_list[i] + 1) + 1;
+			if (length > 0) game_utils_string_copy_n(extention, &str[end_list[i] + 1], length);
+		}
+		else {
+			length = (end_index - 1) - (end_list[i] + 1) + 1;
+			if (length > 0) game_utils_string_copy_n(extention, &str[end_list[i] + 1], length);
+		}
+
+		// copy expand section (",b[1-4].png," => ",b1.png,b2png,b3.png,b4.png")
+		for (int e_i = start_num; e_i <= end_num; e_i++) {
+			game_utils_string_itoa(e_i, expand_num_str, (EXPAND_NUM_STR_SIZE - 1), 10 /* decimal */);
+			if ((e_i == start_num) && start_comma_none) {
+				//expand_str;
+			}
+			else {
+				//expand_str += ",";
+				game_utils_string_copy(&expand_str[expand_str_index], ",");
+				expand_str_index += 1;
+			}
+
+			//expand_str += prefix + expand_num_str + extention;
+			length = (int)strlen(prefix);
+			if (length > 0) {
+				game_utils_string_copy(&expand_str[expand_str_index], prefix);
+				expand_str_index += length;
+			}
+
+			length = (int)strlen(expand_num_str);
+			if (length > 0) {
+				game_utils_string_copy(&expand_str[expand_str_index], expand_num_str);
+				expand_str_index += length;
+			}
+
+			length = (int)strlen(extention);
+			if (length > 0) {
+				game_utils_string_copy(&expand_str[expand_str_index], extention);
+				expand_str_index += length;
+			}
+		}
+
+		latest_end_index = end_index;
+	}
+
+	// copy remain section (",c.png" => ",c.png")
+	length = ((int)str_size - 1) - latest_end_index;
+	if (length > 0) {
+		game_utils_string_copy_n(&expand_str[expand_str_index], &str[latest_end_index], length + 1);
+		expand_str_index += length;
+	}
+
+	return expand_str_index;
+}
+
+// return: split list size
+int game_utils_split_conmma_int(char* str, int* int_list, int int_list_size)
+{
+	int str_size = (int)strlen(str);
+	if (str_size == 0) return 0;
+
+	int list_size = 0;
+	size_t pre_end = 0;
+	for (size_t i = 0; i < str_size; i++) {
+		if (str[i] == ',') {
+			game_utils_string_copy_n(tmp_char_buf, &str[pre_end], (int)(i - pre_end));
+			pre_end = i + 1;
+			int_list[list_size] = atoi(tmp_char_buf);
+			list_size++;
+		}
+		else if (i == (str_size - 1)) {
+			game_utils_string_copy_n(tmp_char_buf, &str[pre_end], (int)((i + 1) - pre_end));
+			pre_end = i + 1;
+			int_list[list_size] = atoi(tmp_char_buf);
+			list_size++;
+		}
+	}
+	return list_size;
+}
+
+// return: split list size
+int game_utils_split_keyword(char* str, char* str_list, int str_list_size, char c_key, int str_list_buf_size)
+{
+	int str_size = (int)strlen(str);
+	if (str_size == 0) return 0;
+
+	int list_size = 0;
+	size_t pre_end = 0;
+	for (size_t i = 0; i < str_size; i++) {
+		if (list_size >= str_list_size) {
+			LOG_ERROR("Error: game_utils_split_keyword() buffer overflow\n");
+			break;
+		}
+
+		if (str[i] == c_key) {
+			game_utils_string_copy_n(&str_list[list_size * str_list_buf_size], &str[pre_end], (int)(i - pre_end));
+			pre_end = i + 1;
+			list_size++;
+		}
+		else if (i == (str_size - 1)) {
+			game_utils_string_copy_n(&str_list[list_size * str_list_buf_size], &str[pre_end], (int)((i + 1) - pre_end));
+			pre_end = i + 1;
+			list_size++;
+		}
+	}
+
+	if (list_size == 0) {
+		// copy all
+		game_utils_string_copy(str_list, str);
+		list_size++;
+	}
+
+	return list_size;
+}
+
+int game_utils_split_conmma(char* str, char* str_list, int str_list_size, int str_list_buf_size)
+{
+	return game_utils_split_keyword(str, str_list, str_list_size, ',', str_list_buf_size);
+}
+
+int game_utils_split_colon(char* str, char* str_list, int str_list_size, int str_list_buf_size)
+{
+	return game_utils_split_keyword(str, str_list, str_list_size, ':', str_list_buf_size);
+}
+#endif
+
 //
 // gui utils
 //
@@ -609,9 +1044,9 @@ bool game_utils_decision_internal(SDL_Rect* rect, int x, int y)
 //
 // image render utils
 //
-SDL_Texture* game_utils_render_img_tex(const std::string& path, SDL_Color src_color, SDL_Color dst_color)
+SDL_Texture* game_utils_render_img_tex(char* path, SDL_Color src_color, SDL_Color dst_color)
 {
-	SDL_Surface* surf = IMG_Load(path.c_str());
+	SDL_Surface* surf = IMG_Load(path);
 
 	if (SDL_LockSurface(surf) == 0) {
 		bool format_check = true;
@@ -669,9 +1104,9 @@ SDL_Texture* game_utils_render_img_tex(const std::string& path, SDL_Color src_co
 //
 // font render utils
 //
-SDL_Texture* game_utils_render_font_tex(const std::string& message, const std::string& fontFile, SDL_Color color, int fontSize)
+SDL_Texture* game_utils_render_font_tex(const std::string& message, char* fontFile, SDL_Color color, int fontSize)
 {
-	TTF_Font* font = TTF_OpenFont(fontFile.c_str(), fontSize);
+	TTF_Font* font = TTF_OpenFont(fontFile, fontSize);
 	if (font == NULL) {
 		LOG_ERROR("TTF_OpenFont Error: %s", SDL_GetError());
 		return NULL;

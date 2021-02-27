@@ -87,7 +87,15 @@ int resource_manager_load_dat(std::string path)
 	bool music_flg = false;
 	bool snd_flg = false;
 
-	std::ifstream inFile(g_base_path + "data/" + path);
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("resource_manager_load_dat failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		std::string line;
 		while (std::getline(inFile, line)) {
@@ -145,37 +153,46 @@ ResourceImg* resource_manager_load_img(std::string path, int type)
 			read_index++;
 		}
 
-		std::vector<std::string> str_list;
-		std::string header_str = path.substr(1, read_index - 1);
-		game_utils_split_conmma(header_str, str_list);
+		char header_str[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		char str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * RESOURCE_MANAGER_IMG_OPT_END];
+		char effect_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * 9];
 
-		for (int i = 0; i < str_list.size(); i++) {
-			std::vector<std::string> effect_list;
-			game_utils_split_colon(str_list[i], effect_list);
+		//std::string header_str = path.substr(1, read_index - 1);
+		game_utils_string_copy_n(header_str, &path[1], read_index - 1);
+		int str_list_size = game_utils_split_conmma(header_str, str_list, RESOURCE_MANAGER_IMG_OPT_END);
+
+		for (int i = 0; i < str_list_size; i++) {
+			char* option_str = &str_list[i * GAME_UTILS_STRING_CHAR_BUF_SIZE];
+			int effect_list_size = game_utils_split_colon(option_str, effect_list, 9);
 
 			// scale_mode:linear ... SDL_SetTextureScaleMode(tex, SDL_ScaleModeLinear)
-			if (effect_list[0] == "scale_mode") {
-				if (effect_list[1] == "linear") {
+			if (STRCMP_EQ(&effect_list[0],"scale_mode")) {
+				char* mode_str = &effect_list[1 * GAME_UTILS_STRING_CHAR_BUF_SIZE];
+				if (STRCMP_EQ(mode_str,"linear")) {
 					scale_mode = (int)SDL_ScaleModeLinear;
 				}
+				continue;
 			}
-			else if (effect_list[0] == "color") {
-				if (effect_list.size() != 9) {
+
+			// color:S:255:255:255:D:255:255:255
+			if (STRCMP_EQ(&effect_list[0],"color")) {
+				if (effect_list_size != 9) {
 					LOG_ERROR("Error: resource_manager_load_img color param are wrong.\n");
 					continue;
 				}
 
 				// effect_list[1] == "S"
-				src_col.r = atoi(effect_list[2].c_str());
-				src_col.g = atoi(effect_list[3].c_str());
-				src_col.b = atoi(effect_list[4].c_str());
+				src_col.r = atoi(&effect_list[2 * GAME_UTILS_STRING_CHAR_BUF_SIZE]);
+				src_col.g = atoi(&effect_list[3 * GAME_UTILS_STRING_CHAR_BUF_SIZE]);
+				src_col.b = atoi(&effect_list[4 * GAME_UTILS_STRING_CHAR_BUF_SIZE]);
 
 				// effect_list[1] == "D"
-				dst_col.r = atoi(effect_list[6].c_str());
-				dst_col.g = atoi(effect_list[7].c_str());
-				dst_col.b = atoi(effect_list[8].c_str());
+				dst_col.r = atoi(&effect_list[6 * GAME_UTILS_STRING_CHAR_BUF_SIZE]);
+				dst_col.g = atoi(&effect_list[7 * GAME_UTILS_STRING_CHAR_BUF_SIZE]);
+				dst_col.b = atoi(&effect_list[8 * GAME_UTILS_STRING_CHAR_BUF_SIZE]);
 
 				effect_color = true;
+				continue;
 			}
 		}
 	}
@@ -190,14 +207,21 @@ ResourceImg* resource_manager_load_img(std::string path, int type)
 		raw_path = &path;
 	}
 
+	//std::string full_path = g_base_path + "data/" + *raw_path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)raw_path->c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("resource_manager_load_img failed get %s\n", path.c_str());
+		return NULL;
+	}
+
 	g_render_mtx.lock();
 	SDL_Texture* tex;
-	std::string full_path = g_base_path + "data/" + *raw_path;
 	if (effect_color) {
 		tex = game_utils_render_img_tex(full_path, src_col, dst_col);
 	}
 	else {
-		tex = IMG_LoadTexture(g_ren, full_path.c_str());
+		tex = IMG_LoadTexture(g_ren, full_path);
 	}
 	g_render_mtx.unlock();
 	if (tex == NULL) {
@@ -306,10 +330,17 @@ ResourceImg* resource_manager_load_font(std::string message, int type)
 		disp_msg = &message;
 	}
 
-	const std::string fontFile = g_base_path + "data/font/" + font_file_name;
+	//const std::string fontFile = g_base_path + "data/font/" + font_file_name;
+	char font_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(font_path, g_base_path, (char*)"data/font/", (char*)font_file_name.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("SDL_CreateTextureFromSurface failed get %s\n", font_file_name.c_str());
+		return NULL;
+	}
+
 	SDL_Color color = { (Uint8)font_color[0], (Uint8)font_color[1], (Uint8)font_color[2], (Uint8)font_color[3] };
 	g_render_mtx.lock();
-	SDL_Texture* tex = game_utils_render_font_tex(*disp_msg, fontFile, color, font_size);
+	SDL_Texture* tex = game_utils_render_font_tex(*disp_msg, font_path, color, font_size);
 	g_render_mtx.unlock();
 	if (tex == NULL) {
 		LOG_ERROR("SDL_CreateTextureFromSurface Error: %s\n", SDL_GetError());
@@ -341,8 +372,15 @@ ResourceImg* resource_manager_getFontTextureFromPath(std::string message)
 //
 ResourceMusic* resource_manager_load_music(std::string path, int type)
 {
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("resource_manager_load_music failed get %s\n", path.c_str());
+		return NULL;
+	}
+
 	g_render_mtx.lock();
-	Mix_Music* music = Mix_LoadMUS((g_base_path + "data/" + path).c_str());
+	Mix_Music* music = Mix_LoadMUS(full_path);
 	g_render_mtx.unlock();
 	if (music == NULL) {
 		LOG_ERROR("Mix_LoadMUS Error: %s\n", SDL_GetError());
@@ -372,8 +410,15 @@ ResourceMusic* resource_manager_getMusicFromPath(std::string path)
 //
 ResourceChunk* resource_manager_load_chunk(std::string path, int type)
 {
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("resource_manager_load_chunk failed get %s\n", path.c_str());
+		return NULL;
+	}
+
 	g_render_mtx.lock();
-	Mix_Chunk* chunk = Mix_LoadWAV((g_base_path + "data/" + path).c_str());
+	Mix_Chunk* chunk = Mix_LoadWAV(full_path);
 	g_render_mtx.unlock();
 	if (chunk == NULL) {
 		LOG_ERROR("Mix_LoadWAV Error: %s\n", SDL_GetError());

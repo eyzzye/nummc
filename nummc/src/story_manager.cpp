@@ -42,7 +42,15 @@ int story_manager_load(std::string path)
 {
 	bool read_flg[STORY_ID_END] = { false };
 
-	std::ifstream inFile(g_base_path + "data/" + path);
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("story_manager_load failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		g_story_data->story_path = path;
 		g_story_data->res_img = NULL;
@@ -85,10 +93,14 @@ int story_manager_load(std::string path)
 }
 
 static void load_basic_info(std::string& line) {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
-	if (key == "id") g_story_data->id = value;
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
+
+	if (STRCMP_EQ(key, "id")) {
+		g_story_data->id = value;
+		return;
+	}
 }
 
 static void load_img(std::string& line) {
@@ -104,11 +116,13 @@ static void load_bgm(std::string& line) {
 }
 
 static void load_auto_text(std::string& line) {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
-	if (key == "time") {
-		g_story_data->auto_text_time = atoi(value.c_str());
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
+
+	if (STRCMP_EQ(key,"time")) {
+		g_story_data->auto_text_time = atoi(value);
+		return;
 	}
 	else {
 		g_story_data->auto_text_list.push_back(line);

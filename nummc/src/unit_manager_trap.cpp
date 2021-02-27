@@ -44,7 +44,7 @@ void unit_manager_unload_trap()
 	}
 }
 
-int unit_manager_search_trap(std::string& path)
+int unit_manager_search_trap(char* path)
 {
 	int ii = 0;
 	bool trap_found = false;
@@ -114,10 +114,19 @@ void unit_manager_trap_set_anim_stat(int unit_id, int stat)
 
 int unit_manager_load_trap(std::string path)
 {
-	if (unit_manager_search_trap(path) > 0) return 0;
+	if (unit_manager_search_trap((char*)path.c_str()) > 0) return 0;
 
 	bool read_flg[UNIT_TAG_END] = { false };
-	std::ifstream inFile(g_base_path + "data/" + path);
+
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("unit_manager_load_trap failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		std::string line;
 		while (std::getline(inFile, line)) {
@@ -186,31 +195,38 @@ int unit_manager_load_trap(std::string path)
 
 static void load_trap_unit(std::string& line)
 {
-	std::string key, value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
-	if (value == "") value = "0";
-	if (key == "hp") trap_base[trap_base_index_end].hp = atoi(value.c_str());
-	if (key == "sub_id") trap_base[trap_base_index_end].sub_id = atoi(value.c_str());
-	if (key == "group") {
-		if (value == "NONE") {
+	if (STRCMP_EQ(key, "hp")) {
+		trap_base[trap_base_index_end].hp = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key, "sub_id")) {
+		trap_base[trap_base_index_end].sub_id = atoi(value);
+		return;
+	}
+	if (STRCMP_EQ(key,"group")) {
+		if (STRCMP_EQ(value,"NONE")) {
 			trap_base[trap_base_index_end].group = UNIT_TRAP_GROUP_NONE;
 		}
-		else if (value == "RECOVERY") {
+		else if (STRCMP_EQ(value,"RECOVERY")) {
 			trap_base[trap_base_index_end].group = UNIT_TRAP_GROUP_RECOVERY;
 		}
-		else if (value == "DAMAGE") {
+		else if (STRCMP_EQ(value,"DAMAGE")) {
 			trap_base[trap_base_index_end].group = UNIT_TRAP_GROUP_DAMAGE;
 		}
-		else if (value == "FIRE") {
+		else if (STRCMP_EQ(value,"FIRE")) {
 			trap_base[trap_base_index_end].group = UNIT_TRAP_GROUP_FIRE;
 		}
-		else if (value == "ICE") {
+		else if (STRCMP_EQ(value,"ICE")) {
 			trap_base[trap_base_index_end].group = UNIT_TRAP_GROUP_ICE;
 		}
-		else if (value == "GATE") {
+		else if (STRCMP_EQ(value,"GATE")) {
 			trap_base[trap_base_index_end].group = UNIT_TRAP_GROUP_GATE;
 		}
+		return;
 	}
 }
 

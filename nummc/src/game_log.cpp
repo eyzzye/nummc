@@ -11,7 +11,8 @@
 #define ERROR_STRING_SIZE 256
 static char error_stack[ERROR_STACK_SIZE][ERROR_STRING_SIZE];
 static int error_index;
-static std::string error_file_path;
+static char error_file_path[GAME_FULL_PATH_MAX];
+static char tmp_char_buf_error[ERROR_STRING_SIZE];
 static std::ofstream* error_file_stream;
 #endif // GAME_LOG_ERROR_ENABLE
 
@@ -20,7 +21,8 @@ static std::ofstream* error_file_stream;
 #define DEBUG_STRING_SIZE 256
 static char debug_stack[DEBUG_STACK_SIZE][DEBUG_STRING_SIZE];
 static int debug_index;
-static std::string debug_file_path;
+static char debug_file_path[GAME_FULL_PATH_MAX];
+static char tmp_char_buf_debug[DEBUG_STRING_SIZE];
 static std::ofstream* debug_file_stream;
 #endif // GAME_LOG_DEBUG_ENABLE
 
@@ -29,7 +31,9 @@ int game_log_init()
 #ifdef GAME_LOG_ERROR_ENABLE
 	error_index = 0;
 	memset(error_stack, '\0', sizeof(error_stack) * sizeof(error_stack[0][0]));
-	error_file_path = g_save_folder + "error.log";
+	//error_file_path = g_save_folder + "error.log";
+	if (game_utils_string_copy(error_file_path, g_save_folder) != 0) return 1;
+	if (game_utils_string_copy(&error_file_path[g_save_folder_size], "error.log") != 0) return 1;
 #ifdef GAME_LOG_FILE_ENABLE
 	if (game_utils_backup_file(error_file_path)) return 1;
 	error_file_stream = new std::ofstream(error_file_path, std::ostream::app);
@@ -39,7 +43,9 @@ int game_log_init()
 #ifdef GAME_LOG_DEBUG_ENABLE
 	debug_index = 0;
 	memset(debug_stack, '\0', sizeof(debug_stack) * sizeof(debug_stack[0][0]));
-	debug_file_path = g_save_folder + "debug.log";
+	//debug_file_path = g_save_folder + "debug.log";
+	if (game_utils_string_copy(debug_file_path, g_save_folder) != 0) return 1;
+	if (game_utils_string_copy(&debug_file_path[g_save_folder_size], "debug.log") != 0) return 1;
 
 #ifdef GAME_LOG_FILE_ENABLE
 	if (game_utils_backup_file(debug_file_path)) return 1;
@@ -72,26 +78,31 @@ void game_log_close()
 #ifdef GAME_LOG_ERROR_ENABLE
 void game_log_error(const char* format, ...)
 {
-	std::string tag_str = ":ERROR: ";
-	size_t format_str_size = strlen(GAME_UTILS_LOCALTIME_FORMAT) + tag_str.size();
+	int log_str_size = 0;
 
-	char buff[ERROR_STRING_SIZE] = { '\0' };
+	//log_str = game_utils_get_localtime() + tag_str; // yyyy/mm/dd_hh:mm:ss:ERROR: 
+	game_utils_get_localtime(tmp_char_buf_error, sizeof(tmp_char_buf_error) - 1);
+	log_str_size = (int)strlen(tmp_char_buf_error);
+	game_utils_string_copy(&tmp_char_buf_error[log_str_size], ":ERROR: ");
+	log_str_size = (int)strlen(tmp_char_buf_error);
+
+	//log_str += format_str;
 	va_list argptr;
 	va_start(argptr, format);
-	vsnprintf_s(buff, (ERROR_STRING_SIZE - format_str_size - 1), format, argptr);
+	int format_str_max = (ERROR_STRING_SIZE - log_str_size - 1);
+	vsnprintf_s(&tmp_char_buf_error[log_str_size], format_str_max, format_str_max, format, argptr);
 	va_end(argptr);
 
-	std::string log_str = buff;
-	log_str = game_utils_get_localtime() + tag_str + log_str; // yyyy/mm/dd_hh:mm:ss:ERROR: format_str
-	size_t log_str_size = log_str.size();
-	LOG_ERROR_CONSOLE("%s", log_str.c_str());
+	// console output
+	log_str_size = (int)strlen(tmp_char_buf_error);
+	LOG_ERROR_CONSOLE("%s", tmp_char_buf_error);
 
-	memcpy(error_stack[error_index], log_str.c_str(), log_str_size);
-	error_stack[error_index][log_str_size] = '\0';
+	// register stack
+	game_utils_string_copy(error_stack[error_index], tmp_char_buf_error);
 
 #ifdef GAME_LOG_FILE_ENABLE
 	if (error_file_stream->is_open()) {
-		error_file_stream->write(log_str.c_str(), log_str.size());
+		error_file_stream->write(tmp_char_buf_error, log_str_size);
 	}
 	else {
 		LOG_ERROR_CONSOLE("game_log_error write error\n");
@@ -106,29 +117,34 @@ void game_log_error(const char* format, ...)
 #ifdef GAME_LOG_DEBUG_ENABLE
 void game_log_debug(const char* format, ...)
 {
-	std::string tag_str = ":DEBUG: ";
-	size_t format_str_size = strlen(GAME_UTILS_LOCALTIME_FORMAT) + tag_str.size();
+	int log_str_size = 0;
 
-	char buff[DEBUG_STRING_SIZE] = { '\0' };
+	//log_str = game_utils_get_localtime() + tag_str; // yyyy/mm/dd_hh:mm:ss:DEBUG: 
+	game_utils_get_localtime(tmp_char_buf_debug, sizeof(tmp_char_buf_debug) - 1);
+	log_str_size = (int)strlen(tmp_char_buf_debug);
+	game_utils_string_copy(&tmp_char_buf_debug[log_str_size], ":DEBUG: ");
+	log_str_size = (int)strlen(tmp_char_buf_debug);
+
+	//log_str += format_str;
 	va_list argptr;
 	va_start(argptr, format);
-	vsnprintf_s(buff, (DEBUG_STRING_SIZE - format_str_size - 1), format, argptr);
+	int format_str_max = (DEBUG_STRING_SIZE - log_str_size - 1);
+	vsnprintf_s(&tmp_char_buf_debug[log_str_size], format_str_max, format_str_max, format, argptr);
 	va_end(argptr);
 
-	std::string log_str = buff;
-	log_str = game_utils_get_localtime() + tag_str + log_str; // yyyy/mm/dd_hh:mm:ss:DEBUG: format_str
-	size_t log_str_size = log_str.size();
-	LOG_DEBUG_CONSOLE("%s", log_str.c_str());
+	// console output
+	log_str_size = (int)strlen(tmp_char_buf_debug);
+	LOG_DEBUG_CONSOLE("%s", tmp_char_buf_debug);
 
-	memcpy(debug_stack[debug_index], log_str.c_str(), log_str_size);
-	debug_stack[debug_index][log_str_size] = '\0';
+	// register stack
+	game_utils_string_copy(debug_stack[debug_index], tmp_char_buf_debug);
 
 #ifdef GAME_LOG_FILE_ENABLE
 	if (debug_file_stream->is_open()) {
-		debug_file_stream->write(log_str.c_str(), log_str.size());
+		debug_file_stream->write(tmp_char_buf_debug, log_str_size);
 	}
 	else {
-		LOG_ERROR_CONSOLE("game_log_error write error\n");
+		LOG_ERROR_CONSOLE("game_log_debug write error\n");
 	}
 #endif
 

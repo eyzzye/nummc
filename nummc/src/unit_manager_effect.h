@@ -39,6 +39,8 @@
 #define UNIT_EFFECT_FLAG_P_SHIELD     (0x00000001 << UNIT_EFFECT_ID_P_SHIELD)
 #define UNIT_EFFECT_FLAG_P_RAMPAGE    (0x00000001 << UNIT_EFFECT_ID_P_RAMPAGE)
 
+#define UNIT_EFFECT_FLAG_P_NUM_MAX          (8) /* effect + stat only */
+
 // for enemy (effect)
 #define UNIT_EFFECT_ID_E_NONE               (0)
 #define UNIT_EFFECT_ID_E_FIRE_UP            (1)
@@ -54,3 +56,5 @@
 #define UNIT_EFFECT_ID_E_NO_TRAP_DAMAGE     (17)
 #define UNIT_EFFECT_FLAG_E_NO_FRICTION      (0x00010000 << (UNIT_EFFECT_ID_E_NO_FRICTION - 16))
 #define UNIT_EFFECT_FLAG_E_NO_TRAP_DAMAGE   (0x00010000 << (UNIT_EFFECT_ID_E_NO_TRAP_DAMAGE - 16))
+
+#define UNIT_EFFECT_FLAG_E_NUM_MAX          (8) /* effect + stat only */

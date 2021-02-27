@@ -40,8 +40,10 @@ static void load_anim_frame(std::string line, anim_data_t* anim_data, int stat);
 static void load_anim_img(std::string line, anim_data_t* anim_data, int stat);
 static void load_anim_snd(std::string line, anim_data_t* anim_data, int stat);
 
-static std::string dir_path;
-std::vector<std::string> tmp_str_list;
+static char dir_path[GAME_FULL_PATH_MAX];
+static int dir_path_size;
+static char tmp_str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * ANIM_FRAME_NUM_MAX];
+static int tmp_str_list_size;
 
 int animation_manager_init()
 {
@@ -219,7 +221,15 @@ int animation_manager_load_file(std::string path, anim_data_t* anim_data, int st
 {
 	bool read_flg[ANIM_TAG_END] = { false };
 
-	std::ifstream inFile(g_base_path + "data/" + path);
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	if (tmp_path_size == 0) {
+		LOG_ERROR("map_manager_load_tile failed get %s\n", path.c_str());
+		return 1;
+	}
+
+	std::ifstream inFile(full_path);
 	if (inFile.is_open()) {
 		std::string line;
 		while (std::getline(inFile, line)) {
@@ -254,12 +264,12 @@ int animation_manager_load_file(std::string path, anim_data_t* anim_data, int st
 
 static void load_anim_frame(std::string line, anim_data_t* anim_data, int stat)
 {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
-	if (key == "duration") {
-		if (value == "*") {
+	if (STRCMP_EQ(key,"duration")) {
+		if (STRCMP_EQ(value,"*")) {
 			anim_data->anim_stat_base_list[stat]->type = ANIM_TYPE_STATIC;
 			anim_frame_data_t* anim_frame_data = animation_manager_new_anim_frame();
 			anim_frame_data->frame_time = 0;
@@ -272,12 +282,12 @@ static void load_anim_frame(std::string line, anim_data_t* anim_data, int stat)
 			anim_data->anim_stat_base_list[stat]->snd_channel = SOUND_MANAGER_CH_AUTO;
 		}
 		else {
-			std::vector<int> int_list;
-			game_utils_split_conmma(value, int_list);
+			int int_list[ANIM_FRAME_NUM_MAX];
+			int int_list_size = game_utils_split_conmma_int(value, int_list, ANIM_FRAME_NUM_MAX);
 
 			anim_data->anim_stat_base_list[stat]->type = ANIM_TYPE_DYNAMIC;
 			anim_data->anim_stat_base_list[stat]->total_time = 0;
-			for (int i = 0; i < int_list.size(); i++) {
+			for (int i = 0; i < int_list_size; i++) {
 				anim_frame_data_t* anim_frame_data = animation_manager_new_anim_frame();
 				anim_frame_data->frame_time = int_list[i];
 				anim_frame_data->res_img = NULL;
@@ -286,106 +296,136 @@ static void load_anim_frame(std::string line, anim_data_t* anim_data, int stat)
 				anim_data->anim_stat_base_list[stat]->frame_list[i] = anim_frame_data;
 				anim_data->anim_stat_base_list[stat]->total_time += int_list[i];
 			}
-			anim_data->anim_stat_base_list[stat]->frame_size = (int)int_list.size();
+			anim_data->anim_stat_base_list[stat]->frame_size = int_list_size;
 			anim_data->anim_stat_base_list[stat]->snd_channel = SOUND_MANAGER_CH_AUTO;
 		}
+		return;
 	}
 
-	if (key == "type") {
-		if (value == "STATIC") {
+	if (STRCMP_EQ(key,"type")) {
+		if (STRCMP_EQ(value,"STATIC")) {
 			anim_data->anim_stat_base_list[stat]->type = ANIM_TYPE_STATIC;
 		}
-		else if (value == "DYNAMIC") {
+		else if (STRCMP_EQ(value,"DYNAMIC")) {
 			anim_data->anim_stat_base_list[stat]->type = ANIM_TYPE_DYNAMIC;
 		}
-		else if (value == "DRAW_RECT") {
+		else if (STRCMP_EQ(value,"DRAW_RECT")) {
 			anim_data->anim_stat_base_list[stat]->type = ANIM_TYPE_DRAW_RECT;
 		}
-		else if (value == "DRAW_CIRCLE") {
+		else if (STRCMP_EQ(value,"DRAW_CIRCLE")) {
 			anim_data->anim_stat_base_list[stat]->type = ANIM_TYPE_DRAW_CIRCLE;
 		}
-		else if (value == "DRAW_RECT_FILL") {
+		else if (STRCMP_EQ(value,"DRAW_RECT_FILL")) {
 			anim_data->anim_stat_base_list[stat]->type = ANIM_TYPE_DRAW_RECT_FILL;
 		}
 		else {
 			anim_data->anim_stat_base_list[stat]->type = ANIM_TYPE_NONE;
 		}
+		return;
 	}
 
-	if (key == "layer") {
-		anim_data->anim_stat_base_list[stat]->tex_layer = atoi(value.c_str());
+	if (STRCMP_EQ(key,"layer")) {
+		anim_data->anim_stat_base_list[stat]->tex_layer = atoi(value);
+		return;
 	}
 
-	if (key == "command") {
-		std::vector<int> int_list;
-		game_utils_split_conmma(value, int_list);
-		for (int i = 0; i < int_list.size(); i++) {
+	if (STRCMP_EQ(key,"command")) {
+		int int_list[ANIM_FRAME_NUM_MAX];
+		int int_list_size = game_utils_split_conmma_int(value, int_list, ANIM_FRAME_NUM_MAX);
+		for (int i = 0; i < int_list_size; i++) {
 			anim_data->anim_stat_base_list[stat]->frame_list[int_list[i]]->command = ANIM_FRAME_COMMAND_ON;
 		}
+		return;
 	}
 
 	// draw color
-	if (key == "color_r") {
-		anim_data->anim_stat_base_list[stat]->color_r = atoi(value.c_str());
+	if (STRCMP_EQ(key,"color_r")) {
+		anim_data->anim_stat_base_list[stat]->color_r = atoi(value);
+		return;
 	}
-	if (key == "color_g") {
-		anim_data->anim_stat_base_list[stat]->color_g = atoi(value.c_str());
+	if (STRCMP_EQ(key,"color_g")) {
+		anim_data->anim_stat_base_list[stat]->color_g = atoi(value);
+		return;
 	}
-	if (key == "color_b") {
-		anim_data->anim_stat_base_list[stat]->color_b = atoi(value.c_str());
+	if (STRCMP_EQ(key,"color_b")) {
+		anim_data->anim_stat_base_list[stat]->color_b = atoi(value);
+		return;
 	}
-	if (key == "color_a") {
-		anim_data->anim_stat_base_list[stat]->color_a = atoi(value.c_str());
+	if (STRCMP_EQ(key,"color_a")) {
+		anim_data->anim_stat_base_list[stat]->color_a = atoi(value);
+		return;
 	}
 }
 
 static void load_anim_img(std::string line, anim_data_t* anim_data, int stat)
 {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_LINE_BUF_SIZE];
+	char expand_str[GAME_UTILS_STRING_LINE_BUF_SIZE];
+	char image_filename[GAME_FULL_PATH_MAX];
+	char str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * ANIM_FRAME_NUM_MAX];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
-	if (key == "layer") {
-		anim_data->anim_stat_base_list[stat]->tex_layer = atoi(value.c_str());
+	if (STRCMP_EQ(key,"layer")) {
+		anim_data->anim_stat_base_list[stat]->tex_layer = atoi(value);
+		return;
 	}
-	if (key == "dir_path") {
-		dir_path = value;
+	if (STRCMP_EQ(key,"dir_path")) {
+		//dir_path = value;
+		if (game_utils_string_copy(dir_path, value) != 0) {
+			dir_path_size = 0;
+			LOG_ERROR("Error: load_anim_img() failed copy dir_path %s\n", value);
+		}
+		dir_path_size = (int)strlen(dir_path);
+		return;
 	}
-	if (key == "path") {
-		std::string expand_str;
-		tmp_str_list.clear();
-		game_utils_expand_value(value, expand_str);
-		game_utils_split_conmma(expand_str, tmp_str_list);
+	if (STRCMP_EQ(key,"path")) {
+		int expand_str_size = game_utils_expand_value(value, expand_str);
 
-		std::string image_filename = dir_path;
-		for (int i = 0; i < tmp_str_list.size(); i++) {
+		tmp_str_list_size = 0;
+		if (expand_str_size > 0) {
+			tmp_str_list_size = game_utils_split_conmma(expand_str, tmp_str_list, ANIM_FRAME_NUM_MAX);
+		}
+		else {
+			tmp_str_list_size = game_utils_split_conmma(value, tmp_str_list, ANIM_FRAME_NUM_MAX);
+		}
+
+		for (int i = 0; i < tmp_str_list_size; i++) {
 			anim_frame_data_t* anim_frame_data = anim_data->anim_stat_base_list[stat]->frame_list[i];
-			anim_frame_data->res_img = resource_manager_getTextureFromPath(image_filename + tmp_str_list[i]);
+			game_utils_string_cat(image_filename, dir_path, &tmp_str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * i]);
+			anim_frame_data->res_img = resource_manager_getTextureFromPath(image_filename);
 
 			int w, h;
 			int ret = GUI_QueryTexture(anim_frame_data->res_img, NULL, NULL, &w, &h);
 			anim_frame_data->src_rect = { 0, 0, w, h };
 		}
+		return;
 	}
-	if (key == "effect") {
-		std::vector<std::string> str_list;
-		game_utils_split_conmma(value, str_list);
+	if (STRCMP_EQ(key,"effect")) {
+		int str_list_size = game_utils_split_conmma(value, str_list, ANIM_FRAME_NUM_MAX);
 
-		if ((str_list.size() == 1) && (str_list[0] == "*")) {
+		if ((str_list_size == 1) && (str_list[0] == '*')) {
 			// do nothing
 		}
 		else {
-			for (int fi = 0; fi < str_list.size(); fi++) {
-				if (str_list[fi].substr(0, 10) == "tile_clip(") {
+			char keyword_str[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+
+			for (int fi = 0; fi < str_list_size; fi++) {
+				char* frame_effect_str = &str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * fi];
+				int element_size = (int)strlen(&str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * fi]);
+
+				int keyword_size = 10;
+				game_utils_string_copy_n(keyword_str, frame_effect_str, keyword_size);
+				if (STRCMP_EQ(keyword_str,"tile_clip(")) {
 					int sep_index[4] = { 0 };
 					int sep_i = 0;
-					for (int i = 10; i < str_list[fi].size(); i++) {
-						if (str_list[fi][i] == ':') {
+					for (int i = keyword_size; i < element_size; i++) {
+						if (frame_effect_str[i] == ':') {
 							sep_index[sep_i] = i;
 							sep_i++;
 							continue;
 						}
-						if (str_list[fi][i] == ')') {
+						if (frame_effect_str[i] == ')') {
 							sep_index[sep_i] = i;
 							sep_i++;
 							break;
@@ -396,73 +436,109 @@ static void load_anim_img(std::string line, anim_data_t* anim_data, int stat)
 						return; // format error
 					}
 
-					int x = atoi(str_list[fi].substr(10, sep_index[0] - 10).c_str());
-					int y = atoi(str_list[fi].substr(sep_index[0] + 1, sep_index[1] - sep_index[0]).c_str());
-					int w = atoi(str_list[fi].substr(sep_index[1] + 1, sep_index[2] - sep_index[1]).c_str());
-					int h = atoi(str_list[fi].substr(sep_index[2] + 1, sep_index[3] - sep_index[2]).c_str());
+					//int x = atoi(str_list[fi].substr(10, sep_index[0] - 10).c_str());
+					game_utils_string_copy_n(keyword_str, &frame_effect_str[keyword_size], sep_index[0] - keyword_size);
+					int x = atoi(keyword_str);
+
+					//int y = atoi(str_list[fi].substr(sep_index[0] + 1, sep_index[1] - sep_index[0]).c_str());
+					game_utils_string_copy_n(keyword_str, &frame_effect_str[sep_index[0] + 1], sep_index[1] - (sep_index[0] + 1));
+					int y = atoi(keyword_str);
+	
+					//int w = atoi(str_list[fi].substr(sep_index[1] + 1, sep_index[2] - sep_index[1]).c_str());
+					game_utils_string_copy_n(keyword_str, &frame_effect_str[sep_index[1] + 1], sep_index[2] - (sep_index[1] + 1));
+					int w = atoi(keyword_str);
+
+					//int h = atoi(str_list[fi].substr(sep_index[2] + 1, sep_index[3] - sep_index[2]).c_str());
+					game_utils_string_copy_n(keyword_str, &frame_effect_str[sep_index[2] + 1], sep_index[3] - (sep_index[2] + 1));
+					int h = atoi(keyword_str);
 
 					anim_frame_data_t* anim_frame_data = anim_data->anim_stat_base_list[stat]->frame_list[fi];
 					anim_frame_data->src_rect = { x, y, w, h };
+					continue;
 				}
-				else if (str_list[fi].substr(0, 6) == "color:") {
-					for (int i = 0; i < tmp_str_list.size(); i++) {
+
+				keyword_size = 6;
+				game_utils_string_copy_n(keyword_str, frame_effect_str, keyword_size);
+				if (STRCMP_EQ(keyword_str,"color:")) {
+					game_utils_string_cat(keyword_str, (char*)"{", frame_effect_str, (char*)"}");
+					for (int i = 0; i < tmp_str_list_size; i++) {
 						anim_frame_data_t* anim_frame_data = anim_data->anim_stat_base_list[stat]->frame_list[i];
-						anim_frame_data->res_img = resource_manager_getTextureFromPath("{" + str_list[fi] + "}" + dir_path + tmp_str_list[i]);
+						//image_filename = {color:S:255:255:255:D:255:255:255} + dir_path + filename
+						game_utils_string_cat(image_filename, keyword_str, dir_path, &tmp_str_list[i * GAME_UTILS_STRING_CHAR_BUF_SIZE]);
+						anim_frame_data->res_img = resource_manager_getTextureFromPath(image_filename);
 					}
 				}
 			}
 		}
 
+		return;
 	}
 }
 
 static void load_anim_snd(std::string line, anim_data_t* anim_data, int stat)
 {
-	std::string key;
-	std::string value;
-	game_utils_split_key_value(line, key, value);
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_LINE_BUF_SIZE];
+	char expand_str[GAME_UTILS_STRING_LINE_BUF_SIZE];
+	char snd_filename[GAME_FULL_PATH_MAX];
+	char str_list[GAME_UTILS_STRING_NAME_BUF_SIZE * ANIM_FRAME_NUM_MAX];
+	game_utils_split_key_value((char*)line.c_str(), key, value);
 
-	if (key == "channel") {
-		anim_data->anim_stat_base_list[stat]->snd_channel = atoi(value.c_str());
+	if (STRCMP_EQ(key,"channel")) {
+		anim_data->anim_stat_base_list[stat]->snd_channel = atoi(value);
+		return;
 	}
-	if (key == "dir_path") {
-		dir_path = value;
+	if (STRCMP_EQ(key,"dir_path")) {
+		//dir_path = value;
+		if (game_utils_string_copy(dir_path, value) != 0) {
+			dir_path_size = 0;
+			LOG_ERROR("Error: load_anim_snd() failed copy dir_path %s\n", value);
+		}
+		dir_path_size = (int)strlen(dir_path);
+		return;
 	}
-	if (key == "path") {
-		std::string expand_str;
-		std::vector<std::string> str_list;
-		game_utils_expand_value(value, expand_str);
-		game_utils_split_conmma(expand_str, str_list);
+	if (STRCMP_EQ(key,"path")) {
+		int expand_str_size = game_utils_expand_value(value, expand_str);
 
-		std::string snd_filename = dir_path;
-		for (int i = 0; i < str_list.size(); i++) {
-			if (str_list[i] == "*") {
+		int str_list_size = 0;
+		if (expand_str_size > 0) {
+			str_list_size = game_utils_split_conmma(expand_str, str_list, ANIM_FRAME_NUM_MAX, GAME_UTILS_STRING_NAME_BUF_SIZE);
+		}
+		else {
+			str_list_size = game_utils_split_conmma(value, str_list, ANIM_FRAME_NUM_MAX, GAME_UTILS_STRING_NAME_BUF_SIZE);
+		}
+
+		//std::string snd_filename = dir_path;
+		for (int i = 0; i < str_list_size; i++) {
+			if (str_list[GAME_UTILS_STRING_NAME_BUF_SIZE * i] == '*') {
 				anim_data->anim_stat_base_list[stat]->frame_list[i]->res_chunk = NULL;
 			}
 			else {
 				anim_frame_data_t* anim_frame_data = anim_data->anim_stat_base_list[stat]->frame_list[i];
-				anim_frame_data->res_chunk = resource_manager_getChunkFromPath(snd_filename + str_list[i]);
+				game_utils_string_cat(snd_filename, dir_path, &str_list[GAME_UTILS_STRING_NAME_BUF_SIZE * i]);
+				anim_frame_data->res_chunk = resource_manager_getChunkFromPath(snd_filename);
 			}
 		}
 
 		// set NULL
-		if (anim_data->anim_stat_base_list[stat]->frame_size > str_list.size()) {
-			if (str_list[str_list.size() - 1] == "*") {
-				for (int i = (int)str_list.size(); i < anim_data->anim_stat_base_list[stat]->frame_size; i++) {
+		if (anim_data->anim_stat_base_list[stat]->frame_size > str_list_size) {
+			if (str_list[GAME_UTILS_STRING_NAME_BUF_SIZE * (str_list_size - 1)] == '*') {
+				for (int i = str_list_size; i < anim_data->anim_stat_base_list[stat]->frame_size; i++) {
 					anim_data->anim_stat_base_list[stat]->frame_list[i]->res_chunk = NULL;
 				}
 			}
 		}
+		return;
 	}
 
-	if (key == "volume") {
-		std::vector<std::string> str_list;
-		game_utils_split_conmma(value, str_list);
-		if ((str_list.size() == 1) && (str_list[0] == "*")) {
+	if (STRCMP_EQ(key,"volume")) {
+		int str_list_size = game_utils_split_conmma(value, str_list, ANIM_FRAME_NUM_MAX, GAME_UTILS_STRING_NAME_BUF_SIZE);
+		if ((str_list_size == 1) && (str_list[0] == '*')) {
 			//
 			// set relative volume
 			//
 		}
+		return;
 	}
 }
 
