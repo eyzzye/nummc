@@ -1,4 +1,3 @@
-#include <fstream>
 #include "game_common.h"
 #include "animation_manager.h"
 
@@ -36,9 +35,9 @@ int anim_stat_data_index_end;
 static anim_frame_data_t anim_frame_data_buffer[ANIM_FRAME_DATA_BUFFER_SIZE];
 int anim_frame_data_index_end;
 
-static void load_anim_frame(std::string line, anim_data_t* anim_data, int stat);
-static void load_anim_img(std::string line, anim_data_t* anim_data, int stat);
-static void load_anim_snd(std::string line, anim_data_t* anim_data, int stat);
+static void load_anim_frame(char* line, anim_data_t* anim_data, int stat);
+static void load_anim_img(char* line, anim_data_t* anim_data, int stat);
+static void load_anim_snd(char* line, anim_data_t* anim_data, int stat);
 
 static char dir_path[GAME_FULL_PATH_MAX];
 static int dir_path_size;
@@ -217,56 +216,68 @@ anim_data_t* animation_manager_new_anim_data()
 	return anim_data;
 }
 
-int animation_manager_load_file(std::string path, anim_data_t* anim_data, int stat)
+typedef struct _load_file_callback_data_t load_file_callback_data_t;
+struct _load_file_callback_data_t {
+	bool read_flg[ANIM_TAG_END];
+	anim_data_t* anim_data;
+	int stat;
+};
+static load_file_callback_data_t load_file_callback_data;
+static void load_file_callback(char* line, int line_size, int line_num, void* argv)
 {
-	bool read_flg[ANIM_TAG_END] = { false };
+	load_file_callback_data_t* data = (load_file_callback_data_t*)argv;
 
+	if (line[0] == '\0') return;
+	if (line[0] == '#') return;
+
+	if (line[0] == '[') {
+		if (STRCMP_EQ(line, "[frame]")) { data->read_flg[ANIM_TAG_FRAME] = true; return; }
+		if (STRCMP_EQ(line, "[/frame]")) { data->read_flg[ANIM_TAG_FRAME] = false; return; }
+		if (STRCMP_EQ(line, "[img]")) { data->read_flg[ANIM_TAG_IMG] = true;  return; }
+		if (STRCMP_EQ(line, "[/img]")) { data->read_flg[ANIM_TAG_IMG] = false; return; }
+		if (STRCMP_EQ(line, "[snd]")) { data->read_flg[ANIM_TAG_SND] = true;  return; }
+		if (STRCMP_EQ(line, "[/snd]")) { data->read_flg[ANIM_TAG_SND] = false; return; }
+	}
+
+	if (data->read_flg[ANIM_TAG_FRAME]) {
+		load_anim_frame(line, data->anim_data, data->stat);
+	}
+	if (data->read_flg[ANIM_TAG_IMG]) {
+		load_anim_img(line, data->anim_data, data->stat);
+	}
+	if (data->read_flg[ANIM_TAG_SND]) {
+		load_anim_snd(line, data->anim_data, data->stat);
+	}
+}
+
+int animation_manager_load_file(char* path, anim_data_t* anim_data, int stat)
+{
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
 	if (tmp_path_size == 0) {
-		LOG_ERROR("map_manager_load_tile failed get %s\n", path.c_str());
+		LOG_ERROR("animation_manager_load_file failed get %s\n", path);
 		return 1;
 	}
 
-	std::ifstream inFile(full_path);
-	if (inFile.is_open()) {
-		std::string line;
-		while (std::getline(inFile, line)) {
-			if (line == "") continue;
-			if (line[0] == '#') continue;
-
-			if (line == "[frame]") { read_flg[ANIM_TAG_FRAME] = true; continue; }
-			if (line == "[/frame]") { read_flg[ANIM_TAG_FRAME] = false; continue; }
-			if (line == "[img]") { read_flg[ANIM_TAG_IMG] = true;  continue; }
-			if (line == "[/img]") { read_flg[ANIM_TAG_IMG] = false; continue; }
-			if (line == "[snd]") { read_flg[ANIM_TAG_SND] = true;  continue; }
-			if (line == "[/snd]") { read_flg[ANIM_TAG_SND] = false; continue; }
-
-			if (read_flg[ANIM_TAG_FRAME]) {
-				load_anim_frame(line, anim_data, stat);
-			}
-			if (read_flg[ANIM_TAG_IMG]) {
-				load_anim_img(line, anim_data, stat);
-			}
-			if (read_flg[ANIM_TAG_SND]) {
-				load_anim_snd(line, anim_data, stat);
-			}
-		}
-		inFile.close();
-	}
-	else {
-		LOG_ERROR("animation_manager_load_file %s error\n", path.c_str());
+	// read file
+	memset(load_file_callback_data.read_flg, 0, sizeof(bool)* ANIM_TAG_END);
+	load_file_callback_data.anim_data = anim_data;
+	load_file_callback_data.stat = stat;
+	int ret = game_utils_files_read_line(full_path, load_file_callback, (void*)&load_file_callback_data);
+	if (ret != 0) {
+		LOG_ERROR("animation_manager_load_file %s error\n", path);
 		return 1;
 	}
+
 	return 0;
 }
 
-static void load_anim_frame(std::string line, anim_data_t* anim_data, int stat)
+static void load_anim_frame(char* line, anim_data_t* anim_data, int stat)
 {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"duration")) {
 		if (STRCMP_EQ(value,"*")) {
@@ -357,14 +368,14 @@ static void load_anim_frame(std::string line, anim_data_t* anim_data, int stat)
 	}
 }
 
-static void load_anim_img(std::string line, anim_data_t* anim_data, int stat)
+static void load_anim_img(char* line, anim_data_t* anim_data, int stat)
 {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_LINE_BUF_SIZE];
 	char expand_str[GAME_UTILS_STRING_LINE_BUF_SIZE];
 	char image_filename[GAME_FULL_PATH_MAX];
 	char str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * ANIM_FRAME_NUM_MAX];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"layer")) {
 		anim_data->anim_stat_base_list[stat]->tex_layer = atoi(value);
@@ -475,14 +486,14 @@ static void load_anim_img(std::string line, anim_data_t* anim_data, int stat)
 	}
 }
 
-static void load_anim_snd(std::string line, anim_data_t* anim_data, int stat)
+static void load_anim_snd(char* line, anim_data_t* anim_data, int stat)
 {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_LINE_BUF_SIZE];
 	char expand_str[GAME_UTILS_STRING_LINE_BUF_SIZE];
 	char snd_filename[GAME_FULL_PATH_MAX];
 	char str_list[GAME_UTILS_STRING_NAME_BUF_SIZE * ANIM_FRAME_NUM_MAX];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"channel")) {
 		anim_data->anim_stat_base_list[stat]->snd_channel = atoi(value);

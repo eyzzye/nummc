@@ -25,6 +25,6 @@ struct _story_data_t {
 extern void story_manager_init();
 extern void story_manager_unload();
 extern void story_manager_set_stat(int stat);
-extern int story_manager_load(std::string path);
+extern int story_manager_load(char* path);
 
 extern story_data_t* g_story_data;

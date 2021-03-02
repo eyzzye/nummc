@@ -1,4 +1,3 @@
-#include <fstream>
 #include <windows.h>      // for FindFirstFileA()
 #include "game_common.h"
 #include "map_manager.h"
@@ -41,22 +40,21 @@ int g_tile_height;  // pixel
 #define MAP_TAG_END      5
 
 // tile functions
-static int map_manager_load_tile(std::string path, tile_data_t* tile);
+static int map_manager_load_tile(char* path, tile_data_t* tile);
 static void map_manager_create_tile_instance(tile_instance_data_t* tile_inst, int w, int h, bool skip_create_col);
 static void map_manager_delete_tile_instance_col(tile_instance_data_t* tile_inst);
-static void load_tile_basic(std::string& line, tile_data_t* tile);
-static void load_tile_frame(std::string& line, tile_data_t* tile);
-static void load_tile_img(std::string& line, tile_data_t* tile);
-static void load_tile_collision(std::string& line, tile_data_t* tile);
+static void load_tile_basic(char* line, tile_data_t* tile);
+static void load_tile_frame(char* line, tile_data_t* tile);
+static void load_tile_img(char* line, tile_data_t* tile);
 
 // section map functions
-static int map_manager_load_data_element(std::string path);
-static void load_map(std::string& line);
-static void load_tileset(std::string& line, int* tile_width, int* tile_height);
-static void load_image(std::string& line, std::string& filename, int* width, int* height);
-static void load_layer(std::string& line, std::string& name, int* width, int* height);
-static void load_data(std::string& line);
-static void load_data_to_stage_data(std::string& line, int tile_type);
+static int map_manager_load_data_element(char* path);
+static void load_map_element(char* line);
+static void load_tileset(char* line, int* tile_width, int* tile_height);
+static void load_image(char* line, char* filename, int* width, int* height);
+static void load_layer(char* line, char* name, int* width, int* height);
+static void load_data(char* line);
+static void load_data_to_stage_data(char* line, int tile_type);
 
 //
 // static variables
@@ -324,32 +322,41 @@ void map_manager_create_stage_map()
 
 	// load basic map settings from section1
 	if (g_stage_data->section_list[1] != NULL) {
-		std::string path = g_stage_data->section_list[1]->map_path;
+		char* path = (char*)g_stage_data->section_list[1]->map_path.c_str();
 		map_manager_load(path);
 
 		//full_path = g_base_path + "data/" + game_utils_upper_folder(path) + "/*.tile";
 		char full_path[GAME_FULL_PATH_MAX];
-		std::string tile_files = game_utils_upper_folder(path) + "/*.tile";
-		int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)tile_files.c_str());
-		if (tmp_path_size == 0) {
-			LOG_ERROR("map_manager_create_stage_map failed get %s\n", path.c_str());
-			return;
-		}
+		char tile_files[GAME_FULL_PATH_MAX];
+		int tmp_path_size = game_utils_upper_folder(path, full_path);
+		if (tmp_path_size <= 0) { LOG_ERROR("Error: map_manager_create_stage_map get upper_folder %s\n", path); return; }
+		tmp_path_size = game_utils_string_cat(tile_files, full_path, (char*)"/*.tile");
+		if (tmp_path_size <= 0) { LOG_ERROR("Error: map_manager_create_stage_map get tile_files %s\n", path); return; }
+		tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)tile_files);
+		if (tmp_path_size <= 0) { LOG_ERROR("Error: map_manager_create_stage_map failed get %s\n", path); return; }
 
 		// load *.tile
 		WIN32_FIND_DATAA find_file_data;
 		HANDLE h_find = FindFirstFileA(full_path, &find_file_data);
 		if (h_find == INVALID_HANDLE_VALUE) {
-			LOG_ERROR("map_manager_load FindFirstFileA() error\n", path.c_str());
+			LOG_ERROR("Error: map_manager_create_stage_map FindFirstFileA() error\n", path);
 			return;
 		}
 
 		do {
 			if (!(find_file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-				std::string filename = find_file_data.cFileName;
-				std::string index_str = filename.substr(0, filename.size() - 5);
-				int index = atoi(index_str.c_str());
-				map_manager_load_tile(game_utils_upper_folder(path) + "/" + filename, &tile_tex[index]);
+				game_utils_upper_folder(path, full_path);
+				//tile_files = full_path + "/" + find_file_data.cFileName;
+				tmp_path_size = game_utils_string_cat(tile_files, full_path, (char*)"/", find_file_data.cFileName);
+				if (tmp_path_size <= 0) { LOG_ERROR("Error: map_manager_create_stage_map get tile_files %s\n", find_file_data.cFileName); return; }
+
+				//index_str = filename.substr(0, filename.size() - 5);
+				char index_str[GAME_UTILS_STRING_NAME_BUF_SIZE];
+				int tile_filename_size = (int)strlen(find_file_data.cFileName);
+				game_utils_string_copy_n(index_str, find_file_data.cFileName, tile_filename_size - 5 /* - strlen(".tile") */);
+				int index = atoi(index_str);
+
+				map_manager_load_tile(tile_files, &tile_tex[index]);
 			}
 		} while (FindNextFile(h_find, &find_file_data) != 0);
 		FindClose(h_find);
@@ -385,7 +392,7 @@ void map_manager_create_stage_map()
 
 		// load section map
 		write_section_map_index = i;
-		map_manager_load_data_element(g_stage_data->section_list[section_id]->map_path);
+		map_manager_load_data_element((char*)g_stage_data->section_list[section_id]->map_path.c_str());
 	}
 }
 
@@ -1093,72 +1100,83 @@ void map_manager_break_block(int x, int y, int w /* block */, int h /* block */)
 	}
 }
 
-static int map_manager_load_tile(std::string path, tile_data_t* tile)
+typedef struct _load_tile_callback_data_t load_tile_callback_data_t;
+struct _load_tile_callback_data_t {
+	bool read_flg[TILE_TAG_END];
+	tile_data_t* tile;
+};
+static load_tile_callback_data_t load_tile_callback_data;
+static void load_tile_callback(char* line, int line_size, int line_num, void* argv)
 {
-	bool read_flg[TILE_TAG_END] = { false };
+	load_tile_callback_data_t* data = (load_tile_callback_data_t*)argv;
 
+	if (line[0] == '\0') return;
+	if (line[0] == '#') return;
+
+	if (line[0] == '[') {
+		if (STRCMP_EQ(line, "[tile]")) {
+			data->read_flg[TILE_TAG_TILE] = true;
+			tile_base_data_t* tile_base = (tile_base_data_t*)data->tile;
+			tile_base->type = UNIT_TYPE_TILE;
+			tile_base->tile_type = TILE_TYPE_BASE;
+			tile_base->breakable = TILE_BREAKABLE_FALSE;
+			return;
+		}
+		if (STRCMP_EQ(line, "[/tile]")) { data->read_flg[TILE_TAG_TILE] = false; return; }
+		if (STRCMP_EQ(line, "[frame]")) {
+			data->read_flg[TILE_TAG_FRAME] = true;
+			tile_base_data_t* tile_base = (tile_base_data_t*)data->tile;
+			tile_base->anim = animation_manager_new_anim_data();
+			animation_manager_new_anim_stat_base_data(tile_base->anim);
+			return;
+		}
+		if (STRCMP_EQ(line, "[/frame]")) { data->read_flg[TILE_TAG_FRAME] = false; return; }
+		if (STRCMP_EQ(line, "[img]")) { data->read_flg[TILE_TAG_IMG] = true;  return; }
+		if (STRCMP_EQ(line, "[/img]")) { data->read_flg[TILE_TAG_IMG] = false; return; }
+		if (STRCMP_EQ(line, "[collision]")) { data->read_flg[TILE_TAG_COLLISION] = true;  return; }
+		if (STRCMP_EQ(line, "[/collision]")) { data->read_flg[TILE_TAG_COLLISION] = false; return; }
+	}
+
+	if (data->read_flg[TILE_TAG_TILE]) {
+		load_tile_basic(line, data->tile);
+	}
+	if (data->read_flg[TILE_TAG_FRAME]) {
+		load_tile_frame(line, data->tile);
+	}
+	if (data->read_flg[TILE_TAG_IMG]) {
+		load_tile_img(line, data->tile);
+	}
+	if (data->read_flg[TILE_TAG_COLLISION]) {
+		load_collision(line, &data->tile->col_shape);
+	}
+}
+
+static int map_manager_load_tile(char* path, tile_data_t* tile)
+{
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
 	if (tmp_path_size == 0) {
-		LOG_ERROR("map_manager_load_tile failed get %s\n", path.c_str());
+		LOG_ERROR("map_manager_load_tile failed get %s\n", path);
 		return 1;
 	}
 
-	std::ifstream inFile(full_path);
-	if (inFile.is_open()) {
-		std::string line;
-		while (std::getline(inFile, line)) {
-			if (line == "") continue;
-			if (line[0] == '#') continue;
-
-			if (line == "[tile]") {
-				read_flg[TILE_TAG_TILE] = true;
-				tile_base_data_t* tile_base = (tile_base_data_t*)tile;
-				tile_base->type = UNIT_TYPE_TILE;
-				tile_base->tile_type = TILE_TYPE_BASE;
-				tile_base->breakable = TILE_BREAKABLE_FALSE;
-			}
-			if (line == "[/tile]") { read_flg[TILE_TAG_TILE] = false; continue; }
-			if (line == "[frame]") {
-				read_flg[TILE_TAG_FRAME] = true;
-				tile_base_data_t* tile_base = (tile_base_data_t*)tile;
-				tile_base->anim = animation_manager_new_anim_data();
-				animation_manager_new_anim_stat_base_data(tile_base->anim);
-				continue;
-			}
-			if (line == "[/frame]") { read_flg[TILE_TAG_FRAME] = false; continue; }
-			if (line == "[img]") { read_flg[TILE_TAG_IMG] = true;  continue; }
-			if (line == "[/img]") { read_flg[TILE_TAG_IMG] = false; continue; }
-			if (line == "[collision]") { read_flg[TILE_TAG_COLLISION] = true;  continue; }
-			if (line == "[/collision]") { read_flg[TILE_TAG_COLLISION] = false; continue; }
-
-			if (read_flg[TILE_TAG_TILE]) {
-				load_tile_basic(line, tile);
-			}
-			if (read_flg[TILE_TAG_FRAME]) {
-				load_tile_frame(line, tile);
-			}
-			if (read_flg[TILE_TAG_IMG]) {
-				load_tile_img(line, tile);
-			}
-			if (read_flg[TILE_TAG_COLLISION]) {
-				load_collision(line, &tile->col_shape);
-			}
-		}
-		inFile.close();
-	}
-	else {
-		LOG_ERROR("map_manager_load_tile %s error\n", path.c_str());
+	// read file
+	memset(load_tile_callback_data.read_flg, 0, sizeof(bool) * TILE_TAG_END);
+	load_tile_callback_data.tile = tile;
+	int ret = game_utils_files_read_line(full_path, load_tile_callback, (void*)&load_tile_callback_data);
+	if (ret != 0) {
+		LOG_ERROR("map_manager_load_tile %s error\n", path);
 		return 1;
 	}
+
 	return 0;
 }
 
-static void load_tile_basic(std::string& line, tile_data_t* tile) {
+static void load_tile_basic(char* line, tile_data_t* tile) {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "breakable")) {
 		tile->breakable = STRCMP_EQ(value,"yes") ? TILE_BREAKABLE_TRUE : TILE_BREAKABLE_FALSE;
@@ -1166,10 +1184,10 @@ static void load_tile_basic(std::string& line, tile_data_t* tile) {
 	}
 }
 
-static void load_tile_frame(std::string& line, tile_data_t* tile) {
+static void load_tile_frame(char* line, tile_data_t* tile) {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	tile_base_data_t* tile_base = (tile_base_data_t*)tile;
 	if (STRCMP_EQ(key,"duration")) {
@@ -1199,13 +1217,13 @@ static void load_tile_frame(std::string& line, tile_data_t* tile) {
 	}
 }
 
-static void load_tile_img(std::string& line, tile_data_t* tile) {
+static void load_tile_img(char* line, tile_data_t* tile) {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 	char image_filename[GAME_FULL_PATH_MAX];
 	char str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * ANIM_FRAME_NUM_MAX];
 	int str_list_size;
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	tile_base_data_t* tile_base = (tile_base_data_t*)tile;
 	if (STRCMP_EQ(key,"layer")) {
@@ -1287,354 +1305,457 @@ static void load_tile_img(std::string& line, tile_data_t* tile) {
 	}
 }
 
-int map_manager_load(std::string path)
+typedef struct _load_map_callback_data_t load_map_callback_data_t;
+struct _load_map_callback_data_t {
+	bool read_flg[MAP_TAG_END];
+	char layer_name[GAME_UTILS_STRING_NAME_BUF_SIZE];
+};
+static load_map_callback_data_t load_map_callback_data;
+static void load_map_callback(char* line, int line_size, int line_num, void* argv)
 {
-	int img_width = 0;
-	int img_height = 0;
-	std::string image_filename = "";
-	std::string layer_name = "";
+	load_map_callback_data_t* data = (load_map_callback_data_t*)argv;
 
+	// seek white space
+	int seek_index = 0;
+	for (seek_index = 0; seek_index < line_size; seek_index++) {
+		if (line[seek_index] != ' ') {
+			break;
+		}
+	}
+	if (seek_index == line_size) return; // not found string
+
+	if (line[seek_index] == '<') {
+		char line_substr[GAME_UTILS_STRING_LINE_BUF_SIZE];
+		int ret = game_utils_string_copy_n(line_substr, &line[seek_index], 9);
+		if (ret != 0) { LOG_ERROR("Error: load_map_callback get line_substr of %s\n", line); return; }
+
+		// strlen(line_substr) == 9
+		if (STRCMP_EQ(line_substr, "<tileset ")) {
+			data->read_flg[MAP_TAG_TILESET] = true;
+			//std::string tileset_element = line.substr(seek_index, line.size() - seek_index);
+			ret = game_utils_string_copy_n(line_substr, &line[seek_index], line_size - seek_index);
+			if (ret != 0) { LOG_ERROR("Error: load_map_callback get tileset_element from %s\n", line); return; }
+			load_tileset(line_substr, &tile_width, &tile_height);
+			g_tile_width = tile_width; g_tile_height = tile_height;
+			data->read_flg[MAP_TAG_TILESET] = false;
+			return;
+		}
+
+		// strlen(line_substr) == 7
+		line_substr[7] = '\0';
+		if (STRCMP_EQ(line_substr, "<image ")) {
+			int img_width, img_height;
+			char image_filename[GAME_FULL_PATH_MAX];
+
+			data->read_flg[MAP_TAG_IMAGE] = true;
+			//std::string image_element = line.substr(seek_index, line_size - seek_index);
+			ret = game_utils_string_copy_n(line_substr, &line[seek_index], line_size - seek_index);
+			if (ret != 0) { LOG_ERROR("Error: load_map_callback get image_element from %s\n", line); return; }
+			load_image(line_substr, image_filename, &img_width, &img_height);
+			data->read_flg[MAP_TAG_IMAGE] = false;
+			return;
+		}
+
+		if (STRCMP_EQ(line_substr, "<layer ")) {
+			data->read_flg[MAP_TAG_LAYER] = true;
+			//std::string layer_element = line.substr(seek_index, line_size - seek_index);
+			ret = game_utils_string_copy_n(line_substr, &line[seek_index], line_size - seek_index);
+			if (ret != 0) { LOG_ERROR("Error: load_map_callback get layer_element from %s\n", line); return; }
+			load_layer(line_substr, data->layer_name, &layer_width, &layer_height);
+			if ((layer_width != MAP_WIDTH_NUM_MAX) || (layer_height != MAP_HEIGHT_NUM_MAX)) {
+				LOG_ERROR("ERROR: load_map_callback %d x %d\n", layer_width, layer_height);
+			}
+			g_map_x_max = layer_width;
+			g_map_y_max = layer_height;
+			data->read_flg[MAP_TAG_LAYER] = false;
+			return;
+		}
+
+		if (STRCMP_EQ(line_substr, "</data>")) {
+			data->read_flg[MAP_TAG_DATA] = false;
+			return;
+		}
+
+		// strlen(line_substr) == 6
+		line_substr[6] = '\0';
+		if (STRCMP_EQ(line_substr, "<data ")) {
+			data->read_flg[MAP_TAG_DATA] = true;
+			if (data->layer_name[0] == '1') {
+				read_tile_type = MAP_TYPE_FIELD;
+
+				map_field_data_t* tmp = (map_field_data_t*)&map_data_list[MAP_TYPE_FIELD];
+				tmp->type = MAP_TYPE_FIELD;
+				tmp->layer = MAP_TYPE_FIELD;
+				tmp->x = layer_width;
+				tmp->y = layer_height;
+				tmp->map_raw_data = map_raw_data[MAP_TYPE_FIELD];
+			}
+			else if (data->layer_name[0] == '2') {
+				read_tile_type = MAP_TYPE_BLOCK;
+
+				map_block_data_t* tmp = (map_block_data_t*)&map_data_list[MAP_TYPE_BLOCK];
+				tmp->type = MAP_TYPE_BLOCK;
+				tmp->layer = MAP_TYPE_BLOCK;
+				tmp->x = layer_width;
+				tmp->y = layer_height;
+				tmp->map_raw_data = map_raw_data[MAP_TYPE_BLOCK];
+			}
+
+			read_tile_index = 0;
+			return;
+		}
+
+		// strlen(line_substr) == 5
+		line_substr[5] = '\0';
+		if (STRCMP_EQ(line_substr, "<map ")) {
+			data->read_flg[MAP_TAG_MAP] = true;
+			//std::string map_element = line.substr(seek_index, line_size - seek_index);
+			ret = game_utils_string_copy_n(line_substr, &line[seek_index], line_size - seek_index);
+			if (ret != 0) { LOG_ERROR("Error: load_map_callback get map_element from %s\n", line); return; }
+			load_map_element(line_substr);
+			data->read_flg[MAP_TAG_MAP] = false;
+			return;
+		}
+	}
+
+	if (data->read_flg[MAP_TAG_DATA]) {
+		load_data(line);
+	}
+}
+
+int map_manager_load(char* path)
+{
+	// full_path = g_base_path + "data/" + path;
+	char full_path[GAME_FULL_PATH_MAX];
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
+	if (tmp_path_size == 0) {
+		LOG_ERROR("map_manager_load failed get %s\n", path);
+		return 1;
+	}
+
+	// init static variables
 	layer_width = 0;
 	layer_height = 0;
 	tile_width = 0;
 	tile_height = 0;
 
-	bool read_flg[MAP_TAG_END] = { false };
-
-	// full_path = g_base_path + "data/" + path;
-	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
-	if (tmp_path_size == 0) {
-		LOG_ERROR("map_manager_load failed get %s\n", path.c_str());
-		return 1;
-	}
-
-	std::ifstream inFile(full_path);
-	if (inFile.is_open()) {
-		std::string line;
-		while (std::getline(inFile, line)) {
-			int seek_index = 0;
-			for (seek_index = 0; seek_index < line.size(); seek_index++) {
-				if (line[seek_index] != ' ') {
-					break;
-				}
-			}
-			if (seek_index == line.size()) continue; // not found string
-
-			if (line.substr(seek_index, 5) == "<map ") {
-				read_flg[MAP_TAG_MAP] = true;
-				std::string map_element = line.substr(seek_index, line.size() - seek_index);
-				load_map(map_element);
-				read_flg[MAP_TAG_MAP] = false;
-				continue;
-			}
-
-			if (line.substr(seek_index, 9) == "<tileset ") {
-				read_flg[MAP_TAG_TILESET] = true;
-				std::string tileset_element = line.substr(seek_index, line.size() - seek_index);
-				load_tileset(tileset_element, &tile_width, &tile_height);
-				g_tile_width = tile_width; g_tile_height = tile_height;
-				read_flg[MAP_TAG_TILESET] = false;
-				continue;
-			}
-
-			if (line.substr(seek_index, 7) == "<image ") {
-				read_flg[MAP_TAG_IMAGE] = true;
-				std::string image_element = line.substr(seek_index, line.size() - seek_index);
-				load_image(image_element, image_filename, &img_width, &img_height);
-				read_flg[MAP_TAG_IMAGE] = false;
-				continue;
-			}
-
-			if (line.substr(seek_index, 7) == "<layer ") {
-				read_flg[MAP_TAG_LAYER] = true;
-				std::string layer_element = line.substr(seek_index, line.size() - seek_index);
-				load_layer(layer_element, layer_name, &layer_width, &layer_height);
-				if ((layer_width != MAP_WIDTH_NUM_MAX) || (layer_height != MAP_HEIGHT_NUM_MAX)) {
-					LOG_ERROR("ERROR: map_manager_load %d x %d\n", layer_width, layer_height);
-				}
-				g_map_x_max = layer_width;
-				g_map_y_max = layer_height;
-				read_flg[MAP_TAG_LAYER] = false;
-				continue;
-			}
-
-			if (line.substr(seek_index, 6) == "<data ") {
-				read_flg[MAP_TAG_DATA] = true;
-				if (layer_name == "1") {
-					read_tile_type = MAP_TYPE_FIELD;
-
-					map_field_data_t* tmp = (map_field_data_t*)&map_data_list[MAP_TYPE_FIELD];
-					tmp->type = MAP_TYPE_FIELD;
-					tmp->layer = MAP_TYPE_FIELD;
-					tmp->x = layer_width;
-					tmp->y = layer_height;
-					tmp->map_raw_data = map_raw_data[MAP_TYPE_FIELD];
-				}
-				else if (layer_name == "2") {
-					read_tile_type = MAP_TYPE_BLOCK;
-
-					map_block_data_t* tmp = (map_block_data_t*)&map_data_list[MAP_TYPE_BLOCK];
-					tmp->type = MAP_TYPE_BLOCK;
-					tmp->layer = MAP_TYPE_BLOCK;
-					tmp->x = layer_width;
-					tmp->y = layer_height;
-					tmp->map_raw_data = map_raw_data[MAP_TYPE_BLOCK];
-				}
-
-				read_tile_index = 0;
-				continue;
-			}
-			if (line.substr(seek_index, 7) == "</data>") {
-				read_flg[MAP_TAG_DATA] = false;
-				continue;
-			}
-			if (read_flg[MAP_TAG_DATA]) {
-				load_data(line);
-			}
-		}
-		inFile.close();
-	}
-	else {
-		LOG_ERROR("map_manager_load %s error\n", path.c_str());
+	// read file
+	memset(load_map_callback_data.read_flg, 0, sizeof(bool)* MAP_TAG_END);
+	int ret = game_utils_files_read_line(full_path, load_map_callback, (void*)&load_map_callback_data);
+	if (ret != 0) {
+		LOG_ERROR("map_manager_load %s error\n", path);
 		return 1;
 	}
 
 	return 0;
 }
 
-static int map_manager_load_data_element(std::string path)
+typedef struct _load_data_element_callback_data_t load_data_element_callback_data_t;
+struct _load_data_element_callback_data_t {
+	bool read_flg[MAP_TAG_END];
+	int read_tile_type_;
+	char layer_name[GAME_UTILS_STRING_NAME_BUF_SIZE];
+};
+static load_data_element_callback_data_t load_data_element_callback_data;
+static void load_data_element_callback(char* line, int line_size, int line_num, void* argv)
 {
-	std::string layer_name = "";
-	int read_tile_type_ = -1;
+	load_data_element_callback_data_t* data = (load_data_element_callback_data_t*)argv;
 
-	bool read_flg[MAP_TAG_END] = { false };
+	int seek_index = 0;
+	for (seek_index = 0; seek_index < line_size; seek_index++) {
+		if (line[seek_index] != ' ') {
+			break;
+		}
+	}
+	if (seek_index == line_size) return; // not found string
 
+	if (line[seek_index] == '<') {
+		char line_substr[GAME_UTILS_STRING_LINE_BUF_SIZE];
+		int ret = game_utils_string_copy_n(line_substr, &line[seek_index], 7);
+		if (ret != 0) { LOG_ERROR("Error: load_data_element_callback get line_substr of %s\n", line); return; }
+
+		// strlen(line_substr) == 7
+		if (STRCMP_EQ(line_substr, "<layer ")) {
+			data->read_flg[MAP_TAG_LAYER] = true;
+			//std::string layer_element = line.substr(seek_index, line_size - seek_index);
+			ret = game_utils_string_copy_n(line_substr, &line[seek_index], line_size - seek_index);
+			if (ret != 0) { LOG_ERROR("Error: load_data_element_callback get layer_element from %s\n", line); return; }
+
+			int dummy_width, dummy_height;
+			load_layer(line_substr, data->layer_name, &dummy_width, &dummy_height);
+			if ((dummy_width != MAP_WIDTH_NUM_MAX) || (layer_height != MAP_HEIGHT_NUM_MAX)) {
+				LOG_ERROR("ERROR: load_data_element_callback %d x %d\n", dummy_width, dummy_height);
+			}
+			data->read_flg[MAP_TAG_LAYER] = false;
+			return;
+		}
+
+		if (STRCMP_EQ(line_substr, "</data>")) {
+			data->read_flg[MAP_TAG_DATA] = false;
+			return;
+		}
+
+		// strlen(line_substr) == 6
+		line_substr[6] = '\0';
+		if (STRCMP_EQ(line_substr, "<data ")) {
+			data->read_flg[MAP_TAG_DATA] = true;
+			if (data->layer_name[0] == '1') {
+				data->read_tile_type_ = MAP_TYPE_FIELD;
+			}
+			else if (data->layer_name[0] == '2') {
+				data->read_tile_type_ = MAP_TYPE_BLOCK;
+			}
+			read_tile_index = 0;
+			return;
+		}
+	}
+
+	if (data->read_flg[MAP_TAG_DATA]) {
+		load_data_to_stage_data(line, data->read_tile_type_);
+	}
+}
+
+static int map_manager_load_data_element(char* path)
+{
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
 	if (tmp_path_size == 0) {
-		LOG_ERROR("map_manager_load_data_element failed get %s\n", path.c_str());
+		LOG_ERROR("map_manager_load_data_element failed get %s\n", path);
 		return 1;
 	}
 
-	std::ifstream inFile(full_path);
-	if (inFile.is_open()) {
-		std::string line;
-		while (std::getline(inFile, line)) {
-			int seek_index = 0;
-			for (seek_index = 0; seek_index < line.size(); seek_index++) {
-				if (line[seek_index] != ' ') {
-					break;
-				}
-			}
-			if (seek_index == line.size()) continue; // not found string
-
-			if (line.substr(seek_index, 7) == "<layer ") {
-				read_flg[MAP_TAG_LAYER] = true;
-				std::string layer_element = line.substr(seek_index, line.size() - seek_index);
-
-				int dummy_width, dummy_height;
-				load_layer(layer_element, layer_name, &dummy_width, &dummy_height);
-				if ((dummy_width != MAP_WIDTH_NUM_MAX) || (layer_height != MAP_HEIGHT_NUM_MAX)) {
-					LOG_ERROR("ERROR: map_manager_load_data_element %d x %d\n", dummy_width, dummy_height);
-				}
-				read_flg[MAP_TAG_LAYER] = false;
-				continue;
-			}
-
-			if (line.substr(seek_index, 6) == "<data ") {
-				read_flg[MAP_TAG_DATA] = true;
-				if (layer_name == "1") {
-					read_tile_type_ = MAP_TYPE_FIELD;
-				}
-				else if (layer_name == "2") {
-					read_tile_type_ = MAP_TYPE_BLOCK;
-				}
-				read_tile_index = 0;
-				continue;
-			}
-			if (line.substr(seek_index, 7) == "</data>") {
-				read_flg[MAP_TAG_DATA] = false;
-				continue;
-			}
-			if (read_flg[MAP_TAG_DATA]) {
-				load_data_to_stage_data(line, read_tile_type_);
-			}
-		}
-		inFile.close();
-	}
-	else {
-		LOG_ERROR("map_manager_load_data_element %s error\n", path.c_str());
+	// read file
+	memset(load_data_element_callback_data.read_flg, 0, sizeof(bool) * MAP_TAG_END);
+	load_data_element_callback_data.read_tile_type_ = -1;
+	int ret = game_utils_files_read_line(full_path, load_data_element_callback, (void*)&load_data_element_callback_data);
+	if (ret != 0) {
+		LOG_ERROR("map_manager_load_data_element %s error\n", path);
 		return 1;
 	}
+
 	return 0;
 }
 
-static void load_map(std::string& line) {
+static void load_map_element(char* line) {
 	/* do nothing */
 }
 
-static void load_tileset(std::string& line, int* tile_width, int* tile_height) {
-
+static void load_tileset(char* line, int* tile_width, int* tile_height)
+{
 	int seek_index = 0;
 	int end_index = 0;
 
-	for (seek_index = 0; seek_index < line.size(); seek_index++) {
+	int line_size = (int)strlen(line);
+	for (seek_index = 0; seek_index < line_size; seek_index++) {
 		if (line[seek_index] == ' ') continue;
-		if (seek_index == line.size()) break; // not found string
+		if (seek_index == line_size) break; // not found string
 
-		if (line.substr(seek_index, 8) == "<tileset") {
-			seek_index += 8;
-			continue;
-		}
-		if (line.substr(seek_index, 11) == "tilewidth=\"") {
-			seek_index += 11;
-			for (int i = seek_index; i < line.size(); i++) {
-				if (line[i] == '"') {
-					end_index = i;
-					break;
-				}
-			}
-			std::string val = line.substr(seek_index, (size_t)end_index - seek_index);
-			*tile_width = atoi(val.c_str());
+		char line_substr[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		int ret = game_utils_string_copy_n(line_substr, &line[seek_index], 12);
+		if (ret != 0) { LOG_ERROR("Error: load_tileset get line_substr from %s\n", line); continue; }
 
-			seek_index = end_index;
-			continue;
-		}
-		if (line.substr(seek_index, 12) == "tileheight=\"") {
+		// strlen(line_substr) == 12
+		if (STRCMP_EQ(line_substr, "tileheight=\"")) {
 			seek_index += 12;
-			for (int i = seek_index; i < line.size(); i++) {
+			for (int i = seek_index; i < line_size; i++) {
 				if (line[i] == '"') {
 					end_index = i;
 					break;
 				}
 			}
-			std::string val = line.substr(seek_index, (size_t)end_index - seek_index);
-			*tile_height = atoi(val.c_str());
+
+			//std::string val = line.substr(seek_index, (size_t)end_index - seek_index);
+			ret = game_utils_string_copy_n(line_substr, &line[seek_index], end_index - seek_index);
+			if (ret != 0) { LOG_ERROR("Error: load_tileset get tileheight from %s\n", line); break; }
+			*tile_height = atoi(line_substr);
 
 			seek_index = end_index;
-			break;
+			break; // tileset last attr
+		}
+
+		// strlen(line_substr) == 11
+		line_substr[11] = '\0';
+		if (STRCMP_EQ(line_substr, "tilewidth=\"")) {
+			seek_index += 11;
+			for (int i = seek_index; i < line_size; i++) {
+				if (line[i] == '"') {
+					end_index = i;
+					break;
+				}
+			}
+			//std::string val = line.substr(seek_index, (size_t)end_index - seek_index);
+			ret = game_utils_string_copy_n(line_substr, &line[seek_index], end_index - seek_index);
+			if (ret != 0) { LOG_ERROR("Error: load_tileset get tilewidth from %s\n", line); break; }
+			*tile_width = atoi(line_substr);
+
+			seek_index = end_index;
+			continue;
+		}
+
+		// strlen(line_substr) == 8
+		line_substr[8] = '\0';
+		if (STRCMP_EQ(line_substr, "<tileset")) {
+			seek_index += 8;
+			continue;
 		}
 	}
 }
 
-static void load_image(std::string& line, std::string& filename, int* width, int* height) {
+static void load_image(char* line, char* filename, int* width, int* height) {
 	int seek_index = 0;
 	int end_index = 0;
 
-	for (seek_index = 0; seek_index < line.size(); seek_index++) {
+	int line_size = (int)strlen(line);
+	for (seek_index = 0; seek_index < line_size; seek_index++) {
 		if (line[seek_index] == ' ') continue;
-		if (seek_index == line.size()) break; // not found string
+		if (seek_index == line_size) break; // not found string
 
-		if (line.substr(seek_index, 6) == "<image") {
+		char line_substr[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		int ret = game_utils_string_copy_n(line_substr, &line[seek_index], 8);
+		if (ret != 0) { LOG_ERROR("Error: load_image get line_substr from %s\n", line); continue; }
+
+		// strlen(line_substr) == 8
+		if (STRCMP_EQ(line_substr, "source=\"")) {
+			seek_index += 8;
+			for (int i = seek_index; i < line_size; i++) {
+				if (line[i] == '"') {
+					end_index = i;
+					break;
+				}
+			}
+			//filename = line.substr(seek_index, (size_t)end_index - seek_index);
+			ret = game_utils_string_copy_n(filename, &line[seek_index], end_index - seek_index);
+			if (ret != 0) { LOG_ERROR("Error: load_image get filename from %s\n", line); break; }
+
+			seek_index = end_index;
+			continue;
+		}
+
+		if (STRCMP_EQ(line_substr, "height=\"")) {
+			seek_index += 8;
+			for (int i = seek_index; i < line_size; i++) {
+				if (line[i] == '"') {
+					end_index = i;
+					break;
+				}
+			}
+			//std::string val = line.substr(seek_index, (size_t)end_index - seek_index);
+			ret = game_utils_string_copy_n(line_substr, &line[seek_index], end_index - seek_index);
+			if (ret != 0) { LOG_ERROR("Error: load_image get height from %s\n", line); break; }
+			*height = atoi(line_substr);
+
+			seek_index = end_index;
+			break; // image last attr
+		}
+
+		// strlen(line_substr) == 7
+		line_substr[7] = '\0';
+		if (STRCMP_EQ(line_substr, "width=\"")) {
+			seek_index += 7;
+			for (int i = seek_index; i < line_size; i++) {
+				if (line[i] == '"') {
+					end_index = i;
+					break;
+				}
+			}
+
+			//std::string val = line.substr(seek_index, (size_t)end_index - seek_index);
+			ret = game_utils_string_copy_n(line_substr, &line[seek_index], end_index - seek_index);
+			if (ret != 0) { LOG_ERROR("Error: load_image get width from %s\n", line); break; }
+			*width = atoi(line_substr);
+
+			seek_index = end_index;
+			continue;
+		}
+
+		// strlen(line_substr) == 6
+		line_substr[6] = '\0';
+		if (STRCMP_EQ(line_substr, "<image")) {
 			seek_index += 6;
 			continue;
-		}
-		if (line.substr(seek_index, 8) == "source=\"") {
-			seek_index += 8;
-			for (int i = seek_index; i < line.size(); i++) {
-				if (line[i] == '"') {
-					end_index = i;
-					break;
-				}
-			}
-			filename = line.substr(seek_index, (size_t)end_index - seek_index);
-
-			seek_index = end_index;
-			continue;
-		}
-		if (line.substr(seek_index, 7) == "width=\"") {
-			seek_index += 7;
-			for (int i = seek_index; i < line.size(); i++) {
-				if (line[i] == '"') {
-					end_index = i;
-					break;
-				}
-			}
-			std::string val = line.substr(seek_index, (size_t)end_index - seek_index);
-			*width = atoi(val.c_str());
-
-			seek_index = end_index;
-			continue;
-		}
-		if (line.substr(seek_index, 8) == "height=\"") {
-			seek_index += 8;
-			for (int i = seek_index; i < line.size(); i++) {
-				if (line[i] == '"') {
-					end_index = i;
-					break;
-				}
-			}
-			std::string val = line.substr(seek_index, (size_t)end_index - seek_index);
-			*height = atoi(val.c_str());
-
-			seek_index = end_index;
-			break;
 		}
 	}
 }
 
-static void load_layer(std::string& line, std::string& name, int* width, int* height) {
+static void load_layer(char* line, char* name, int* width, int* height) {
 	int seek_index = 0;
 	int end_index = 0;
 
-	for (seek_index = 0; seek_index < line.size(); seek_index++) {
+	int line_size = (int)strlen(line);
+	for (seek_index = 0; seek_index < line_size; seek_index++) {
 		if (line[seek_index] == ' ') continue;
-		if (seek_index == line.size()) break; // not found string
+		if (seek_index == line_size) break; // not found string
 
-		if (line.substr(seek_index, 6) == "<layer") {
-			seek_index += 6;
-			continue;
-		}
+		char line_substr[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		int ret = game_utils_string_copy_n(line_substr, &line[seek_index], 8);
+		if (ret != 0) { LOG_ERROR("Error: load_layer get line_substr from %s\n", line); continue; }
 
-		if (line.substr(seek_index, 6) == "name=\"") {
-			seek_index += 6;
-			for (int i = seek_index; i < line.size(); i++) {
-				if (line[i] == '"') {
-					end_index = i;
-					break;
-				}
-			}
-			name = line.substr(seek_index, (size_t)end_index - seek_index);
-
-			seek_index = end_index;
-			continue;
-		}
-		if (line.substr(seek_index, 7) == "width=\"") {
-			seek_index += 7;
-			for (int i = seek_index; i < line.size(); i++) {
-				if (line[i] == '"') {
-					end_index = i;
-					break;
-				}
-			}
-			std::string val = line.substr(seek_index, (size_t)end_index - seek_index);
-			*width = atoi(val.c_str());
-
-			seek_index = end_index;
-			continue;
-		}
-		if (line.substr(seek_index, 8) == "height=\"") {
+		// strlen(line_substr) == 8
+		if (STRCMP_EQ(line_substr, "height=\"")) {
 			seek_index += 8;
-			for (int i = seek_index; i < line.size(); i++) {
+			for (int i = seek_index; i < line_size; i++) {
 				if (line[i] == '"') {
 					end_index = i;
 					break;
 				}
 			}
-			std::string val = line.substr(seek_index, (size_t)end_index - seek_index);
-			*height = atoi(val.c_str());
+			//std::string val = line.substr(seek_index, (size_t)end_index - seek_index);
+			ret = game_utils_string_copy_n(line_substr, &line[seek_index], end_index - seek_index);
+			if (ret != 0) { LOG_ERROR("Error: load_layer get height from %s\n", line); break; }
+			*height = atoi(line_substr);
 
 			seek_index = end_index;
-			break;
+			break; // layer last attr
+		}
+
+		// strlen(line_substr) == 7
+		line_substr[7] = '\0';
+		if (STRCMP_EQ(line_substr, "width=\"")) {
+			seek_index += 7;
+			for (int i = seek_index; i < line_size; i++) {
+				if (line[i] == '"') {
+					end_index = i;
+					break;
+				}
+			}
+			//std::string val = line.substr(seek_index, (size_t)end_index - seek_index);
+			ret = game_utils_string_copy_n(line_substr, &line[seek_index], end_index - seek_index);
+			if (ret != 0) { LOG_ERROR("Error: load_layer get width from %s\n", line); break; }
+			*width = atoi(line_substr);
+
+			seek_index = end_index;
+			continue;
+		}
+
+		// strlen(line_substr) == 6
+		line_substr[6] = '\0';
+		if (STRCMP_EQ(line_substr, "<layer")) {
+			seek_index += 6;
+			continue;
+		}
+
+		if (STRCMP_EQ(line_substr, "name=\"")) {
+			seek_index += 6;
+			for (int i = seek_index; i < line_size; i++) {
+				if (line[i] == '"') {
+					end_index = i;
+					break;
+				}
+			}
+			//name = line.substr(seek_index, (size_t)end_index - seek_index);
+			ret = game_utils_string_copy_n(name, &line[seek_index], end_index - seek_index);
+			if (ret != 0) { LOG_ERROR("Error: load_layer get name from %s\n", line); break; }
+
+			seek_index = end_index;
+			continue;
 		}
 	}
 }
 
-static void load_data(std::string& line) {
+static void load_data(char* line) {
 	int int_list[MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX];
-	int int_list_size = game_utils_split_conmma_int((char*)line.c_str(), int_list, MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX);
+	int int_list_size = game_utils_split_conmma_int(line, int_list, MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX);
 
 	for (int i = 0; i < int_list_size; i++) {
 		(map_raw_data[read_tile_type] + read_tile_index)->id = int_list[i];
@@ -1642,9 +1763,9 @@ static void load_data(std::string& line) {
 	}
 }
 
-static void load_data_to_stage_data(std::string& line, int tile_type) {
+static void load_data_to_stage_data(char* line, int tile_type) {
 	int int_list[MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX];
-	int int_list_size = game_utils_split_conmma_int((char*)line.c_str(), int_list, MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX);
+	int int_list_size = game_utils_split_conmma_int(line, int_list, MAP_WIDTH_NUM_MAX * MAP_HEIGHT_NUM_MAX);
 
 	for (int i = 0; i < int_list_size; i++) {
 		g_stage_data->stage_map[write_section_map_index].section_map[tile_type][read_tile_index] = (char)int_list[i];

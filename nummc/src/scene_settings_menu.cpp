@@ -866,7 +866,7 @@ void scene_settings_menu_init() {
 	scene_func.set_stat_event = &set_stat_event;
 
 	// load resource files
-	resource_manager_load_dat("scenes/scene_settings_menu.dat");
+	resource_manager_load_dat((char*)"scenes/scene_settings_menu.dat");
 
 	// set texture position
 	tex_info_init();

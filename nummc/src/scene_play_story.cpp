@@ -124,7 +124,7 @@ static void load_event() {
 	// load story data
 	auto_text_finish = false;
 	story_manager_init();
-	story_manager_load(story_path);
+	story_manager_load((char*)story_path.c_str());
 
 	// reset size
 	tex_info_reset();
@@ -228,7 +228,7 @@ void scene_play_story_init()
 	scene_func.set_stat_event = &set_stat_event;
 
 	// load resource files
-	resource_manager_load_dat("scenes/scene_play_story.dat");
+	resource_manager_load_dat((char*)"scenes/scene_play_story.dat");
 }
 
 SceneManagerFunc* scene_play_story_get_func()

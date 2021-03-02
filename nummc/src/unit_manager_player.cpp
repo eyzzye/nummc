@@ -1,4 +1,3 @@
-#include <fstream>
 #include "game_common.h"
 #include "unit_manager.h"
 
@@ -131,7 +130,7 @@ static const char* star_effect_path = "units/effect/star/star.unit";
 static const char* heart_item_path = "units/items/recovery/heart/heart.unit";
 static const char* bom_item_path = "units/items/bom/simple/bom.unit";
 
-static void load_unit(std::string& line);
+static void load_unit(char* line);
 static void unit_manager_player_change_bullet_curving(int bullet_curving);
 static void unit_manager_player_change_bullet_strength(int bullet_strength);
 static void unit_manager_player_change_speed(int speed);
@@ -225,72 +224,80 @@ int unit_manager_load_player_effects()
 	return 0;
 }
 
-int unit_manager_load_player(std::string path)
+typedef struct _load_player_callback_data_t load_player_callback_data_t;
+struct _load_player_callback_data_t {
+	bool read_flg[UNIT_TAG_END];
+	char* path;
+};
+static load_player_callback_data_t load_player_callback_data;
+static void load_player_callback(char* line, int line_size, int line_num, void* argv)
 {
-	bool read_flg[UNIT_TAG_END] = { false };
+	load_player_callback_data_t* data = (load_player_callback_data_t*)argv;
 
+	if (line[0] == '\0') return;
+	if (line[0] == '#') return;
+
+	if (line[0] == '[') {
+		if (STRCMP_EQ(line, "[unit]")) {
+			data->read_flg[UNIT_TAG_UNIT] = true;
+
+			// set base unit data
+			char* path_c_str = game_utils_string_new();
+			game_utils_string_copy(path_c_str, data->path);
+			player_base[player_base_index_end].obj          = (void*)path_c_str;
+			player_base[player_base_index_end].type         = UNIT_TYPE_PLAYER;
+			player_base[player_base_index_end].id           = player_base_index_end;
+			player_base[player_base_index_end].effect_stat  = UNIT_EFFECT_FLAG_P_NONE;
+			player_base[player_base_index_end].effect_param = player_base_effect;
+			return;
+		}
+		if (STRCMP_EQ(line, "[/unit]"))      { data->read_flg[UNIT_TAG_UNIT]      = false; return; }
+		if (STRCMP_EQ(line, "[collision]"))  { data->read_flg[UNIT_TAG_COLLISION] = true;  return; }
+		if (STRCMP_EQ(line, "[/collision]")) { data->read_flg[UNIT_TAG_COLLISION] = false; return; }
+		if (STRCMP_EQ(line, "[anim]")) {
+			data->read_flg[UNIT_TAG_ANIM] = true;
+			player_base[player_base_index_end].anim = animation_manager_new_anim_data();
+			animation_manager_new_anim_stat_base_data(player_base[player_base_index_end].anim);
+			return;
+		}
+		if (STRCMP_EQ(line, "[/anim]")) { data->read_flg[UNIT_TAG_ANIM] = false; return; }
+	}
+
+	if (data->read_flg[UNIT_TAG_UNIT]) {
+		load_unit(line);
+	}
+	if (data->read_flg[UNIT_TAG_COLLISION]) {
+		load_collision(line, &player_base[player_base_index_end].col_shape);
+	}
+	if (data->read_flg[UNIT_TAG_ANIM]) {
+		load_anim(line, player_base[player_base_index_end].anim);
+	}
+}
+
+int unit_manager_load_player(char* path)
+{
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
 	if (tmp_path_size == 0) {
-		LOG_ERROR("unit_manager_load_player failed get %s\n", path.c_str());
+		LOG_ERROR("unit_manager_load_player failed get %s\n", path);
 		return 1;
 	}
 
-	std::ifstream inFile(full_path);
-	if (inFile.is_open()) {
-		std::string line;
-		while (std::getline(inFile, line)) {
-			if (line == "") continue;
-			if (line[0] == '#') continue;
-
-			if (line == "[unit]") {
-				read_flg[UNIT_TAG_UNIT] = true;
-
-				// set base unit data
-				char* path_c_str = game_utils_string_new();
-				game_utils_string_copy(path_c_str, path.c_str());
-				player_base[player_base_index_end].obj = (void*)path_c_str;
-				player_base[player_base_index_end].type = UNIT_TYPE_PLAYER;
-				player_base[player_base_index_end].id = player_base_index_end;
-				player_base[player_base_index_end].effect_stat = UNIT_EFFECT_FLAG_P_NONE;
-				player_base[player_base_index_end].effect_param = player_base_effect;
-				continue;
-			}
-			if (line == "[/unit]") { read_flg[UNIT_TAG_UNIT] = false; continue; }
-			if (line == "[collision]") { read_flg[UNIT_TAG_COLLISION] = true;  continue; }
-			if (line == "[/collision]") { read_flg[UNIT_TAG_COLLISION] = false; continue; }
-			if (line == "[anim]") {
-				read_flg[UNIT_TAG_ANIM] = true;
-				player_base[player_base_index_end].anim = animation_manager_new_anim_data();
-				animation_manager_new_anim_stat_base_data(player_base[player_base_index_end].anim);
-				continue;
-			}
-			if (line == "[/anim]") { read_flg[UNIT_TAG_ANIM] = false; continue; }
-
-			if (read_flg[UNIT_TAG_UNIT]) {
-				load_unit(line);
-			}
-			if (read_flg[UNIT_TAG_COLLISION]) {
-				load_collision(line, &player_base[player_base_index_end].col_shape);
-			}
-			if (read_flg[UNIT_TAG_ANIM]) {
-				load_anim(line, player_base[player_base_index_end].anim);
-			}
-		}
-		inFile.close();
-	}
-	else {
-		LOG_ERROR("unit_manager_load_player %s error\n", path.c_str());
+	// read file
+	memset(load_player_callback_data.read_flg, 0, sizeof(bool)* UNIT_TAG_END);
+	load_player_callback_data.path = path;
+	int ret = game_utils_files_read_line(full_path, load_player_callback, (void*)&load_player_callback_data);
+	if (ret != 0) {
+		LOG_ERROR("unit_manager_load_player %s error\n", path);
 		return 1;
 	}
 
 	// load anim files
 	if (player_base[player_base_index_end].anim) {
 		for (int i = 0; i < ANIM_STAT_END; i++) {
-			char* cstr_anim_path = (char*)player_base[player_base_index_end].anim->anim_stat_base_list[i]->obj;
-			if (cstr_anim_path) {
-				std::string anim_path = cstr_anim_path;
+			char* anim_path = (char*)player_base[player_base_index_end].anim->anim_stat_base_list[i]->obj;
+			if (anim_path) {
 				animation_manager_load_file(anim_path, player_base[player_base_index_end].anim, i);
 			}
 		}
@@ -305,11 +312,11 @@ int unit_manager_load_player(std::string path)
 	return 0;
 }
 
-static void load_unit(std::string& line)
+static void load_unit(char* line)
 {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"hp")) {
 		player_base[player_base_index_end].hp = atoi(value);

@@ -1,4 +1,3 @@
-#include <fstream>
 #include "game_common.h"
 #include "ai_manager.h"
 
@@ -32,7 +31,7 @@ static int ai_data_index_end;
 unit_data_t ai_dummy_unit_data;
 static shape_data dummy_shape_data;
 
-static void load_basic(std::string& line, ai_bullet_t* bullet_data);
+static void load_basic(char* line, ai_bullet_t* bullet_data);
 static void update_simple(ai_data_t* ai_data);
 static void update_left_right(ai_data_t* ai_data);
 static void update_stay(ai_data_t* ai_data);
@@ -126,46 +125,57 @@ int ai_manager_get_ai_type(char* value)
 	return ret;
 }
 
-int ai_manager_load_bullet_file(std::string path, ai_bullet_t* bullet_base)
-{
-	bool read_flg[AI_BULLET_TAG_END] = { false };
 
+typedef struct _load_bullet_file_callback_data_t load_bullet_file_callback_data_t;
+struct _load_bullet_file_callback_data_t {
+	bool read_flg[AI_BULLET_TAG_END];
+	ai_bullet_t* bullet_base;
+};
+static load_bullet_file_callback_data_t load_bullet_file_callback_data;
+static void load_bullet_file_callback(char* line, int line_size, int line_num, void* argv)
+{
+	load_bullet_file_callback_data_t* data = (load_bullet_file_callback_data_t*)argv;
+
+	if (line[0] == '\0') return;
+	if (line[0] == '#') return;
+
+	if (line[0] == '[') {
+		if (STRCMP_EQ(line, "[basic]")) { data->read_flg[AI_BULLET_TAG_BASIC] = true; return; }
+		if (STRCMP_EQ(line, "[/basic]")) { data->read_flg[AI_BULLET_TAG_BASIC] = false; return; }
+	}
+
+	if (data->read_flg[AI_BULLET_TAG_BASIC]) {
+		load_basic(line, data->bullet_base);
+	}
+}
+
+int ai_manager_load_bullet_file(char* path, ai_bullet_t* bullet_base)
+{
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
 	if (tmp_path_size == 0) {
-		LOG_ERROR("ai_manager_load_bullet_file failed get %s\n", path.c_str());
+		LOG_ERROR("ai_manager_load_bullet_file failed get %s\n", path);
 		return 1;
 	}
 
-	std::ifstream inFile(full_path);
-	if (inFile.is_open()) {
-		std::string line;
-		while (std::getline(inFile, line)) {
-			if (line == "") continue;
-			if (line[0] == '#') continue;
-
-			if (line == "[basic]") { read_flg[AI_BULLET_TAG_BASIC] = true; continue; }
-			if (line == "[/basic]") { read_flg[AI_BULLET_TAG_BASIC] = false; continue; }
-
-			if (read_flg[AI_BULLET_TAG_BASIC]) {
-				load_basic(line, bullet_base);
-			}
-		}
-		inFile.close();
-	}
-	else {
-		LOG_ERROR("ai_manager_load_bullet_file %s error\n", path.c_str());
+	// read file
+	memset(load_bullet_file_callback_data.read_flg, 0, sizeof(bool) * AI_BULLET_TAG_END);
+	load_bullet_file_callback_data.bullet_base = bullet_base;
+	int ret = game_utils_files_read_line(full_path, load_bullet_file_callback, (void*)&load_bullet_file_callback_data);
+	if (ret != 0) {
+		LOG_ERROR("ai_manager_load_bullet_file %s error\n", path);
 		return 1;
 	}
+
 	return 0;
 }
 
-static void load_basic(std::string& line, ai_bullet_t* bullet_data)
+static void load_basic(char* line, ai_bullet_t* bullet_data)
 {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "bullet_unit")) {
 		char* bullet_path = value;
@@ -783,8 +793,7 @@ bool ai_manager_decide_attack_in_region(unit_data_t* unit_data, float abs_vec, i
 	}
 
 	// create dummy bullet
-	std::string bullet_path = g_enemy_bullet_path[bullet_index];
-	int bullet_base_id = unit_manager_search_enemy_bullet(bullet_path);
+	int bullet_base_id = unit_manager_search_enemy_bullet((char*)g_enemy_bullet_path[bullet_index]);
 	unit_enemy_bullet_data_t* bullet_data = unit_manager_get_enemy_bullet_base(bullet_base_id);
 
 	// set bullet direction

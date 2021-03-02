@@ -59,14 +59,17 @@ float game_utils_cos(float angle)
 }
 
 //
-// file utils
+// file helper utils
 //
-std::string game_utils_upper_folder(std::string path)
+int game_utils_upper_folder(char* path, char* dst_str)
 {
+	int dst_str_size = 0;
+	int path_size = (int)strlen(path);
+
 	bool found_flg = false;
 	size_t split_index = 0;
 
-	int start_index = (path[path.size()-1] == '/') ? ((int)path.size() - 2) : ((int)path.size() - 1);
+	int start_index = (path[path_size - 1] == '/') ? (path_size - 2) : (path_size - 1);
 	for (int i = start_index; i >= 0; i--) {
 		if (path[i] == '/') {
 			split_index = (size_t)i;
@@ -76,35 +79,63 @@ std::string game_utils_upper_folder(std::string path)
 	}
 
 	// error return
-	if (!found_flg) return "";
-	if (split_index < 3) return "";
+	if (!found_flg) return 0;
+	if (split_index < 3) return 0;
 
-	return path.substr(0, split_index);
+	//path.substr(0, split_index);
+	int ret = game_utils_string_copy_n(dst_str, &path[0], (int)split_index);
+	if (ret == 0) dst_str_size = (int)strlen(dst_str);
+
+	return dst_str_size;
 }
 
-int game_utils_create_folder(std::string path)
+// path: root_folder/new_folder_path
+//       root_folder ... already created, can accsess
+//       new_folder_path ... already created or not
+// return: create all folder(0), error(1)
+int game_utils_create_folder(char* path)
 {
+#ifdef _WIN32
 	int ret = 0;
-	if (_access(path.c_str(), 6) == -1) {
-		std::string upper = game_utils_upper_folder(path);
-		if (upper == "") {
+	if (_access(path, 6) == -1) {
+		char upper[256];
+		int upper_size = game_utils_upper_folder(path, upper);
+		if (upper_size <= 0) {
 			return 1;
 		}
 		else {
 			if (game_utils_create_folder(upper)) {
 				return 1;
 			}
-			if (!CreateDirectoryA(path.c_str(), NULL)) {
+			if (!CreateDirectoryA(path, NULL)) {
 				return 1;
 			}
 		}
 	}
+#else
+	int ret = 0;
+	if (access(path, R_OK | W_OK) == -1) {
+		char upper[256];
+		int upper_size = game_utils_upper_folder(path, upper);
+		if (upper_size <= 0) {
+			return 1;
+		}
+		else {
+			if (game_utils_create_folder(upper)) {
+				return 1;
+			}
+			if (mkdir(path, 0700) != 0 && errno != EEXIST) {
+				return 1;
+			}
+		}
+	}
+#endif
 	return 0;
 }
 
-int game_utils_backup_file(std::string path, int max_size)
+int game_utils_backup_file(char* path, int max_size)
 {
-	HANDLE logFile = CreateFileA(path.c_str(),
+	HANDLE logFile = CreateFileA(path,
 		GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
 	if (logFile == INVALID_HANDLE_VALUE) {
 		if (GetLastError() == ERROR_FILE_NOT_FOUND) {
@@ -126,8 +157,10 @@ int game_utils_backup_file(std::string path, int max_size)
 			return 1;
 		}
 		else if (file_size.QuadPart > max_size) {
-			std::string backup_file_name = path + ".1";
-			if (!CopyFileExA(path.c_str(), backup_file_name.c_str(), NULL, NULL, NULL, COPY_FILE_NO_BUFFERING))
+			//std::string backup_file_name = path + ".1";
+			char backup_file_name[GAME_FULL_PATH_MAX];
+			int backup_file_name_size = game_utils_string_cat(backup_file_name, path, (char*)".1");
+			if ((backup_file_name_size <= 0) || (!CopyFileExA(path, backup_file_name, NULL, NULL, NULL, COPY_FILE_NO_BUFFERING)))
 			{
 				LOG_ERROR_WINAPI_CONSOLE("CopyFileExA Error: %s\n");
 				CloseHandle(logFile);
@@ -147,6 +180,229 @@ int game_utils_backup_file(std::string path, int max_size)
 			return 0;
 		}
 	}
+}
+
+int game_utils_files_get_file_list(char* path, char* filter, char* file_list, int file_list_size, int file_list_line_size)
+{
+	int list_size = 0;
+
+#ifdef _WIN32
+	char full_filename[256];
+	int flie_size = game_utils_string_cat(full_filename, path, filter);
+	if (flie_size <= 0) {
+		LOG_ERROR("Error: game_utils_files_get_file_list() failed string_cat\n");
+		return 0;
+	}
+
+	WIN32_FIND_DATAA find_file_data;
+	HANDLE h_find = FindFirstFileA(full_filename, &find_file_data);
+	if (h_find == INVALID_HANDLE_VALUE) {
+		LOG_ERROR("game_utils_files_get_file_list FindFirstFileA() error %s\n", full_filename);
+		return 0;
+	}
+
+	do {
+		if (!(find_file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+			int flie_size = game_utils_string_cat(full_filename, path, find_file_data.cFileName);
+			if (flie_size > 0) {
+				game_utils_string_copy(&file_list[list_size * file_list_line_size], full_filename);
+				list_size++;
+			}
+		}
+	} while (FindNextFileA(h_find, &find_file_data) != 0);
+	FindClose(h_find);
+#else
+	char* extention = NULL;
+	int extention_size = (int)strlen(filter);
+	if ((extention_size >= 3) && (filter[0] == '*') && (filter[1] == '.')) {
+		extention = &filter[1];
+	}
+	else if ((extention_size >= 2) && (filter[0] == '.')) {
+		extention = &filter[0];
+	}
+	else {
+		//extention = NULL;
+	}
+
+	char full_filename[256];
+	DIR* top_dir = opendir(path);
+	struct dirent* dir;
+	if (top_dir != NULL) {
+		while ((dir = readdir(top_dir)) != NULL) {
+			if (dir->d_type != DT_DIR) {
+				//realpath(dir->d_name, full_filename);
+
+				bool register_flag = false;
+				int current_ext_size = 0;
+				if (extention != NULL) {
+					char current_ext[32];
+					current_ext_size = game_utils_get_extention(dir->d_name, current_ext);
+					if ((current_ext_size > 0) && (strcmp(current_ext, extention) == 0)) {
+						register_flag = true;
+					}
+				}
+				else {
+					register_flag = true;
+				}
+
+				if (register_flag) {
+					int flie_size = game_utils_string_cat(full_filename, path, dir->d_name);
+					if (flie_size > 0) {
+						game_utils_string_copy(&file_list[list_size * file_list_line_size], full_filename);
+						list_size++;
+					}
+				}
+			}
+		}
+	}
+	closedir(top_dir);
+#endif
+	return list_size;
+}
+
+//
+// file write/read utils
+//
+static SDL_RWops* current_file;
+int game_utils_files_open(char* path, const char* mode, SDL_RWops** context)
+{
+	current_file = SDL_RWFromFile(path, mode);
+	if (current_file == NULL) {
+		LOG_ERROR("Error: game_utils_files_open() failed %s\n", path);
+		return 1;
+	}
+	*context = current_file;
+	return 0;
+}
+void game_utils_files_set_current_file(SDL_RWops* context)
+{
+	current_file = context;
+}
+void game_utils_files_write_line(char* line, int line_size, int line_num)
+{
+	int ret = 0;
+	int write_size = line_size;
+	if (line[line_size - 1] == '\0') write_size = line_size - 1;
+
+	if (write_size > 0) {
+		ret = (int)SDL_RWwrite(current_file, line, write_size, 1);
+		if (ret <= 0) {
+			LOG_ERROR("Error: game_utils_files_write_line() failed\n");
+			return;
+		}
+	}
+
+	// write new_line
+	ret = (int)SDL_RWwrite(current_file, "\n", 1, 1);
+}
+int game_utils_files_close(SDL_RWops* context)
+{
+	int ret = SDL_RWclose(context);
+	if (ret != 0) {
+		LOG_ERROR("Error: game_utils_files_close() failed\n");
+		return 1;
+	}
+	return 0;
+}
+
+int game_utils_files_read_line(char* path, callback_read_line_func func, void* callback_argv)
+{
+	int ret = 0;
+
+	SDL_RWops* in_file = SDL_RWFromFile(path, "r");
+	if (in_file == NULL) {
+		LOG_ERROR("Error: SDL_RWFromFile() failed\n");
+		return 1;
+	}
+
+	// read line
+	int line_num = 0;
+	int line_index = 0;
+	char line[256];
+	char read_buf[256];
+	bool find_eof = false;
+	bool remain_line = false;
+
+	while (!find_eof || remain_line) {
+		int read_index = 0;
+
+		memset(read_buf, '\0', sizeof(read_buf));
+		int read_count = (int)SDL_RWread(in_file, read_buf, sizeof(read_buf) - 1, 1);
+		int read_size = (int)strlen(read_buf);
+
+		bool read_buf_end_flag = false;
+		while ((!read_buf_end_flag && (read_size > 0)) || remain_line) {
+			// find '\n'
+			int new_line_size = 0;
+			int line_end = read_index;
+			for (; line_end < read_size; line_end++) {
+				if (read_buf[line_end] == '\n') {
+					new_line_size = 1;
+					break;
+				}
+			}
+
+			// copy line
+			if ((new_line_size > 0) || ((new_line_size == 0) && remain_line)) {
+				int line_size = 0;
+				if (new_line_size > 0) {
+					// read_buf[line_end-1]='\r' read_buf[line_end]='\n'
+					if ((line_end > 0) && (read_buf[line_end - 1] == '\r'))
+					{
+						new_line_size += 1;
+					}
+					// line[line_index-1]='\r' read_buf[0]='\n'
+					else if (remain_line && (line_index > 0) && (line[line_index - 1] == '\r') && (read_buf[0] == '\n'))
+					{
+						new_line_size += 1;
+					}
+
+					line_size = (line_end - read_index + 1) - new_line_size;
+					if (line_size > 0) memcpy(&line[line_index], &read_buf[read_index], line_size);
+					line[line_index + line_size] = '\0';
+				}
+
+				//
+				// do anything
+				//
+				if (func != NULL) {
+					func(line, (line_index + line_size), line_num, callback_argv);
+				}
+				//printf("test: %s\n", line);
+
+				if (remain_line) remain_line = false;
+				line_num += 1;
+				line_index = 0;
+				read_index = (line_end + 1);
+			}
+
+			// buf end
+			else {
+				int buf_end_size = read_size - read_index;
+				if (buf_end_size > 0) {
+					memcpy(&line[0], &read_buf[read_index], buf_end_size);
+					line[buf_end_size] = '\0';
+					line_index = buf_end_size;
+					remain_line = true;
+				}
+				read_index = 0;
+				read_buf_end_flag = true;
+				break;
+			}
+		}
+
+		if (read_size <= 0) {
+			find_eof = true;
+		}
+	}
+
+	ret = SDL_RWclose(in_file);
+	if (ret != 0) {
+		LOG_ERROR("Error: SDL_RWclose() failed\n");
+		return 1;
+	}
+
+	return 0;
 }
 
 //
@@ -233,12 +489,11 @@ void game_utils_node_delete(node_data_t* node_data, node_buffer_info_t* node_buf
 //
 // char buffer utils
 //
+static char tmp_char_buf[GAME_UTILS_STRING_NAME_BUF_SIZE];
+
 #define GAME_UTILS_STRING_SIZE  (256 * 8)  /* *.unit, SPAWN.anim, IDLE.anim, MOVE.anim, DIE.anim, ATTACK1.anim, ATTACK2.anim, *.unit->next_level */
 static game_utils_string_t game_utils_string[GAME_UTILS_STRING_SIZE];
 static int game_utils_string_index_end;
-
-#define TMP_CHAR_BUF_SIZE  32
-static char tmp_char_buf[TMP_CHAR_BUF_SIZE];
 
 int game_utils_string_init()
 {
@@ -669,6 +924,7 @@ int game_utils_string_cat(char* dst_str, char* src_str1, char* src_str2, char* s
 	return dst_str_size;
 }
 
+// replace src_str
 void game_utils_replace_string(char* src_str, const char old_c, const char new_c)
 {
 	int i = 0;
@@ -679,12 +935,15 @@ void game_utils_replace_string(char* src_str, const char old_c, const char new_c
 	return;
 }
 
-void game_utils_get_extention(char* src_str, char* dst_str)
+// return: success(strlen(dst_str)), error(0)
+int game_utils_get_extention(char* src_str, char* dst_str)
 {
+	int dst_str_size = 0;
+	int src_str_size = (int)strlen(src_str);
+
 	bool found_flg = false;
 	size_t head_index = 0;
-	int src_str_size = (int)strlen(src_str);
-	for (int i = (int)src_str_size - 1; i >= 0; i--) {
+	for (int i = src_str_size - 1; i >= 0; i--) {
 		if (src_str[i] == '.') {
 			head_index = (size_t)i;
 			found_flg = true;
@@ -702,23 +961,28 @@ void game_utils_get_extention(char* src_str, char* dst_str)
 			dst_str[ext_i] = src_str[i];
 		}
 		dst_str[ext_i] = '\0';
+		dst_str_size = (int)strlen(dst_str);
 	}
-	return;
+
+	return dst_str_size;
 }
 
-void game_utils_get_filename(char* path, char* dst_str)
+// return: success(strlen(dst_str)), error(0)
+int game_utils_get_filename(char* src_str, char* dst_str)
 {
+	int dst_str_size = 0;
+	int src_str_size = (int)strlen(src_str);
+
 	bool found_flg = false;
-	int path_size = (int)strlen(path);
-	int start_index = path_size - 1;
+	int start_index = src_str_size - 1;
 	size_t split_index = 0;
 	size_t extention_index = start_index;
 
 	for (int i = start_index; i >= 0; i--) {
-		if (path[i] == '.') {
+		if (src_str[i] == '.') {
 			extention_index = (size_t)i;
 		}
-		else if (path[i] == '/') {
+		else if (src_str[i] == '/') {
 			split_index = (size_t)i;
 			found_flg = true;
 			break;
@@ -726,12 +990,13 @@ void game_utils_get_filename(char* path, char* dst_str)
 	}
 
 	// error return
-	if (!found_flg) return;
-	if (split_index < 3) return;
+	if (!found_flg) return 0;
+	if (split_index < 3) return 0;
 
-	game_utils_string_copy_n(dst_str, &path[split_index + 1], (int)(extention_index - (split_index + 1)));
+	int ret = game_utils_string_copy_n(dst_str, &src_str[split_index + 1], (int)(extention_index - (split_index + 1)));
+	if (ret == 0) dst_str_size = (int)strlen(dst_str);
 
-	return;
+	return dst_str_size;
 }
 
 void game_utils_get_localtime(char* dst_str, int dst_str_size)
@@ -791,8 +1056,8 @@ int game_utils_expand_value(char* str, char* expand_str)
 	if (str_size == 0) return 0;
 
 	// local char buf
-	char prefix[TMP_CHAR_BUF_SIZE];
-	char extention[TMP_CHAR_BUF_SIZE];
+	char prefix[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char extention[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char expand_num_str[EXPAND_NUM_STR_SIZE];
 
 	// search ,.*[.+].*,

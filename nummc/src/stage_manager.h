@@ -254,7 +254,7 @@ extern void stage_manager_set_stat(int stat);
 extern void stage_manager_set_result(int result);
 extern void stage_manager_set_next_load(int stat);
 extern void stage_manager_set_section_circumstance(int stat);
-extern int stage_manager_load(std::string path);
+extern int stage_manager_load(char* path);
 
 // daytime
 extern void stage_manager_daytime_init();

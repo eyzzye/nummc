@@ -1,6 +1,5 @@
 #include <vector>
 #include <string>
-#include <fstream>
 #include "game_common.h"
 #include "stage_manager.h"
 
@@ -77,23 +76,23 @@ static section_stock_item_t section_stock_item[SECTION_STOCK_ITEM_SIZE];
 static node_buffer_info_t section_stock_item_buffer_info[SECTION_DATA_BUFFER_SIZE];
 
 // stage
-static void load_basic_info(std::string& line);
-static void load_daytime(std::string& line);
-static void load_player_start(std::string& line);
-static void load_goal(std::string& line);
-static void load_next_stage(std::string& line);
-static void load_items_def(std::string& line);
-static void load_section(std::string& line);
+static void load_basic_info(char* line);
+static void load_daytime(char* line);
+static void load_player_start(char* line);
+static void load_goal(char* line);
+static void load_next_stage(char* line);
+static void load_items_def(char* line);
+static void load_section(char* line);
 
 // section
 static int stage_manager_load_section_files();
-static int load_section_file(std::string path);
-static void load_items(std::string& line);
-static void load_drop_items(std::string& line);
-static void load_goal_items(std::string& line);
-static void load_trap(std::string& line);
+static int load_section_file(char* path);
+static void load_items(char* line);
+static void load_drop_items(char* line);
+static void load_goal_items(char* line);
+static void load_trap(char* line);
 static void clear_enemy(enemy_data_t* enemy_data);
-static void load_enemy(std::string& line);
+static void load_enemy(char* line);
 
 void stage_manager_init()
 {
@@ -339,95 +338,101 @@ void stage_manager_set_section_circumstance(int stat)
 	}
 }
 
-int stage_manager_load(std::string path)
+typedef struct _load_stage_callback_data_t load_stage_callback_data_t;
+struct _load_stage_callback_data_t {
+	bool read_flg[STAGE_ID_END];
+};
+static load_stage_callback_data_t load_stage_callback_data;
+static void load_stage_callback(char* line, int line_size, int line_num, void* argv)
 {
-	bool read_flg[STAGE_ID_END] = { false };
+	load_stage_callback_data_t* data = (load_stage_callback_data_t*)argv;
 
+	if (line[0] == '\0') return;
+	if (line[0] == '#') return;
+
+	if (line[0] == '[') {
+		if (STRCMP_EQ(line, "[basic_info]"))    { data->read_flg[STAGE_ID_BASIC_INFO]   = true;  return; }
+		if (STRCMP_EQ(line, "[/basic_info]"))   { data->read_flg[STAGE_ID_BASIC_INFO]   = false; return; }
+		if (STRCMP_EQ(line, "[daytime]"))       { data->read_flg[STAGE_ID_DAYTIME]      = true;  return; }
+		if (STRCMP_EQ(line, "[/daytime]"))      { data->read_flg[STAGE_ID_DAYTIME]      = false; return; }
+		if (STRCMP_EQ(line, "[player_start]"))  { data->read_flg[STAGE_ID_PLAYER_START] = true;  return; }
+		if (STRCMP_EQ(line, "[/player_start]")) { data->read_flg[STAGE_ID_PLAYER_START] = false; return; }
+		if (STRCMP_EQ(line, "[goal]"))          { data->read_flg[STAGE_ID_GOAL]         = true;  return; }
+		if (STRCMP_EQ(line, "[/goal]"))         { data->read_flg[STAGE_ID_GOAL]         = false; return; }
+		if (STRCMP_EQ(line, "[next_stage]"))    { data->read_flg[STAGE_ID_NEXT_STAGE]   = true;  return; }
+		if (STRCMP_EQ(line, "[/next_stage]"))   { data->read_flg[STAGE_ID_NEXT_STAGE]   = false; return; }
+		if (STRCMP_EQ(line, "[items_def]"))     { data->read_flg[STAGE_ID_ITEMS_DEF]    = true;  return; }
+		if (STRCMP_EQ(line, "[/items_def]"))    { data->read_flg[STAGE_ID_ITEMS_DEF]    = false; return; }
+		if (STRCMP_EQ(line, "[section]"))       { data->read_flg[STAGE_ID_SECTION]      = true;  return; }
+		if (STRCMP_EQ(line, "[/section]"))      { data->read_flg[STAGE_ID_SECTION]      = false; return; }
+	}
+
+	if (data->read_flg[STAGE_ID_BASIC_INFO]) {
+		load_basic_info(line);
+	}
+	if (data->read_flg[STAGE_ID_DAYTIME]) {
+		load_daytime(line);
+	}
+	if (data->read_flg[STAGE_ID_PLAYER_START]) {
+		load_player_start(line);
+	}
+	if (data->read_flg[STAGE_ID_GOAL]) {
+		load_goal(line);
+	}
+	if (data->read_flg[STAGE_ID_NEXT_STAGE]) {
+		load_next_stage(line);
+	}
+	if (data->read_flg[STAGE_ID_ITEMS_DEF]) {
+		load_items_def(line);
+	}
+	if (data->read_flg[STAGE_ID_SECTION]) {
+		load_section(line);
+	}
+}
+
+int stage_manager_load(char* path)
+{
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
 	if (tmp_path_size == 0) {
-		LOG_ERROR("stage_manager_load failed get %s\n", path.c_str());
+		LOG_ERROR("stage_manager_load failed get %s\n", path);
 		return 1;
 	}
 
-	std::ifstream inFile(full_path);
-	if (inFile.is_open()) {
-		std::string line;
-
-		// init section 0
-		{
-			current_section_id = 0;
-			current_section_data = new_section_data();
-			current_section_data->id = 0;
-			current_section_data->section_type = SECTION_TYPE_NORMAL;
-			g_stage_data->section_list[current_section_id] = current_section_data;
-			current_section_data->item_drop_rate = 4;
-			current_section_data->map_path = "map/common/n_empty.tmx";
-			current_section_data->bgm_path = "";
-			current_section_data->enemy_path[0] = "";
-			current_section_data->trap_path = "";
-			current_section_data->items_path = "";
-		}
-
-		while (std::getline(inFile, line)) {
-			if (line == "") continue;
-			if (line[0] == '#') continue;
-
-			if (line == "[basic_info]") { read_flg[STAGE_ID_BASIC_INFO] = true;  continue; }
-			if (line == "[/basic_info]") { read_flg[STAGE_ID_BASIC_INFO] = false; continue; }
-			if (line == "[daytime]") { read_flg[STAGE_ID_DAYTIME] = true;  continue; }
-			if (line == "[/daytime]") { read_flg[STAGE_ID_DAYTIME] = false; continue; }
-			if (line == "[player_start]") { read_flg[STAGE_ID_PLAYER_START] = true;  continue; }
-			if (line == "[/player_start]") { read_flg[STAGE_ID_PLAYER_START] = false; continue; }
-			if (line == "[goal]") { read_flg[STAGE_ID_GOAL] = true;  continue; }
-			if (line == "[/goal]") { read_flg[STAGE_ID_GOAL] = false; continue; }
-			if (line == "[next_stage]") { read_flg[STAGE_ID_NEXT_STAGE] = true;  continue; }
-			if (line == "[/next_stage]") { read_flg[STAGE_ID_NEXT_STAGE] = false; continue; }
-			if (line == "[items_def]") { read_flg[STAGE_ID_ITEMS_DEF] = true;  continue; }
-			if (line == "[/items_def]") { read_flg[STAGE_ID_ITEMS_DEF] = false; continue; }
-			if (line == "[section]") { read_flg[STAGE_ID_SECTION] = true;  continue; }
-			if (line == "[/section]") { read_flg[STAGE_ID_SECTION] = false; continue; }
-
-			if (read_flg[STAGE_ID_BASIC_INFO]) {
-				load_basic_info(line);
-			}
-			if (read_flg[STAGE_ID_DAYTIME]) {
-				load_daytime(line);
-			}
-			if (read_flg[STAGE_ID_PLAYER_START]) {
-				load_player_start(line);
-			}
-			if (read_flg[STAGE_ID_GOAL]) {
-				load_goal(line);
-			}
-			if (read_flg[STAGE_ID_NEXT_STAGE]) {
-				load_next_stage(line);
-			}
-			if (read_flg[STAGE_ID_ITEMS_DEF]) {
-				load_items_def(line);
-			}
-			if (read_flg[STAGE_ID_SECTION]) {
-				load_section(line);
-			}
-		}
-		inFile.close();
+	// init section 0
+	{
+		current_section_id = 0;
+		current_section_data = new_section_data();
+		current_section_data->id = 0;
+		current_section_data->section_type = SECTION_TYPE_NORMAL;
+		g_stage_data->section_list[current_section_id] = current_section_data;
+		current_section_data->item_drop_rate = 4;
+		current_section_data->map_path = "map/common/n_empty.tmx";
+		current_section_data->bgm_path = "";
+		current_section_data->enemy_path[0] = "";
+		current_section_data->trap_path = "";
+		current_section_data->items_path = "";
 	}
-	else {
-		LOG_ERROR("stage_manager_load %s error\n", path.c_str());
+
+	// read file
+	memset(load_stage_callback_data.read_flg, 0, sizeof(bool)* STAGE_ID_END);
+	int ret = game_utils_files_read_line(full_path, load_stage_callback, (void*)&load_stage_callback_data);
+	if (ret != 0) {
+		LOG_ERROR("stage_manager_load %s error\n", path);
 		return 1;
 	}
 
 	// load section files
-	int ret = stage_manager_load_section_files();
+	ret = stage_manager_load_section_files();
 
 	return ret;
 }
 
-static void load_basic_info(std::string& line) {
+static void load_basic_info(char* line) {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "id")) {
 		g_stage_data->id = value;
@@ -444,10 +449,10 @@ static void load_basic_info(std::string& line) {
 	}
 }
 
-static void load_daytime(std::string& line) {
+static void load_daytime(char* line) {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"stat")) {
 		if (STRCMP_EQ(value,"MORNING")) {
@@ -477,10 +482,10 @@ static void load_daytime(std::string& line) {
 	}
 }
 
-static void load_player_start(std::string& line) {
+static void load_player_start(char* line) {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "x")) {
 		g_stage_data->start_x = atoi(value);
@@ -492,10 +497,10 @@ static void load_player_start(std::string& line) {
 	}
 }
 
-static void load_goal(std::string& line) {
+static void load_goal(char* line) {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "x")) {
 		g_stage_data->goal_x = atoi(value);
@@ -515,18 +520,19 @@ static void load_goal(std::string& line) {
 	}
 }
 
-static void load_next_stage(std::string& line) {
+static void load_next_stage(char* line) {
 	g_stage_data->next_stage_id = line;
 }
 
-static void load_items_def(std::string& line) {
-	g_stage_data->common_items_list.push_back(line);
+static void load_items_def(char* line) {
+	std::string items_def = line;
+	g_stage_data->common_items_list.push_back(items_def);
 }
 
-static void load_section(std::string& line) {
+static void load_section(char* line) {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"section")) {
 		current_section_id += 1;
@@ -599,76 +605,83 @@ static int stage_manager_load_section_files()
 
 		for (int phase = 0; phase < SECTION_ENEMY_PHASE_SIZE; phase++) {
 			tmp_current_enemy_phase = phase;
-			if (current_section_data->enemy_path[phase].size() > 0) load_section_file(current_section_data->enemy_path[phase]);
+			if (current_section_data->enemy_path[phase].size() > 0) load_section_file((char*)current_section_data->enemy_path[phase].c_str());
 		}
-		if (current_section_data->trap_path.size() > 0) load_section_file(current_section_data->trap_path);
-		if (current_section_data->items_path.size() > 0) load_section_file(current_section_data->items_path);
+		if (current_section_data->trap_path.size() > 0) load_section_file((char*)current_section_data->trap_path.c_str());
+		if (current_section_data->items_path.size() > 0) load_section_file((char*)current_section_data->items_path.c_str());
 	}
 	return 0;
 }
 
-static int load_section_file(std::string path)
+typedef struct _load_section_file_callback_data_t load_section_file_callback_data_t;
+struct _load_section_file_callback_data_t {
+	bool read_flg[SECTION_ID_END];
+};
+static load_section_file_callback_data_t load_section_file_callback_data;
+static void load_section_file_callback(char* line, int line_size, int line_num, void* argv)
 {
-	bool read_flg[SECTION_ID_END] = { false };
+	load_section_file_callback_data_t* data = (load_section_file_callback_data_t*)argv;
 
+	if (line[0] == '\0') return;
+	if (line[0] == '#') return;
+
+	if (line[0] == '[') {
+		if (STRCMP_EQ(line, "[enemy]"))       { data->read_flg[SECTION_ID_ENEMY]      = true;  return; }
+		if (STRCMP_EQ(line, "[/enemy]"))      { data->read_flg[SECTION_ID_ENEMY]      = false; return; }
+		if (STRCMP_EQ(line, "[trap]"))        { data->read_flg[SECTION_ID_TRAP]       = true;  return; }
+		if (STRCMP_EQ(line, "[/trap]"))       { data->read_flg[SECTION_ID_TRAP]       = false; return; }
+		if (STRCMP_EQ(line, "[items]"))       { data->read_flg[SECTION_ID_ITEMS]      = true;  return; }
+		if (STRCMP_EQ(line, "[/items]"))      { data->read_flg[SECTION_ID_ITEMS]      = false; return; }
+		if (STRCMP_EQ(line, "[drop_items]"))  { data->read_flg[SECTION_ID_DROP_ITEMS] = true;  return; }
+		if (STRCMP_EQ(line, "[/drop_items]")) { data->read_flg[SECTION_ID_DROP_ITEMS] = false; return; }
+		if (STRCMP_EQ(line, "[goal_items]"))  { data->read_flg[SECTION_ID_GOAL_ITEMS] = true;  return; }
+		if (STRCMP_EQ(line, "[/goal_items]")) { data->read_flg[SECTION_ID_GOAL_ITEMS] = false; return; }
+	}
+
+	if (data->read_flg[SECTION_ID_ENEMY]) {
+		load_enemy(line);
+	}
+	if (data->read_flg[SECTION_ID_TRAP]) {
+		load_trap(line);
+	}
+	if (data->read_flg[SECTION_ID_ITEMS]) {
+		load_items(line);
+	}
+	if (data->read_flg[SECTION_ID_DROP_ITEMS]) {
+		load_drop_items(line);
+	}
+	if (data->read_flg[SECTION_ID_GOAL_ITEMS]) {
+		load_goal_items(line);
+	}
+}
+
+static int load_section_file(char* path)
+{
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
 	if (tmp_path_size == 0) {
-		LOG_ERROR("load_section_file failed get %s\n", path.c_str());
+		LOG_ERROR("load_section_file failed get %s\n", path);
 		return 1;
 	}
 
-	std::ifstream inFile(full_path);
-	if (inFile.is_open()) {
-		std::string line;
-		while (std::getline(inFile, line)) {
-			if (line == "") continue;
-			if (line[0] == '#') continue;
-
-			if (line == "[enemy]") { read_flg[SECTION_ID_ENEMY] = true;  continue; }
-			if (line == "[/enemy]") { read_flg[SECTION_ID_ENEMY] = false; continue; }
-			if (line == "[trap]") { read_flg[SECTION_ID_TRAP] = true;  continue; }
-			if (line == "[/trap]") { read_flg[SECTION_ID_TRAP] = false; continue; }
-			if (line == "[items]") { read_flg[SECTION_ID_ITEMS] = true;  continue; }
-			if (line == "[/items]") { read_flg[SECTION_ID_ITEMS] = false; continue; }
-			if (line == "[drop_items]") { read_flg[SECTION_ID_DROP_ITEMS] = true;  continue; }
-			if (line == "[/drop_items]") { read_flg[SECTION_ID_DROP_ITEMS] = false; continue; }
-			if (line == "[goal_items]") { read_flg[SECTION_ID_GOAL_ITEMS] = true;  continue; }
-			if (line == "[/goal_items]") { read_flg[SECTION_ID_GOAL_ITEMS] = false; continue; }
-
-			if (read_flg[SECTION_ID_ENEMY]) {
-				load_enemy(line);
-			}
-			if (read_flg[SECTION_ID_TRAP]) {
-				load_trap(line);
-			}
-			if (read_flg[SECTION_ID_ITEMS]) {
-				load_items(line);
-			}
-			if (read_flg[SECTION_ID_DROP_ITEMS]) {
-				load_drop_items(line);
-			}
-			if (read_flg[SECTION_ID_GOAL_ITEMS]) {
-				load_goal_items(line);
-			}
-		}
-		inFile.close();
-	}
-	else {
-		LOG_ERROR("load_stage_file %s error\n", path.c_str());
+	// read file
+	memset(load_section_file_callback_data.read_flg, 0, sizeof(bool) * SECTION_ID_END);
+	int ret = game_utils_files_read_line(full_path, load_section_file_callback, (void*)&load_section_file_callback_data);
+	if (ret != 0) {
+		LOG_ERROR("load_section_file %s error\n", path);
 		return 1;
 	}
 
 	return 0;
 }
 
-static void load_items(std::string& line) {
+static void load_items(char* line) {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_LINE_BUF_SIZE];
 	int val_list[GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX];
 	int val_list_size;
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"type")) {
 		items_data_t* new_item = (items_data_t*)game_utils_node_new(&items_list_buffer_info[current_section_id]);
@@ -707,20 +720,22 @@ static void load_items(std::string& line) {
 	}
 }
 
-static void load_drop_items(std::string& line) {
-	current_section_data->drop_items_list.push_back(line);
+static void load_drop_items(char* line) {
+	std::string drop_items = line;
+	current_section_data->drop_items_list.push_back(drop_items);
 }
 
-static void load_goal_items(std::string& line) {
-	current_section_data->goal_items_list.push_back(line);
+static void load_goal_items(char* line) {
+	std::string goal_items = line;
+	current_section_data->goal_items_list.push_back(goal_items);
 }
 
-static void load_trap(std::string& line) {
+static void load_trap(char* line) {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_LINE_BUF_SIZE];
 	int val_list[GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX];
 	int val_list_size;
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"type")) {
 		trap_data_t* new_trap = (trap_data_t*)game_utils_node_new(&trap_list_buffer_info[current_section_id]);
@@ -769,14 +784,14 @@ static void clear_enemy(enemy_data_t* enemy_data) {
 	enemy_data->ai_step = 0;
 }
 
-static void load_enemy(std::string& line) {
+static void load_enemy(char* line) {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_LINE_BUF_SIZE];
 	char str_list[GAME_UTILS_STRING_NAME_BUF_SIZE * GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX];
 	int str_list_size;
 	int val_list[GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX];
 	int val_list_size;
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"type")) {
 		int enemy_list_buffer_index = current_section_id * SECTION_ENEMY_PHASE_SIZE + tmp_current_enemy_phase;

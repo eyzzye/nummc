@@ -1,11 +1,8 @@
 #pragma once
-#include <vector>
 #include "game_common.h"
 #include "collision_manager.h"
 #include "animation_manager.h"
 #include "ai_manager.h"
-
-#include "windows.h"  // for MAX_PATH
 
 #define UNIT_TAG_UNIT       0
 #define UNIT_TAG_COLLISION  1
@@ -369,10 +366,10 @@ extern void unit_manager_player_bullet_set_effect_stat(int unit_id, int stat);
 extern void unit_manager_enemy_bullet_set_anim_stat(int unit_id, int stat);
 extern void unit_manager_enemy_bullet_set_effect_stat(int unit_id, int stat);
 
-extern void load_collision(std::string& line, shape_data** col_shape);
-extern void load_anim(std::string& line, anim_data_t* anim);
-extern void load_ai(std::string& line, ai_data_t* ai_data);
-extern void load_bullet(std::string& line, ai_data_t** bullet_data);
+extern void load_collision(char* line, shape_data** col_shape);
+extern void load_anim(char* line, anim_data_t* anim);
+extern void load_ai(char* line, ai_data_t* ai_data);
+extern void load_bullet(char* line, ai_data_t** bullet_data);
 
 extern void unit_display(unit_data_t* unit_data, int layer);
 extern void unit_manager_update_unit_friction(unit_data_t* unit_data);
@@ -397,7 +394,7 @@ extern void unit_manager_backup_player();
 extern void unit_manager_restore_player();
 extern void unit_manager_clear_player_backup();
 extern int unit_manager_load_player_effects();
-extern int unit_manager_load_player(std::string path);
+extern int unit_manager_load_player(char* path);
 extern void unit_manager_create_player(int x, int y);
 extern void unit_manager_player_clear_stats();
 extern void unit_manager_player_set_stat(int stat);
@@ -430,7 +427,7 @@ extern void unit_manager_set_enemy_slowed(int index);
 extern void unit_manager_set_all_enemy_slowed();
 extern unit_enemy_data_t* unit_manager_get_enemy(int index);
 extern int unit_manager_load_enemy_effects(int unit_id, int base_w = 32);
-extern int unit_manager_load_enemy(std::string path);
+extern int unit_manager_load_enemy(char* path);
 extern int unit_manager_create_enemy(int x, int y, int face, int base_index = -1);
 extern void unit_manager_create_hell();
 extern void unit_manager_clear_enemy(unit_enemy_data_t* enemy);
@@ -463,8 +460,8 @@ extern void unit_manager_items_fire_bom(unit_items_data_t* item_data);
 extern void unit_manager_items_bom_event(unit_items_data_t* item_data);
 extern unit_items_data_t* unit_manager_get_items_base(int index);
 extern unit_items_data_t* unit_manager_get_items(int index);
-extern int unit_manager_load_items_def(std::string path);
-extern int unit_manager_load_items(std::string path);
+extern int unit_manager_load_items_def(char* path);
+extern int unit_manager_load_items(char* path);
 extern int unit_manager_create_items(int x, int y, int base_index = -1);
 extern int unit_manager_create_items_by_sid(int sid, int x, int y);
 extern void unit_manager_clear_items(unit_items_data_t* item);
@@ -476,7 +473,7 @@ extern void unit_manager_items_display(int layer);
 extern int unit_manager_search_trap(char* path);
 extern unit_trap_data_t* unit_manager_get_trap(int index);
 extern bool unit_manager_trap_within(int x, int y);
-extern int unit_manager_load_trap(std::string path);
+extern int unit_manager_load_trap(char* path);
 extern int unit_manager_create_trap(int x, int y, int base_index = -1);
 extern void unit_manager_clear_trap(unit_trap_data_t* trap);
 extern void unit_manager_trap_update();
@@ -487,31 +484,31 @@ extern int unit_manager_search_effect(char* path);
 extern void unit_manager_effect_set_trace_unit(int unit_id, unit_data_t* unit_data);
 extern void unit_manager_effect_set_b2position(int unit_id, float x, float y);
 extern unit_effect_data_t* unit_manager_get_effect(int index);
-extern int unit_manager_load_effect(std::string path);
+extern int unit_manager_load_effect(char* path);
 extern int unit_manager_create_effect(int x, int y, int base_index = -1);
 extern void unit_manager_clear_effect(unit_effect_data_t* effect);
 extern void unit_manager_effect_update();
 extern void unit_manager_effect_display(int layer);
 
 // player_bullet
-extern int unit_manager_search_player_bullet(std::string& path);
+extern int unit_manager_search_player_bullet(char* path);
 extern void unit_manager_player_bullet_set_hp(int unit_id, int hp);
 extern void unit_manager_player_bullet_set_bullet_life_timer(int unit_id, int bullet_life_timer);
 extern unit_player_bullet_data_t* unit_manager_get_player_bullet_base(int index);
-extern int unit_manager_load_player_bullet(std::string path);
+extern int unit_manager_load_player_bullet(char* path);
 extern int unit_manager_create_player_bullet(int x, int y, float vec_x, float vec_y, int face, int base_index = -1);
 extern void unit_manager_clear_player_bullet(unit_player_bullet_data_t* bullet);
 extern void unit_manager_player_bullet_update();
 extern void unit_manager_player_bullet_display(int layer);
 
 // enemy_bullet
-extern int unit_manager_search_enemy_bullet(std::string& path);
+extern int unit_manager_search_enemy_bullet(char* path);
 extern void unit_manager_enemy_bullet_set_hp(int unit_id, int hp);
 extern void unit_manager_enemy_bullet_set_bullet_life_timer(int unit_id, int bullet_life_timer);
 extern void unit_manager_enemy_bullet_set_force(int unit_id, float strength_x, float strength_y);
 extern unit_enemy_bullet_data_t* unit_manager_get_enemy_bullet_base(int index);
 extern int unit_manager_enemy_bullet_get_delta_time(unit_enemy_bullet_data_t* enemy_bullet_data);
-extern int unit_manager_load_enemy_bullet(std::string path);
+extern int unit_manager_load_enemy_bullet(char* path);
 extern int unit_manager_create_enemy_bullet(int x, int y, float vec_x, float vec_y, int face, int owner_base_id, int base_index = -1, ai_data_t* ai_bullet=NULL);
 extern void unit_manager_clear_enemy_bullet(unit_enemy_bullet_data_t* bullet);
 extern void unit_manager_enemy_bullet_update();

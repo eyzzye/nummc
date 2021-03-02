@@ -346,8 +346,7 @@ static void main_event() {
 		}
 
 		if (attack_dirt) {
-			std::string bullet_path = g_player_bullet_path[g_player.weapon];
-			int bullet_base_id = unit_manager_search_player_bullet(bullet_path);
+			int bullet_base_id = unit_manager_search_player_bullet((char*)g_player_bullet_path[g_player.weapon]);
 			int bullet_num = UNIT_BULLET_SPEC_GET_NUM(&g_player);
 
 			unit_manager_get_bullet_start_pos((unit_data_t*)&g_player, (unit_data_t*)unit_manager_get_player_bullet_base(bullet_base_id), UNIT_BULLET_TRACK_LINE, bullet_num, face, x, y);
@@ -555,7 +554,7 @@ static void after_draw() {
 
 static void pre_load_event(void* null) {
 	// load resource files
-	resource_manager_load_dat("scenes/scene_play_stage.dat");
+	resource_manager_load_dat((char*)"scenes/scene_play_stage.dat");
 
 	// set texture position
 	tex_info_init();
@@ -577,7 +576,7 @@ static void pre_load_event(void* null) {
 	// load stage
 	stage_manager_init();
 	std::string stage_path = (stage_id == "final") ? ("scenes/stages/final.dat") : ("scenes/stages/stage" + stage_id + ".dat");
-	stage_manager_load(stage_path);
+	stage_manager_load((char*)stage_path.c_str());
 
 	// init unit manager
 	unit_manager_init();
@@ -592,24 +591,24 @@ static void pre_load_event(void* null) {
 	quest_log_manager_init();
 
 	// load effect
-	unit_manager_load_effect("units/effect/boost/boost.unit");
-	unit_manager_load_effect("units/effect/fire_up/fire_up.unit");
-	unit_manager_load_effect("units/effect/fire_up/48x48/fire_up.unit");
-	unit_manager_load_effect("units/effect/fire_up/64x64/fire_up.unit");
-	unit_manager_load_effect("units/effect/freeze_up/freeze_up.unit");
-	unit_manager_load_effect("units/effect/freeze_up/48x48/freeze_up.unit");
-	unit_manager_load_effect("units/effect/freeze_up/64x64/freeze_up.unit");
-	unit_manager_load_effect("units/effect/shield/shield.unit");
-	unit_manager_load_effect("units/effect/rampage/rampage.unit");
+	unit_manager_load_effect((char*)"units/effect/boost/boost.unit");
+	unit_manager_load_effect((char*)"units/effect/fire_up/fire_up.unit");
+	unit_manager_load_effect((char*)"units/effect/fire_up/48x48/fire_up.unit");
+	unit_manager_load_effect((char*)"units/effect/fire_up/64x64/fire_up.unit");
+	unit_manager_load_effect((char*)"units/effect/freeze_up/freeze_up.unit");
+	unit_manager_load_effect((char*)"units/effect/freeze_up/48x48/freeze_up.unit");
+	unit_manager_load_effect((char*)"units/effect/freeze_up/64x64/freeze_up.unit");
+	unit_manager_load_effect((char*)"units/effect/shield/shield.unit");
+	unit_manager_load_effect((char*)"units/effect/rampage/rampage.unit");
 
 	// load common items
 	for (int i = 0; i < g_stage_data->common_items_list.size(); i++) {
-		unit_manager_load_items_def(g_stage_data->common_items_list[i]);
+		unit_manager_load_items_def((char*)g_stage_data->common_items_list[i].c_str());
 	}
 
 	// load goal (trap)
-	unit_manager_load_trap(goal_path);
-	unit_manager_load_trap(go_next_path);
+	unit_manager_load_trap((char*)goal_path);
+	unit_manager_load_trap((char*)go_next_path);
 
 	// load player unit
 	unit_manager_load_player_effects();
@@ -810,37 +809,37 @@ static void section_init()
 		map_manager_create_stage_map();
 
 		// load enemy bullet
-		unit_manager_load_enemy_bullet("units/bullet/point/enemy/point.unit");
-		unit_manager_load_enemy_bullet("units/bullet/fire/enemy/fire.unit");
-		unit_manager_load_enemy_bullet("units/bullet/ice/enemy/ice.unit");
-		unit_manager_load_enemy_bullet("units/bullet/ice_ball/enemy/ice_ball.unit");
-		unit_manager_load_enemy_bullet("units/bullet/leaser/enemy/leaser.unit");
-		unit_manager_load_enemy_bullet("units/bullet/big_point/enemy/big_point.unit");
+		unit_manager_load_enemy_bullet((char*)"units/bullet/point/enemy/point.unit");
+		unit_manager_load_enemy_bullet((char*)"units/bullet/fire/enemy/fire.unit");
+		unit_manager_load_enemy_bullet((char*)"units/bullet/ice/enemy/ice.unit");
+		unit_manager_load_enemy_bullet((char*)"units/bullet/ice_ball/enemy/ice_ball.unit");
+		unit_manager_load_enemy_bullet((char*)"units/bullet/leaser/enemy/leaser.unit");
+		unit_manager_load_enemy_bullet((char*)"units/bullet/big_point/enemy/big_point.unit");
 
 		// load player bullet
-		unit_manager_load_player_bullet("units/bullet/point/point.unit");
-		unit_manager_load_player_bullet("units/bullet/fire/fire.unit");
-		unit_manager_load_player_bullet("units/bullet/ice/ice.unit");
-		//unit_manager_load_player_bullet("units/bullet/ice_ball/ice_ball.unit");
-		unit_manager_load_player_bullet("units/bullet/leaser/leaser.unit");
-		unit_manager_load_player_bullet("units/bullet/big_point/big_point.unit");
+		unit_manager_load_player_bullet((char*)"units/bullet/point/point.unit");
+		unit_manager_load_player_bullet((char*)"units/bullet/fire/fire.unit");
+		unit_manager_load_player_bullet((char*)"units/bullet/ice/ice.unit");
+		//unit_manager_load_player_bullet((char*)"units/bullet/ice_ball/ice_ball.unit");
+		unit_manager_load_player_bullet((char*)"units/bullet/leaser/leaser.unit");
+		unit_manager_load_player_bullet((char*)"units/bullet/big_point/big_point.unit");
 
 		// load effect
-		unit_manager_load_effect("units/effect/smoke/smoke.unit");
-		unit_manager_load_effect("units/effect/trash/trash.unit");
-		unit_manager_load_effect("units/effect/door/boss.unit");
-		unit_manager_load_effect("units/effect/door/nest.unit");
-		unit_manager_load_effect("units/effect/star/star.unit");
-		unit_manager_load_effect("units/effect/damage/damage.unit");
-		unit_manager_load_effect("units/effect/damage/48x48/damage.unit");
-		unit_manager_load_effect("units/effect/damage/64x64/damage.unit");
-		unit_manager_load_effect("units/effect/high_light_line/high_light_line.unit");
-		unit_manager_load_effect("units/effect/shadow/shadow.unit");
-		unit_manager_load_effect("units/effect/shadow/48x48/shadow.unit");
-		unit_manager_load_effect("units/effect/shadow/64x64/shadow.unit");
-		unit_manager_load_effect("units/effect/shadow/shadow_drop.unit");
-		unit_manager_load_effect("units/effect/shadow/48x48/shadow_drop.unit");
-		unit_manager_load_effect("units/effect/shadow/64x64/shadow_drop.unit");
+		unit_manager_load_effect((char*)"units/effect/smoke/smoke.unit");
+		unit_manager_load_effect((char*)"units/effect/trash/trash.unit");
+		unit_manager_load_effect((char*)"units/effect/door/boss.unit");
+		unit_manager_load_effect((char*)"units/effect/door/nest.unit");
+		unit_manager_load_effect((char*)"units/effect/star/star.unit");
+		unit_manager_load_effect((char*)"units/effect/damage/damage.unit");
+		unit_manager_load_effect((char*)"units/effect/damage/48x48/damage.unit");
+		unit_manager_load_effect((char*)"units/effect/damage/64x64/damage.unit");
+		unit_manager_load_effect((char*)"units/effect/high_light_line/high_light_line.unit");
+		unit_manager_load_effect((char*)"units/effect/shadow/shadow.unit");
+		unit_manager_load_effect((char*)"units/effect/shadow/48x48/shadow.unit");
+		unit_manager_load_effect((char*)"units/effect/shadow/64x64/shadow.unit");
+		unit_manager_load_effect((char*)"units/effect/shadow/shadow_drop.unit");
+		unit_manager_load_effect((char*)"units/effect/shadow/48x48/shadow_drop.unit");
+		unit_manager_load_effect((char*)"units/effect/shadow/64x64/shadow_drop.unit");
 	}
 
 	// load section map
@@ -860,7 +859,7 @@ static void section_init()
 		node_data_t* node = (p_section->trap_list == NULL) ? NULL : p_section->trap_list->start_node;
 		while (node != NULL) {
 			trap_data_t* spawn_trap_data = (trap_data_t*)node;
-			unit_manager_load_trap(spawn_trap_data->path);
+			unit_manager_load_trap((char*)spawn_trap_data->path.c_str());
 			if ((spawn_trap_data->x >= 0) && (spawn_trap_data->y >= 0)) {
 				unit_manager_create_trap(spawn_trap_data->x, spawn_trap_data->y,
 					unit_manager_search_trap((char*)spawn_trap_data->path.c_str()));
@@ -876,7 +875,7 @@ static void section_init()
 		node_data_t* node = (p_section->trap_list == NULL) ? NULL : p_section->trap_list->start_node;
 		while (node != NULL) {
 			trap_data_t* spawn_trap_data = (trap_data_t*)node;
-			unit_manager_load_trap(spawn_trap_data->path);
+			unit_manager_load_trap((char*)spawn_trap_data->path.c_str());
 			if ((spawn_trap_data->x >= 0) && (spawn_trap_data->y >= 0)) {
 				unit_manager_create_trap(spawn_trap_data->x, spawn_trap_data->y,
 					unit_manager_search_trap((char*)spawn_trap_data->path.c_str()));
@@ -890,7 +889,7 @@ static void section_init()
 		node_data_t* node = (p_section->items_list == NULL) ? NULL : p_section->items_list->start_node;
 		while (node != NULL) {
 			items_data_t* spawn_items_data = (items_data_t*)node;
-			unit_manager_load_items(spawn_items_data->path);
+			unit_manager_load_items((char*)spawn_items_data->path.c_str());
 			if ((spawn_items_data->x >= 0) && (spawn_items_data->y >= 0)) {
 				unit_manager_create_items(spawn_items_data->x, spawn_items_data->y, unit_manager_search_items((char*)spawn_items_data->path.c_str()));
 			}
@@ -913,7 +912,7 @@ static void section_init()
 		node = (p_section->trap_list == NULL) ? NULL : p_section->trap_list->start_node;
 		while (node != NULL) {
 			trap_data_t* spawn_trap_data = (trap_data_t*)node;
-			unit_manager_load_trap(spawn_trap_data->path);
+			unit_manager_load_trap((char*)spawn_trap_data->path.c_str());
 			if ((spawn_trap_data->x >= 0) && (spawn_trap_data->y >= 0)) {
 				unit_manager_create_trap(spawn_trap_data->x, spawn_trap_data->y,
 					unit_manager_search_trap((char*)spawn_trap_data->path.c_str()));
@@ -925,7 +924,7 @@ static void section_init()
 		node = (p_section->enemy_list[0] == NULL) ? NULL : p_section->enemy_list[0]->start_node;
 		while (node != NULL) {
 			enemy_data_t* spawn_enemy_data = (enemy_data_t*)node;
-			unit_manager_load_enemy(spawn_enemy_data->path);
+			unit_manager_load_enemy((char*)spawn_enemy_data->path.c_str());
 			int enemy_id = unit_manager_create_enemy(spawn_enemy_data->x, spawn_enemy_data->y, spawn_enemy_data->face,
 				unit_manager_search_enemy((char*)spawn_enemy_data->path.c_str()));
 			if (spawn_enemy_data->ai_step != 0) {
@@ -956,7 +955,7 @@ static void load_next_enemy_phase()
 	node_data_t* node = (p_section->enemy_list[phase] == NULL) ? NULL : p_section->enemy_list[phase]->start_node;
 	while (node != NULL) {
 		enemy_data_t* spawn_enemy_data = (enemy_data_t*)node;
-		unit_manager_load_enemy(spawn_enemy_data->path);
+		unit_manager_load_enemy((char*)spawn_enemy_data->path.c_str());
 		int enemy_id = unit_manager_create_enemy(spawn_enemy_data->x, spawn_enemy_data->y, spawn_enemy_data->face,
 			unit_manager_search_enemy((char*)spawn_enemy_data->path.c_str()));
 		if (spawn_enemy_data->ai_step != 0) {
@@ -1180,13 +1179,12 @@ static void event_msg_handler()
 			char* unit_path = (char*)unit_data->obj;
 
 			// big_point -> 3 point bullet
-			if (strcmp(unit_path, g_player_bullet_path[UNIT_BULLET_ID_BIG_POINT]) == 0) {
+			if (STRCMP_EQ(unit_path, g_player_bullet_path[UNIT_BULLET_ID_BIG_POINT])) {
 				int x[3], y[3], other_face;
 				float vec_x[3], vec_y[3], abs_vec = 1.0f;
-				std::string point_bullet = g_player_bullet_path[UNIT_BULLET_ID_POINT];
 				other_face = unit_manager_get_face_other_side(unit_data);
 
-				int bullet_base_id = unit_manager_search_player_bullet(point_bullet);
+				int bullet_base_id = unit_manager_search_player_bullet((char*)g_player_bullet_path[UNIT_BULLET_ID_POINT]);
 				unit_manager_get_bullet_start_pos(unit_data, (unit_data_t*)unit_manager_get_player_bullet_base(bullet_base_id), UNIT_BULLET_TRACK_RADIAL, UNIT_BULLET_NUM_TRIPLE, other_face, x, y);
 				unit_manager_get_face_velocity(vec_x, vec_y, other_face, abs_vec, UNIT_BULLET_TRACK_RADIAL, UNIT_BULLET_NUM_TRIPLE);
 
@@ -1205,13 +1203,12 @@ static void event_msg_handler()
 			char* unit_path = (char*)unit_data->obj;
 
 			// big_point -> 3 point bullet
-			if (strcmp(unit_path, g_enemy_bullet_path[UNIT_BULLET_ID_BIG_POINT]) == 0) {
+			if (STRCMP_EQ(unit_path, g_enemy_bullet_path[UNIT_BULLET_ID_BIG_POINT])) {
 				int x[3], y[3], other_face;
 				float vec_x[3], vec_y[3], abs_vec = 1.0f;
-				std::string point_bullet = g_enemy_bullet_path[UNIT_BULLET_ID_POINT];
 				other_face = unit_manager_get_face_other_side((unit_data_t*)unit_data);
 
-				int bullet_base_id = unit_manager_search_enemy_bullet(point_bullet);
+				int bullet_base_id = unit_manager_search_enemy_bullet((char*)g_enemy_bullet_path[UNIT_BULLET_ID_POINT]);
 				unit_manager_get_bullet_start_pos((unit_data_t*)unit_data, (unit_data_t*)unit_manager_get_enemy_bullet_base(bullet_base_id), UNIT_BULLET_TRACK_RADIAL, UNIT_BULLET_NUM_TRIPLE, other_face, x, y);
 				unit_manager_get_face_velocity(vec_x, vec_y, other_face, abs_vec, UNIT_BULLET_TRACK_RADIAL, UNIT_BULLET_NUM_TRIPLE);
 

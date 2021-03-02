@@ -157,7 +157,7 @@ extern void map_manager_display(int layer);
 #ifdef _MAP_OFFSET_ENABLE_
 extern void map_manager_set_offset(int x, int y);
 #endif
-extern int map_manager_load(std::string path);
+extern int map_manager_load(char* path);
 extern shape_data* map_manager_get_col_shape(int x, int y);
 extern void map_manager_create_stage_map();
 extern void map_manager_create_instance();

@@ -81,7 +81,7 @@ static SDL_Rect mini_map_background;
 static SDL_Rect mini_map_horizontal_lines[MINI_MAP_HORIZONTAL_LINES_SIZE];
 static SDL_Rect mini_map_vertical_lines[MINI_MAP_VERTICAL_LINES_SIZE];
 
-static std::string mini_map_icon_path[STAGE_MINI_MAP_ICON_END] = {
+static const char* mini_map_icon_path[STAGE_MINI_MAP_ICON_END] = {
 	"images/map/common/none_icon.png",
 	"images/map/common/tresure_icon.png",
 	"images/map/common/unknown_icon.png",
@@ -98,7 +98,7 @@ static tex_info_t mini_map_icon[STAGE_MINI_MAP_ICON_END];
 #define MINI_MAP_TYPE_ICON_HIDE  2
 #define MINI_MAP_TYPE_ICON_NEST  3
 #define MINI_MAP_TYPE_ICON_END   4
-static std::string mini_map_type_icon_path[MINI_MAP_TYPE_ICON_END] = {
+static const char* mini_map_type_icon_path[MINI_MAP_TYPE_ICON_END] = {
 	"images/map/common/none_icon.png",
 	"images/map/common/boss_icon.png",
 	"images/map/common/hide_icon.png",
@@ -423,16 +423,16 @@ static void hud_tex_info_reset_space_val(unit_items_data_t* unit_item_data)
 	hud_tex_info_init_rect(&tex_icon_info[HUD_ICON_ID_SPACE], w, h, w_pos, h_pos);
 }
 
-static void hud_tex_info_reset_progress(std::string stage_id)
+static void hud_tex_info_reset_progress(char* stage_id)
 {
 	int w, h, w_pos, h_pos;
 
-	if (stage_id == "final") {
+	if (STRCMP_EQ(stage_id,(char*)"final")) {
 		tex_progress_info.res_img = resource_manager_getTextureFromPath("{color:S:0:0:0:D:255:0:0}images/gui/font/question.png");
 
 	} else {
 		// display stage [N]
-		int stage_number = atoi(stage_id.c_str());
+		int stage_number = atoi(stage_id);
 		if (stage_number > 9) stage_number = 9;
 		tex_progress_info.res_img = game_utils_render_number_font_tex(stage_number);
 	}
@@ -580,7 +580,7 @@ static void tex_info_init()
 	hud_tex_info_reset_space_val(NULL);
 
 	// progress label
-	hud_tex_info_reset_progress(g_stage_data->id);
+	hud_tex_info_reset_progress((char*)g_stage_data->id.c_str());
 }
 
 void hud_manager_update()

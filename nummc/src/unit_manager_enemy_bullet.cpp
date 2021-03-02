@@ -1,4 +1,3 @@
-#include <fstream>
 #include "game_common.h"
 #include "unit_manager.h"
 
@@ -29,7 +28,7 @@ static unit_enemy_bullet_data_t enemy_bullet[UNIT_ENEMY_BULLET_LIST_SIZE];
 static int enemy_bullet_base_index_end;
 static int enemy_bullet_index_end;
 
-static void load_bullet_unit(std::string& line);
+static void load_bullet_unit(char* line);
 
 //
 // enemy bullet
@@ -54,13 +53,13 @@ void unit_manager_unload_enemy_bullet()
 	}
 }
 
-int unit_manager_search_enemy_bullet(std::string& path)
+int unit_manager_search_enemy_bullet(char* path)
 {
 	int i = 0;
 	bool enemy_bullet_found = false;
 	while (enemy_bullet_base[i].type == UNIT_TYPE_ENEMY_BULLET) {
-		std::string regist_path = (char*)enemy_bullet_base[i].obj;
-		if (regist_path == path) {
+		char* regist_path = (char*)enemy_bullet_base[i].obj;
+		if ((regist_path != NULL) && STRCMP_EQ(regist_path,path)) {
 			enemy_bullet_found = true;
 			break;
 		}
@@ -115,72 +114,80 @@ int unit_manager_enemy_bullet_get_delta_time(unit_enemy_bullet_data_t* enemy_bul
 	return enemy_bullet_delta_time;
 }
 
-int unit_manager_load_enemy_bullet(std::string path)
+typedef struct _load_enemy_bullet_callback_data_t load_enemy_bullet_callback_data_t;
+struct _load_enemy_bullet_callback_data_t {
+	bool read_flg[UNIT_TAG_END];
+	char* path;
+};
+static load_enemy_bullet_callback_data_t load_enemy_bullet_callback_data;
+static void load_enemy_bullet_callback(char* line, int line_size, int line_num, void* argv)
+{
+	load_enemy_bullet_callback_data_t* data = (load_enemy_bullet_callback_data_t*)argv;
+
+	if (line[0] == '\0') return;
+	if (line[0] == '#') return;
+
+	if (line[0] == '[') {
+		if (STRCMP_EQ(line, "[unit]")) {
+			data->read_flg[UNIT_TAG_UNIT] = true;
+
+			// set base unit data
+			char* path_c_str = game_utils_string_new();
+			game_utils_string_copy(path_c_str, data->path);
+			enemy_bullet_base[enemy_bullet_base_index_end].obj = (void*)path_c_str;
+			enemy_bullet_base[enemy_bullet_base_index_end].type = UNIT_TYPE_ENEMY_BULLET;
+			enemy_bullet_base[enemy_bullet_base_index_end].id = enemy_bullet_base_index_end;
+			return;
+		}
+		if (STRCMP_EQ(line, "[/unit]"))      { data->read_flg[UNIT_TAG_UNIT]      = false; return; }
+		if (STRCMP_EQ(line, "[collision]"))  { data->read_flg[UNIT_TAG_COLLISION] = true;  return; }
+		if (STRCMP_EQ(line, "[/collision]")) { data->read_flg[UNIT_TAG_COLLISION] = false; return; }
+		if (STRCMP_EQ(line, "[anim]")) {
+			data->read_flg[UNIT_TAG_ANIM] = true;
+			enemy_bullet_base[enemy_bullet_base_index_end].anim = animation_manager_new_anim_data();
+			animation_manager_new_anim_stat_base_data(enemy_bullet_base[enemy_bullet_base_index_end].anim);
+			return;
+		}
+		if (STRCMP_EQ(line, "[/anim]")) { data->read_flg[UNIT_TAG_ANIM] = false; return; }
+	}
+
+	if (data->read_flg[UNIT_TAG_UNIT]) {
+		load_bullet_unit(line);
+	}
+	if (data->read_flg[UNIT_TAG_COLLISION]) {
+		load_collision(line, &enemy_bullet_base[enemy_bullet_base_index_end].col_shape);
+	}
+	if (data->read_flg[UNIT_TAG_ANIM]) {
+		load_anim(line, enemy_bullet_base[enemy_bullet_base_index_end].anim);
+	}
+}
+
+int unit_manager_load_enemy_bullet(char* path)
 {
 	if (unit_manager_search_enemy_bullet(path) > 0) return 0;
 
-	bool read_flg[UNIT_TAG_END] = { false };
-
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
 	if (tmp_path_size == 0) {
-		LOG_ERROR("unit_manager_load_enemy_bullet failed get %s\n", path.c_str());
+		LOG_ERROR("unit_manager_load_enemy_bullet failed get %s\n", path);
 		return 1;
 	}
 
-	std::ifstream inFile(full_path);
-	if (inFile.is_open()) {
-		std::string line;
-		while (std::getline(inFile, line)) {
-			if (line == "") continue;
-			if (line[0] == '#') continue;
-
-			if (line == "[unit]") {
-				read_flg[UNIT_TAG_UNIT] = true;
-
-				// set base unit data
-				char* path_c_str = game_utils_string_new();
-				game_utils_string_copy(path_c_str, path.c_str());
-				enemy_bullet_base[enemy_bullet_base_index_end].obj = (void*)path_c_str;
-				enemy_bullet_base[enemy_bullet_base_index_end].type = UNIT_TYPE_ENEMY_BULLET;
-				enemy_bullet_base[enemy_bullet_base_index_end].id = enemy_bullet_base_index_end;
-				continue;
-			}
-			if (line == "[/unit]") { read_flg[UNIT_TAG_UNIT] = false; continue; }
-			if (line == "[collision]") { read_flg[UNIT_TAG_COLLISION] = true;  continue; }
-			if (line == "[/collision]") { read_flg[UNIT_TAG_COLLISION] = false; continue; }
-			if (line == "[anim]") {
-				read_flg[UNIT_TAG_ANIM] = true;
-				enemy_bullet_base[enemy_bullet_base_index_end].anim = animation_manager_new_anim_data();
-				animation_manager_new_anim_stat_base_data(enemy_bullet_base[enemy_bullet_base_index_end].anim);
-				continue;
-			}
-			if (line == "[/anim]") { read_flg[UNIT_TAG_ANIM] = false; continue; }
-
-			if (read_flg[UNIT_TAG_UNIT]) {
-				load_bullet_unit(line);
-			}
-			if (read_flg[UNIT_TAG_COLLISION]) {
-				load_collision(line, &enemy_bullet_base[enemy_bullet_base_index_end].col_shape);
-			}
-			if (read_flg[UNIT_TAG_ANIM]) {
-				load_anim(line, enemy_bullet_base[enemy_bullet_base_index_end].anim);
-			}
-		}
-		inFile.close();
-	}
-	else {
-		LOG_ERROR("unit_manager_load_enemy_bullet %s error\n", path.c_str());
+	// read file
+	memset(load_enemy_bullet_callback_data.read_flg, 0, sizeof(bool) * UNIT_TAG_END);
+	load_enemy_bullet_callback_data.path = path;
+	int ret = game_utils_files_read_line(full_path, load_enemy_bullet_callback, (void*)&load_enemy_bullet_callback_data);
+	if (ret != 0) {
+		LOG_ERROR("unit_manager_load_enemy_bullet %s error\n", path);
 		return 1;
 	}
 
 	// load anim files
 	if (enemy_bullet_base[enemy_bullet_base_index_end].anim) {
 		for (int i = 0; i < ANIM_STAT_END; i++) {
-			char* cstr_anim_path = (char*)enemy_bullet_base[enemy_bullet_base_index_end].anim->anim_stat_base_list[i]->obj;
-			if (cstr_anim_path) {
-				std::string anim_path = cstr_anim_path;
+			char* anim_path = (char*)enemy_bullet_base[enemy_bullet_base_index_end].anim->anim_stat_base_list[i]->obj;
+			if (anim_path) {
 				animation_manager_load_file(anim_path, enemy_bullet_base[enemy_bullet_base_index_end].anim, i);
 			}
 		}
@@ -195,11 +202,11 @@ int unit_manager_load_enemy_bullet(std::string path)
 	return 0;
 }
 
-static void load_bullet_unit(std::string& line)
+static void load_bullet_unit(char* line)
 {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "hp")) {
 		enemy_bullet_base[enemy_bullet_base_index_end].hp = atoi(value);

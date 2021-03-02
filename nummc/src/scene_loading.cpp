@@ -173,7 +173,7 @@ void scene_loading_init()
 	scene_func.set_stat_event = &set_stat_event;
 
 	// load resource files
-	resource_manager_load_dat("scenes/scene_loading.dat");
+	resource_manager_load_dat((char*)"scenes/scene_loading.dat");
 
 	// set texture position
 	tex_info_init();

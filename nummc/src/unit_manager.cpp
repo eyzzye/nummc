@@ -1,4 +1,3 @@
-#include <fstream>
 #include "game_common.h"
 #include "unit_manager.h"
 
@@ -42,11 +41,11 @@ void unit_manager_unload()
 	unit_manager_unload_enemy_bullet();
 }
 
-void load_collision(std::string& line, shape_data** col_shape)
+void load_collision(char* line, shape_data** col_shape)
 {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"type")) {
 		if (STRCMP_EQ(value,"BOX")) {
@@ -154,11 +153,11 @@ void load_collision(std::string& line, shape_data** col_shape)
 	}
 }
 
-void load_anim(std::string& line, anim_data_t* anim)
+void load_anim(char* line, anim_data_t* anim)
 {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"base_w")) {
 		anim->base_w = atoi(value);
@@ -172,7 +171,8 @@ void load_anim(std::string& line, anim_data_t* anim)
 	// find stat name
 	int index_start = -1;
 	int index_end = -1;
-	for (int i = (int)line.size(); i >= 0; i--) {
+	int line_size = (int)strlen(line);
+	for (int i = (int)line_size; i >= 0; i--) {
 		if (line[i] == '.') {
 			if (index_end == -1) {
 				index_end = i;
@@ -215,21 +215,21 @@ void load_anim(std::string& line, anim_data_t* anim)
 		stat_val = ANIM_STAT_HIDE;
 	}
 	else {
-		LOG_ERROR("load_anim %s error\n", line.c_str());
+		LOG_ERROR("load_anim %s error\n", line);
 		return;
 	}
 
 	// set anim path
 	char* path_c_str = game_utils_string_new();
-	game_utils_string_copy(path_c_str, line.c_str());
+	game_utils_string_copy(path_c_str, line);
 	anim->anim_stat_base_list[stat_val]->obj = (void*)path_c_str;
 }
 
-void load_ai(std::string& line, ai_data_t* ai_data)
+void load_ai(char* line, ai_data_t* ai_data)
 {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"type")) {
 		ai_data->type = ai_manager_get_ai_type(value);
@@ -254,11 +254,11 @@ void load_ai(std::string& line, ai_data_t* ai_data)
 	}
 }
 
-void load_bullet(std::string& line, ai_data_t** bullet_data)
+void load_bullet(char* line, ai_data_t** bullet_data)
 {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"bullet1_ai")) {
 		bullet_data[0] = ai_manager_new_ai_base_data();

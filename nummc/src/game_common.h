@@ -102,6 +102,7 @@ struct _node_buffer_info_t {
 typedef struct _game_utils_string_t game_utils_string_t;
 struct _game_utils_string_t {
 	int type;        // NONE:0, CHAR_BUF:1
+	int buffer_size;
 	char buffer[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 };
 

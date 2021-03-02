@@ -81,131 +81,146 @@ static void game_config_data_delete()
 	}
 }
 
-static int game_save_load_ini_file(std::string path)
+typedef struct _load_ini_file_callback_data_t load_ini_file_callback_data_t;
+struct _load_ini_file_callback_data_t {
+	bool read_flg = false;
+	bool read_slot_flg[GAME_SAVE_SLOT_NUM];
+	bool read_player_flg[GAME_SAVE_SLOT_NUM];
+	bool read_stocker_flg[GAME_SAVE_SLOT_NUM];
+};
+static load_ini_file_callback_data_t load_ini_file_callback_data;
+static void load_ini_file_callback(char* line, int line_size, int line_num, void* argv)
+{
+	load_ini_file_callback_data_t* data = (load_ini_file_callback_data_t*)argv;
+	char tag_name[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+
+	if (line[0] == '\0') { return; }
+	if (line[0] == '#') return;
+
+	if (line[0] == '[') {
+		if (STRCMP_EQ(line, "[settings]")) {
+			// clear other flg
+			memset(data->read_slot_flg,    0, sizeof(bool) * GAME_SAVE_SLOT_NUM);
+			memset(data->read_player_flg,  0, sizeof(bool) * GAME_SAVE_SLOT_NUM);
+			memset(data->read_stocker_flg, 0, sizeof(bool) * GAME_SAVE_SLOT_NUM);
+
+			data->read_flg = true;
+			game_config_data.settings->section = line;
+			return;
+		}
+
+		int ret = game_utils_string_copy(tag_name, (char*)"[slot1]"); // [slot1...8]
+		if (ret != 0) { LOG_ERROR("Error: load_ini_file_callback() [slot1] %d\n", line_num);  return; }
+		bool found_slot = false;
+		for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
+			if (STRCMP_EQ(line,tag_name)) {
+				// clear other flg
+				data->read_flg = false;
+				memset(data->read_slot_flg,    0, sizeof(bool) * GAME_SAVE_SLOT_NUM);
+				memset(data->read_player_flg,  0, sizeof(bool) * GAME_SAVE_SLOT_NUM);
+				memset(data->read_stocker_flg, 0, sizeof(bool) * GAME_SAVE_SLOT_NUM);
+
+				data->read_slot_flg[i] = true;
+				found_slot = true;
+				game_config_data.slot[i]->section = line;
+				break;
+			}
+			tag_name[5] += 1;
+		}
+		if (found_slot) return;
+
+		ret = game_utils_string_copy(tag_name, (char*)"[player1]"); // [player1...8]
+		if (ret != 0) { LOG_ERROR("Error: load_ini_file_callback() [player1] %d\n", line_num);  return; }
+		found_slot = false;
+		for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
+			if (STRCMP_EQ(line,tag_name)) {
+				// clear other flg
+				data->read_flg = false;
+				memset(data->read_slot_flg,    0, sizeof(bool) * GAME_SAVE_SLOT_NUM);
+				memset(data->read_player_flg,  0, sizeof(bool) * GAME_SAVE_SLOT_NUM);
+				memset(data->read_stocker_flg, 0, sizeof(bool) * GAME_SAVE_SLOT_NUM);
+
+				data->read_player_flg[i] = true;
+				found_slot = true;
+				game_config_data.player[i]->section = line;
+				break;
+			}
+			tag_name[7] += 1;
+		}
+		if (found_slot) return;
+
+		ret = game_utils_string_copy(tag_name, (char*)"[stocker1]"); // [stocker1...8]
+		if (ret != 0) { LOG_ERROR("Error: load_ini_file_callback() [stocker1] %d\n", line_num);  return; }
+		found_slot = false;
+		for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
+			if (STRCMP_EQ(line,tag_name)) {
+				// clear other flg
+				data->read_flg = false;
+				memset(data->read_slot_flg,    0, sizeof(bool) * GAME_SAVE_SLOT_NUM);
+				memset(data->read_player_flg,  0, sizeof(bool) * GAME_SAVE_SLOT_NUM);
+				memset(data->read_stocker_flg, 0, sizeof(bool) * GAME_SAVE_SLOT_NUM);
+
+				data->read_stocker_flg[i] = true;
+				found_slot = true;
+				game_config_data.stocker[i]->section = line;
+				break;
+			}
+			tag_name[8] += 1;
+		}
+		if (found_slot) return;
+	}
+
+	if (data->read_flg) {
+		if (game_utils_split_key_value(line, key, value) == 0) {
+			game_config_data.settings->values.insert(std::pair<std::string, std::string>(key, value));
+		}
+	}
+	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
+		if (data->read_slot_flg[i]) {
+			if (game_utils_split_key_value(line, key, value) == 0) {
+				game_config_data.slot[i]->values.insert(std::pair<std::string, std::string>(key, value));
+			}
+			break;
+		}
+	}
+	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
+		if (data->read_player_flg[i]) {
+			if (game_utils_split_key_value(line, key, value) == 0) {
+				game_config_data.player[i]->values.insert(std::pair<std::string, std::string>(key, value));
+			}
+			break;
+		}
+	}
+	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
+		if (data->read_stocker_flg[i]) {
+			if (game_utils_split_key_value(line, key, value) == 0) {
+				game_config_data.stocker[i]->values.insert(std::pair<std::string, std::string>(key, value));
+			}
+			break;
+		}
+	}
+}
+
+static int game_save_load_ini_file(char* path)
 {
 	if (game_config_data_alloc()) {
 		LOG_ERROR("game_config_data_alloc error\n");
 		return 1;
 	}
 
-	bool read_flg = false;
-	bool read_slot_flg[GAME_SAVE_SLOT_NUM] = { false };
-	bool read_player_flg[GAME_SAVE_SLOT_NUM] = { false };
-	bool read_stocker_flg[GAME_SAVE_SLOT_NUM] = { false };
-	std::ifstream inFile(path);
-	if (inFile.is_open()) {
-		std::string line;
-		char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-		char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-		while (std::getline(inFile, line)) {
-			if (line == "") { continue; }
-
-			if (line[0] == '[') {
-				if (line == "[settings]") {
-					// clear other flg
-					memset(read_slot_flg, 0, sizeof(read_slot_flg));
-					memset(read_player_flg, 0, sizeof(read_player_flg));
-					memset(read_stocker_flg, 0, sizeof(read_stocker_flg));
-
-					read_flg = true;
-					game_config_data.settings->section = line;
-					continue;
-				}
-
-				std::string tag_name = "[slot1]"; // [slot1...8]
-				bool found_slot = false;
-				for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-					if (line == tag_name) {
-						// clear other flg
-						read_flg = false;
-						memset(read_slot_flg, 0, sizeof(read_slot_flg));
-						memset(read_player_flg, 0, sizeof(read_player_flg));
-						memset(read_stocker_flg, 0, sizeof(read_stocker_flg));
-
-						read_slot_flg[i] = true;
-						found_slot = true;
-						game_config_data.slot[i]->section = line;
-						break;
-					}
-					tag_name[5] += 1;
-				}
-				if (found_slot) continue;
-
-				tag_name = "[player1]"; // [player1...8]
-				found_slot = false;
-				for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-					if (line == tag_name) {
-						// clear other flg
-						read_flg = false;
-						memset(read_slot_flg, 0, sizeof(read_slot_flg));
-						memset(read_player_flg, 0, sizeof(read_player_flg));
-						memset(read_stocker_flg, 0, sizeof(read_stocker_flg));
-
-						read_player_flg[i] = true;
-						found_slot = true;
-						game_config_data.player[i]->section = line;
-						break;
-					}
-					tag_name[7] += 1;
-				}
-				if (found_slot) continue;
-
-				tag_name = "[stocker1]"; // [stocker1...8]
-				found_slot = false;
-				for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-					if (line == tag_name) {
-						// clear other flg
-						read_flg = false;
-						memset(read_slot_flg, 0, sizeof(read_slot_flg));
-						memset(read_player_flg, 0, sizeof(read_player_flg));
-						memset(read_stocker_flg, 0, sizeof(read_stocker_flg));
-
-						read_stocker_flg[i] = true;
-						found_slot = true;
-						game_config_data.stocker[i]->section = line;
-						break;
-					}
-					tag_name[8] += 1;
-				}
-				if (found_slot) continue;
-			}
-
-			if (read_flg) {
-				if (game_utils_split_key_value((char*)line.c_str(), key, value) == 0) {
-					game_config_data.settings->values.insert(std::pair<std::string, std::string>(key, value));
-				}
-			}
-			for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-				if (read_slot_flg[i]) {
-					if (game_utils_split_key_value((char*)line.c_str(), key, value) == 0) {
-						game_config_data.slot[i]->values.insert(std::pair<std::string, std::string>(key, value));
-					}
-					break;
-				}
-			}
-			for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-				if (read_player_flg[i]) {
-					if (game_utils_split_key_value((char*)line.c_str(), key, value) == 0) {
-						game_config_data.player[i]->values.insert(std::pair<std::string, std::string>(key, value));
-					}
-					break;
-				}
-			}
-			for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-				if (read_stocker_flg[i]) {
-					if (game_utils_split_key_value((char*)line.c_str(), key, value) == 0) {
-						game_config_data.stocker[i]->values.insert(std::pair<std::string, std::string>(key, value));
-					}
-					break;
-				}
-			}
-		}
-		inFile.close();
-	}
-	else {
-		LOG_ERROR("game_save_load_ini_file %s error\n", path.c_str());
+	// read file
+	load_ini_file_callback_data.read_flg = false;
+	memset(load_ini_file_callback_data.read_slot_flg,    0, sizeof(bool)* GAME_SAVE_SLOT_NUM);
+	memset(load_ini_file_callback_data.read_player_flg,  0, sizeof(bool)* GAME_SAVE_SLOT_NUM);
+	memset(load_ini_file_callback_data.read_stocker_flg, 0, sizeof(bool)* GAME_SAVE_SLOT_NUM);
+	int ret = game_utils_files_read_line(path, load_ini_file_callback, (void*)&load_ini_file_callback_data);
+	if (ret != 0) {
+		LOG_ERROR("game_save_load_ini_file %s error\n", path);
 		return 1;
 	}
+
 	return 0;
 }
 

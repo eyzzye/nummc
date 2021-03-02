@@ -1,4 +1,3 @@
-#include <fstream>
 #include "game_common.h"
 #include "unit_manager.h"
 
@@ -15,7 +14,7 @@ static unit_effect_data_t effect[UNIT_EFFECT_LIST_SIZE];
 static int effect_base_index_end;
 static int effect_index_end;
 
-static void load_effect_unit(std::string& line);
+static void load_effect_unit(char* line);
 
 //
 // effect
@@ -45,8 +44,8 @@ int unit_manager_search_effect(char* path)
 	int ii = 0;
 	bool effect_found = false;
 	while (effect_base[ii].type == UNIT_TYPE_EFFECT) {
-		std::string regist_path = (char*)effect_base[ii].obj;
-		if (regist_path == path) {
+		char* regist_path = (char*)effect_base[ii].obj;
+		if ((regist_path != NULL) && STRCMP_EQ(regist_path,path)) {
 			effect_found = true;
 			break;
 		}
@@ -87,73 +86,81 @@ unit_effect_data_t* unit_manager_get_effect(int index)
 	return &effect[index];
 }
 
-int unit_manager_load_effect(std::string path)
+typedef struct _load_effect_callback_data_t load_effect_callback_data_t;
+struct _load_effect_callback_data_t {
+	bool read_flg[UNIT_TAG_END];
+	char* path;
+};
+static load_effect_callback_data_t load_effect_callback_data;
+static void load_effect_callback(char* line, int line_size, int line_num, void* argv)
 {
-	if (unit_manager_search_effect((char*)path.c_str()) > 0) return 0;
+	load_effect_callback_data_t* data = (load_effect_callback_data_t*)argv;
 
-	bool read_flg[UNIT_TAG_END] = { false };
+	if (line[0] == '\0') return;
+	if (line[0] == '#') return;
+
+	if (line[0] == '[') {
+		if (STRCMP_EQ(line, "[unit]")) {
+			data->read_flg[UNIT_TAG_UNIT] = true;
+
+			// set base unit data
+			char* path_c_str = game_utils_string_new();
+			game_utils_string_copy(path_c_str, data->path);
+			effect_base[effect_base_index_end].obj = (void*)path_c_str;
+			effect_base[effect_base_index_end].type = UNIT_TYPE_EFFECT;
+			effect_base[effect_base_index_end].id = effect_base_index_end;
+			effect_base[effect_base_index_end].clear_type = UNIT_EFFECT_CLEAR_TYPE_NONE;
+			return;
+		}
+		if (STRCMP_EQ(line, "[/unit]"))      { data->read_flg[UNIT_TAG_UNIT]      = false; return; }
+		if (STRCMP_EQ(line, "[collision]"))  { data->read_flg[UNIT_TAG_COLLISION] = true;  return; }
+		if (STRCMP_EQ(line, "[/collision]")) { data->read_flg[UNIT_TAG_COLLISION] = false; return; }
+		if (STRCMP_EQ(line, "[anim]")) {
+			data->read_flg[UNIT_TAG_ANIM] = true;
+			effect_base[effect_base_index_end].anim = animation_manager_new_anim_data();
+			animation_manager_new_anim_stat_base_data(effect_base[effect_base_index_end].anim);
+			return;
+		}
+		if (STRCMP_EQ(line, "[/anim]")) { data->read_flg[UNIT_TAG_ANIM] = false; return; }
+	}
+
+	if (data->read_flg[UNIT_TAG_UNIT]) {
+		load_effect_unit(line);
+	}
+	if (data->read_flg[UNIT_TAG_COLLISION]) {
+		load_collision(line, &effect_base[effect_base_index_end].col_shape);
+	}
+	if (data->read_flg[UNIT_TAG_ANIM]) {
+		load_anim(line, effect_base[effect_base_index_end].anim);
+	}
+}
+
+int unit_manager_load_effect(char* path)
+{
+	if (unit_manager_search_effect(path) > 0) return 0;
 
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
 	if (tmp_path_size == 0) {
-		LOG_ERROR("unit_manager_load_effect failed get %s\n", path.c_str());
+		LOG_ERROR("unit_manager_load_effect failed get %s\n", path);
 		return 1;
 	}
 
-	std::ifstream inFile(full_path);
-	if (inFile.is_open()) {
-		std::string line;
-		while (std::getline(inFile, line)) {
-			if (line == "") continue;
-			if (line[0] == '#') continue;
-
-			if (line == "[unit]") {
-				read_flg[UNIT_TAG_UNIT] = true;
-
-				// set base unit data
-				char* path_c_str = game_utils_string_new();
-				game_utils_string_copy(path_c_str, path.c_str());
-				effect_base[effect_base_index_end].obj = (void*)path_c_str;
-				effect_base[effect_base_index_end].type = UNIT_TYPE_EFFECT;
-				effect_base[effect_base_index_end].id = effect_base_index_end;
-				effect_base[effect_base_index_end].clear_type = UNIT_EFFECT_CLEAR_TYPE_NONE;
-				continue;
-			}
-			if (line == "[/unit]") { read_flg[UNIT_TAG_UNIT] = false; continue; }
-			if (line == "[collision]") { read_flg[UNIT_TAG_COLLISION] = true;  continue; }
-			if (line == "[/collision]") { read_flg[UNIT_TAG_COLLISION] = false; continue; }
-			if (line == "[anim]") {
-				read_flg[UNIT_TAG_ANIM] = true;
-				effect_base[effect_base_index_end].anim = animation_manager_new_anim_data();
-				animation_manager_new_anim_stat_base_data(effect_base[effect_base_index_end].anim);
-				continue;
-			}
-			if (line == "[/anim]") { read_flg[UNIT_TAG_ANIM] = false; continue; }
-
-			if (read_flg[UNIT_TAG_UNIT]) {
-				load_effect_unit(line);
-			}
-			if (read_flg[UNIT_TAG_COLLISION]) {
-				load_collision(line, &effect_base[effect_base_index_end].col_shape);
-			}
-			if (read_flg[UNIT_TAG_ANIM]) {
-				load_anim(line, effect_base[effect_base_index_end].anim);
-			}
-		}
-		inFile.close();
-	}
-	else {
-		LOG_ERROR("unit_manager_load_effect %s error\n", path.c_str());
+	// read file
+	memset(load_effect_callback_data.read_flg, 0, sizeof(bool) * UNIT_TAG_END);
+	load_effect_callback_data.path = path;
+	int ret = game_utils_files_read_line(full_path, load_effect_callback, (void*)&load_effect_callback_data);
+	if (ret != 0) {
+		LOG_ERROR("unit_manager_load_effect %s error\n", path);
 		return 1;
 	}
 
 	// load anim files
 	if (effect_base[effect_base_index_end].anim) {
 		for (int i = 0; i < ANIM_STAT_END; i++) {
-			char* cstr_anim_path = (char*)effect_base[effect_base_index_end].anim->anim_stat_base_list[i]->obj;
-			if (cstr_anim_path) {
-				std::string anim_path = cstr_anim_path;
+			char* anim_path = (char*)effect_base[effect_base_index_end].anim->anim_stat_base_list[i]->obj;
+			if (anim_path) {
 				animation_manager_load_file(anim_path, effect_base[effect_base_index_end].anim, i);
 			}
 		}
@@ -165,14 +172,15 @@ int unit_manager_load_effect(std::string path)
 		LOG_ERROR("ERROR: unit_manager_load_effect() effect_base overflow\n");
 		return 1;
 	}
+
 	return 0;
 }
 
-static void load_effect_unit(std::string& line)
+static void load_effect_unit(char* line)
 {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"group")) {
 		if (STRCMP_EQ(value,"NONE")) {

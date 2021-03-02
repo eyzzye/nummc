@@ -1,6 +1,5 @@
 #include <vector>
 #include <string>
-#include <fstream>
 #include "game_common.h"
 #include "story_manager.h"
 
@@ -17,10 +16,10 @@
 story_data_t* g_story_data;
 story_data_t g_story_data_buffer;
 
-static void load_basic_info(std::string& line);
-static void load_img(std::string& line);
-static void load_bgm(std::string& line);
-static void load_auto_text(std::string& line);
+static void load_basic_info(char* line);
+static void load_img(char* line);
+static void load_bgm(char* line);
+static void load_auto_text(char* line);
 
 void story_manager_init()
 {
@@ -38,64 +37,72 @@ void story_manager_set_stat(int stat)
 	g_story_data->stat = stat;
 }
 
-int story_manager_load(std::string path)
+typedef struct _load_story_callback_data_t load_story_callback_data_t;
+struct _load_story_callback_data_t {
+	bool read_flg[STORY_ID_END];
+};
+static load_story_callback_data_t load_story_callback_data;
+static void load_story_callback(char* line, int line_size, int line_num, void* argv)
 {
-	bool read_flg[STORY_ID_END] = { false };
+	load_story_callback_data_t* data = (load_story_callback_data_t*)argv;
 
+	if (line[0] == '\0') return;
+	if (line[0] == '#') return;
+
+	if (line[0] == '[') {
+		if (STRCMP_EQ(line, "[basic_info]"))  { data->read_flg[STORY_ID_BASIC_INFO] = true;  return; }
+		if (STRCMP_EQ(line, "[/basic_info]")) { data->read_flg[STORY_ID_BASIC_INFO] = false; return; }
+		if (STRCMP_EQ(line, "[img]"))         { data->read_flg[STORY_ID_IMG]        = true;  return; }
+		if (STRCMP_EQ(line, "[/img]"))        { data->read_flg[STORY_ID_IMG]        = false; return; }
+		if (STRCMP_EQ(line, "[bgm]"))         { data->read_flg[STORY_ID_BGM]        = true;  return; }
+		if (STRCMP_EQ(line, "[/bgm]"))        { data->read_flg[STORY_ID_BGM]        = false; return; }
+		if (STRCMP_EQ(line, "[auto_text]"))   { data->read_flg[STORY_ID_AUTO_TEXT]  = true;  return; }
+		if (STRCMP_EQ(line, "[/auto_text]"))  { data->read_flg[STORY_ID_AUTO_TEXT]  = false; return; }
+	}
+
+	if (data->read_flg[STORY_ID_BASIC_INFO]) {
+		load_basic_info(line);
+	}
+	if (data->read_flg[STORY_ID_IMG]) {
+		load_img(line);
+	}
+	if (data->read_flg[STORY_ID_BGM]) {
+		load_bgm(line);
+	}
+	if (data->read_flg[STORY_ID_AUTO_TEXT]) {
+		load_auto_text(line);
+	}
+}
+
+int story_manager_load(char* path)
+{
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
 	if (tmp_path_size == 0) {
-		LOG_ERROR("story_manager_load failed get %s\n", path.c_str());
+		LOG_ERROR("story_manager_load failed get %s\n", path);
 		return 1;
 	}
 
-	std::ifstream inFile(full_path);
-	if (inFile.is_open()) {
-		g_story_data->story_path = path;
-		g_story_data->res_img = NULL;
-		g_story_data->res_chunk = NULL;
+	g_story_data->story_path = path;
+	g_story_data->res_img = NULL;
+	g_story_data->res_chunk = NULL;
 
-		std::string line;
-		while (std::getline(inFile, line)) {
-			if (line == "") continue;
-			if (line[0] == '#') continue;
-
-			if (line == "[basic_info]") { read_flg[STORY_ID_BASIC_INFO] = true;  continue; }
-			if (line == "[/basic_info]") { read_flg[STORY_ID_BASIC_INFO] = false; continue; }
-			if (line == "[img]") { read_flg[STORY_ID_IMG] = true;  continue; }
-			if (line == "[/img]") { read_flg[STORY_ID_IMG] = false; continue; }
-			if (line == "[bgm]") { read_flg[STORY_ID_BGM] = true;  continue; }
-			if (line == "[/bgm]") { read_flg[STORY_ID_BGM] = false; continue; }
-			if (line == "[auto_text]") { read_flg[STORY_ID_AUTO_TEXT] = true;  continue; }
-			if (line == "[/auto_text]") { read_flg[STORY_ID_AUTO_TEXT] = false; continue; }
-
-			if (read_flg[STORY_ID_BASIC_INFO]) {
-				load_basic_info(line);
-			}
-			if (read_flg[STORY_ID_IMG]) {
-				load_img(line);
-			}
-			if (read_flg[STORY_ID_BGM]) {
-				load_bgm(line);
-			}
-			if (read_flg[STORY_ID_AUTO_TEXT]) {
-				load_auto_text(line);
-			}
-		}
-		inFile.close();
-	}
-	else {
-		LOG_ERROR("story_manager_load %s error\n", path.c_str());
+	// read file
+	memset(load_story_callback_data.read_flg, 0, sizeof(bool)* STORY_ID_END);
+	int ret = game_utils_files_read_line(full_path, load_story_callback, (void*)&load_story_callback_data);
+	if (ret != 0) {
+		LOG_ERROR("story_manager_load %s error\n", path);
 		return 1;
 	}
+
 	return 0;
 }
 
-static void load_basic_info(std::string& line) {
+static void load_basic_info(char* line) {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "id")) {
 		g_story_data->id = value;
@@ -103,22 +110,22 @@ static void load_basic_info(std::string& line) {
 	}
 }
 
-static void load_img(std::string& line) {
-	if (line != "") {
+static void load_img(char* line) {
+	if (line[0] != '\0') {
 		g_story_data->res_img = resource_manager_getTextureFromPath(line);
 	}
 }
 
-static void load_bgm(std::string& line) {
-	if (line != "") {
+static void load_bgm(char* line) {
+	if (line[0] != '\0') {
 		g_story_data->res_chunk = resource_manager_getChunkFromPath(line);
 	}
 }
 
-static void load_auto_text(std::string& line) {
+static void load_auto_text(char* line) {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"time")) {
 		g_story_data->auto_text_time = atoi(value);

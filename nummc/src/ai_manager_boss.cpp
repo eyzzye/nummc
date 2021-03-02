@@ -642,7 +642,7 @@ int ai_manager_boss_spawn_six(ai_data_t* ai_data)
 	}
 
 	int enemy_id;
-	unit_manager_load_enemy(mini_boss_six_path);
+	unit_manager_load_enemy((char*)mini_boss_six_path);
 
 	// left
 	enemy_id = unit_manager_create_enemy(120, 152, UNIT_FACE_W,
@@ -873,7 +873,7 @@ int ai_manager_boss_spawn_eight(ai_data_t* ai_data)
 
 	if (unit_manager_enemy_get_enemy_count() < 3) {
 		int enemy_id;
-		unit_manager_load_enemy(mini_enemy_eight_path);
+		unit_manager_load_enemy((char*)mini_enemy_eight_path);
 
 		int enemy_cx, enemy_cy;
 		unit_manager_get_center_position(unit_data, &enemy_cx, &enemy_cy);
@@ -1198,7 +1198,7 @@ int ai_manager_boss_spawn_x(ai_data_t* ai_data)
 	int enemy_x_path_index = ai_data->val2;
 
 	int enemy_id;
-	unit_manager_load_enemy(enemy_x_path[enemy_x_path_index]);
+	unit_manager_load_enemy((char*)enemy_x_path[enemy_x_path_index]);
 
 	// left
 	enemy_id = unit_manager_create_enemy(128, 128, UNIT_FACE_W,

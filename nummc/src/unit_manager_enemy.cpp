@@ -1,4 +1,3 @@
-#include <fstream>
 #include "game_common.h"
 #include "unit_manager.h"
 
@@ -108,7 +107,7 @@ static int enemy_strength_rank[UNIT_ENEMY_STRENGTH_RANK_SIZE] = {
 	20,	// 10
 };
 
-static void load_unit_enemy(std::string& line, unit_enemy_data_t* enemy_data);
+static void load_unit_enemy(char* line, unit_enemy_data_t* enemy_data);
 
 //
 // enemy
@@ -152,8 +151,8 @@ int unit_manager_search_enemy(char* path)
 	int ei = 0;
 	bool enemy_found = false;
 	while (enemy_base[ei].type == UNIT_TYPE_ENEMY) {
-		std::string regist_path = (char*)enemy_base[ei].obj;
-		if (regist_path == path) {
+		char* regist_path = (char*)enemy_base[ei].obj;
+		if ((regist_path != NULL) && STRCMP_EQ(regist_path,path)) {
 			enemy_found = true;
 			break;
 		}
@@ -252,6 +251,10 @@ void unit_manager_enemy_set_effect_stat(int unit_id, int stat, bool off_on)
 
 void unit_manager_set_enemy_slowed(int index)
 {
+	if ((enemy[index].col_shape == NULL) || (enemy[index].col_shape->stat != COLLISION_STAT_ENABLE)) {
+		return;
+	}
+
 	if (enemy[index].col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) {
 		// set moter speed (1/3)
 		collision_manager_set_moter_speed(enemy[index].col_shape, ((float)enemy[index].col_shape->joint_val1 / (3 * 1000.0f)) * b2_pi);
@@ -336,92 +339,99 @@ void unit_manager_set_ai_step(int index, int step) {
 	((ai_stat_data_t*)enemy[index].ai)->step[AI_STAT_STEP_W] = step;
 }
 
-int unit_manager_load_enemy(std::string path)
+typedef struct _load_enemy_callback_data_t load_enemy_callback_data_t;
+struct _load_enemy_callback_data_t {
+	bool read_flg[UNIT_TAG_END];
+	char* path;
+};
+static load_enemy_callback_data_t load_enemy_callback_data;
+static void load_enemy_callback(char* line, int line_size, int line_num, void* argv)
 {
-	if (unit_manager_search_enemy((char*)path.c_str()) >= 0) return 0; // regist already
+	load_enemy_callback_data_t* data = (load_enemy_callback_data_t*)argv;
 
-	bool read_flg[UNIT_TAG_END] = { false };
+	if (line[0] == '\0') return;
+	if (line[0] == '#') return;
+
+	if (line[0] == '[') {
+		if (STRCMP_EQ(line, "[unit]")) {
+			data->read_flg[UNIT_TAG_UNIT] = true;
+
+			// set base unit data
+			char* path_c_str = game_utils_string_new();
+			game_utils_string_copy(path_c_str, data->path);
+			enemy_base[enemy_base_index_end].obj             = (void*)path_c_str;
+			enemy_base[enemy_base_index_end].type            = UNIT_TYPE_ENEMY;
+			enemy_base[enemy_base_index_end].id              = enemy_base_index_end;
+			enemy_base[enemy_base_index_end].effect_stat     = UNIT_EFFECT_FLAG_E_NONE;
+			enemy_base[enemy_base_index_end].effect_param    = NULL;
+			enemy_base[enemy_base_index_end].resistance_stat = UNIT_EFFECT_FLAG_E_NONE;
+			enemy_base[enemy_base_index_end].drop_item       = UNIT_ITEM_ID_IGNORE; // disable
+			return;
+		}
+		if (STRCMP_EQ(line, "[/unit]"))      { data->read_flg[UNIT_TAG_UNIT]      = false; return; }
+		if (STRCMP_EQ(line, "[collision]"))  { data->read_flg[UNIT_TAG_COLLISION] = true;  return; }
+		if (STRCMP_EQ(line, "[/collision]")) { data->read_flg[UNIT_TAG_COLLISION] = false; return; }
+		if (STRCMP_EQ(line, "[anim]")) {
+			data->read_flg[UNIT_TAG_ANIM] = true;
+			enemy_base[enemy_base_index_end].anim = animation_manager_new_anim_data();
+			animation_manager_new_anim_stat_base_data(enemy_base[enemy_base_index_end].anim);
+			return;
+		}
+		if (STRCMP_EQ(line, "[/anim]")) { data->read_flg[UNIT_TAG_ANIM] = false; return; }
+		if (STRCMP_EQ(line, "[ai]")) {
+			data->read_flg[UNIT_TAG_AI] = true;
+			enemy_base[enemy_base_index_end].ai = ai_manager_new_ai_base_data();
+			enemy_base[enemy_base_index_end].ai->obj = NULL;
+			return;
+		}
+		if (STRCMP_EQ(line, "[/ai]"))     { data->read_flg[UNIT_TAG_AI]     = false; return; }
+		if (STRCMP_EQ(line, "[bullet]"))  { data->read_flg[UNIT_TAG_BULLET] = true;  return; }
+		if (STRCMP_EQ(line, "[/bullet]")) { data->read_flg[UNIT_TAG_BULLET] = false; return; }
+	}
+
+	if (data->read_flg[UNIT_TAG_UNIT]) {
+		load_unit_enemy(line, &enemy_base[enemy_base_index_end]);
+	}
+	if (data->read_flg[UNIT_TAG_COLLISION]) {
+		load_collision(line, &enemy_base[enemy_base_index_end].col_shape);
+	}
+	if (data->read_flg[UNIT_TAG_ANIM]) {
+		load_anim(line, enemy_base[enemy_base_index_end].anim);
+	}
+	if (data->read_flg[UNIT_TAG_AI]) {
+		load_ai(line, enemy_base[enemy_base_index_end].ai);
+	}
+	if (data->read_flg[UNIT_TAG_BULLET]) {
+		load_bullet(line, enemy_base[enemy_base_index_end].bullet);
+	}
+}
+
+int unit_manager_load_enemy(char* path)
+{
+	if (unit_manager_search_enemy(path) >= 0) return 0; // regist already
 
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
 	if (tmp_path_size == 0) {
-		LOG_ERROR("unit_manager_load_enemy failed get %s\n", path.c_str());
+		LOG_ERROR("unit_manager_load_enemy failed get %s\n", path);
 		return 1;
 	}
 
-	std::ifstream inFile(full_path);
-	if (inFile.is_open()) {
-		std::string line;
-		while (std::getline(inFile, line)) {
-			if (line == "") continue;
-			if (line[0] == '#') continue;
-
-			if (line == "[unit]") {
-				read_flg[UNIT_TAG_UNIT] = true;
-
-				// set base unit data
-				char* path_c_str = game_utils_string_new();
-				game_utils_string_copy(path_c_str, path.c_str());
-				enemy_base[enemy_base_index_end].obj = (void*)path_c_str;
-				enemy_base[enemy_base_index_end].type = UNIT_TYPE_ENEMY;
-				enemy_base[enemy_base_index_end].id = enemy_base_index_end;
-				enemy_base[enemy_base_index_end].effect_stat = UNIT_EFFECT_FLAG_E_NONE;
-				enemy_base[enemy_base_index_end].effect_param = NULL;
-				enemy_base[enemy_base_index_end].resistance_stat = UNIT_EFFECT_FLAG_E_NONE;
-				enemy_base[enemy_base_index_end].drop_item = UNIT_ITEM_ID_IGNORE; // disable
-				continue;
-			}
-			if (line == "[/unit]") { read_flg[UNIT_TAG_UNIT] = false; continue; }
-			if (line == "[collision]") { read_flg[UNIT_TAG_COLLISION] = true;  continue; }
-			if (line == "[/collision]") { read_flg[UNIT_TAG_COLLISION] = false; continue; }
-			if (line == "[anim]") {
-				read_flg[UNIT_TAG_ANIM] = true;
-				enemy_base[enemy_base_index_end].anim = animation_manager_new_anim_data();
-				animation_manager_new_anim_stat_base_data(enemy_base[enemy_base_index_end].anim);
-				continue;
-			}
-			if (line == "[/anim]") { read_flg[UNIT_TAG_ANIM] = false; continue; }
-			if (line == "[ai]") {
-				read_flg[UNIT_TAG_AI] = true;
-				enemy_base[enemy_base_index_end].ai = ai_manager_new_ai_base_data();
-				enemy_base[enemy_base_index_end].ai->obj = NULL;
-				continue;
-			}
-			if (line == "[/ai]") { read_flg[UNIT_TAG_AI] = false; continue; }
-			if (line == "[bullet]") { read_flg[UNIT_TAG_BULLET] = true;  continue; }
-			if (line == "[/bullet]") { read_flg[UNIT_TAG_BULLET] = false; continue; }
-
-
-			if (read_flg[UNIT_TAG_UNIT]) {
-				load_unit_enemy(line, &enemy_base[enemy_base_index_end]);
-			}
-			if (read_flg[UNIT_TAG_COLLISION]) {
-				load_collision(line, &enemy_base[enemy_base_index_end].col_shape);
-			}
-			if (read_flg[UNIT_TAG_ANIM]) {
-				load_anim(line, enemy_base[enemy_base_index_end].anim);
-			}
-			if (read_flg[UNIT_TAG_AI]) {
-				load_ai(line, enemy_base[enemy_base_index_end].ai);
-			}
-			if (read_flg[UNIT_TAG_BULLET]) {
-				load_bullet(line, enemy_base[enemy_base_index_end].bullet);
-			}
-		}
-		inFile.close();
-	}
-	else {
-		LOG_ERROR("unit_manager_load_enemy %s error\n", path.c_str());
+	// read file
+	memset(load_enemy_callback_data.read_flg, 0, sizeof(bool) * UNIT_TAG_END);
+	load_enemy_callback_data.path = path;
+	int ret = game_utils_files_read_line(full_path, load_enemy_callback, (void*)&load_enemy_callback_data);
+	if (ret != 0) {
+		LOG_ERROR("unit_manager_load_enemy %s error\n", path);
 		return 1;
 	}
 
 	// load anim files
 	if (enemy_base[enemy_base_index_end].anim) {
 		for (int i = 0; i < ANIM_STAT_END; i++) {
-			char* cstr_anim_path = (char*)enemy_base[enemy_base_index_end].anim->anim_stat_base_list[i]->obj;
-			if (cstr_anim_path) {
-				std::string anim_path = cstr_anim_path;
+			char* anim_path = (char*)enemy_base[enemy_base_index_end].anim->anim_stat_base_list[i]->obj;
+			if (anim_path) {
 				animation_manager_load_file(anim_path, enemy_base[enemy_base_index_end].anim, i);
 			}
 		}
@@ -430,9 +440,8 @@ int unit_manager_load_enemy(std::string path)
 	// load ai_bullet files
 	for (int i = 0; i < UNIT_ENEMY_BULLET_NUM; i++) {
 		if (enemy_base[enemy_base_index_end].bullet[i]) {
-			char* cstr_bullet_path = (char*)enemy_base[enemy_base_index_end].bullet[i]->obj;
-			if (cstr_bullet_path) {
-				std::string bullet_path = cstr_bullet_path;
+			char* bullet_path = (char*)enemy_base[enemy_base_index_end].bullet[i]->obj;
+			if (bullet_path) {
 				ai_manager_load_bullet_file(bullet_path, (ai_bullet_t*)enemy_base[enemy_base_index_end].bullet[i]);
 			}
 		}
@@ -447,11 +456,11 @@ int unit_manager_load_enemy(std::string path)
 	return 0;
 }
 
-static void load_unit_enemy(std::string& line, unit_enemy_data_t* enemy_data)
+static void load_unit_enemy(char* line, unit_enemy_data_t* enemy_data)
 {
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-	game_utils_split_key_value((char*)line.c_str(), key, value);
+	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "hp")) {
 		enemy_data->hp = atoi(value);
@@ -507,7 +516,7 @@ static void load_unit_enemy(std::string& line, unit_enemy_data_t* enemy_data)
 		stat_list_size = game_utils_split_conmma(value, stat_list, UNIT_EFFECT_FLAG_E_NUM_MAX, GAME_UTILS_STRING_NAME_BUF_SIZE);
 		int resistance_val = UNIT_EFFECT_FLAG_E_NONE;
 		for (int i = 0; i < stat_list_size; i++) {
-			char* stat_str = &stat_list[i * GAME_UTILS_STRING_CHAR_BUF_SIZE];
+			char* stat_str = &stat_list[i * GAME_UTILS_STRING_NAME_BUF_SIZE];
 			if (STRCMP_EQ(stat_str,"FIRE_UP")) {
 				resistance_val |= UNIT_EFFECT_FLAG_E_FIRE_UP;
 			}
@@ -666,10 +675,10 @@ void unit_manager_create_hell()
 
 	for (int i = 0; i < LENGTH_OF(hell_enemy_list); i++) {
 		// load ghost trap
-		if (strlen(hell_enemy_list[i].trap_path) > 0) unit_manager_load_trap(hell_enemy_list[i].trap_path);
+		if (strlen(hell_enemy_list[i].trap_path) > 0) unit_manager_load_trap((char*)hell_enemy_list[i].trap_path);
 
 		// create enemy
-		unit_manager_load_enemy(hell_enemy_list[i].path);
+		unit_manager_load_enemy((char*)hell_enemy_list[i].path);
 		unit_manager_create_enemy(hell_enemy_list[i].x, hell_enemy_list[i].y, hell_enemy_list[i].face,
 			unit_manager_search_enemy((char*)hell_enemy_list[i].path));
 	}
@@ -892,8 +901,8 @@ int unit_manager_enemy_attack(unit_enemy_data_t* enemy_data, int stat)
 	// convert face (face_W -> face_X)
 	bullet_face = unit_manager_get_face_relative((unit_data_t*)enemy_data, bullet_face);
 
-	std::string bullet_path = g_enemy_bullet_path[bullet];
-	int bullet_base_id = unit_manager_search_enemy_bullet(bullet_path);
+	// get base id
+	int bullet_base_id = unit_manager_search_enemy_bullet((char*)g_enemy_bullet_path[bullet]);
 
 	if (ai_bullet->val1 & AI_BULLET_PARAM_TARGET) {
 		int target_x = ((ai_stat_bullet_t*)ai_bullet)->val2;

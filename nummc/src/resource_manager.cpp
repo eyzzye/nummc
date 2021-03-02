@@ -6,6 +6,12 @@
 #include "game_utils.h"
 #include "game_log.h"
 
+#define RESOURCE_TAG_IMG        0
+#define RESOURCE_TAG_FONT       1
+#define RESOURCE_TAG_MUSIC      2
+#define RESOURCE_TAG_SOUND      3
+#define RESOURCE_TAG_END        4
+
 #define RESOURCE_IMG_BUFFER_SIZE  (ANIM_DATA_LIST_SIZE)
 static ResourceImg resource_img_buffer[RESOURCE_IMG_BUFFER_SIZE];
 static node_buffer_info_t resource_img_buffer_info;
@@ -80,56 +86,61 @@ void resource_manager_unload()
 	}
 }
 
-int resource_manager_load_dat(std::string path)
+typedef struct _load_dat_callback_data_t load_dat_callback_data_t;
+struct _load_dat_callback_data_t {
+	bool read_flg[RESOURCE_TAG_END];
+};
+static load_dat_callback_data_t load_dat_callback_data;
+static void load_dat_callback(char* line, int line_size, int line_num, void* argv)
 {
-	bool img_flg = false;
-	bool font_flg = false;
-	bool music_flg = false;
-	bool snd_flg = false;
+	load_dat_callback_data_t* data = (load_dat_callback_data_t*)argv;
 
+	if (line[0] == '\0') return;
+	if (line[0] == '#') return;
+
+	if (line[0] == '[') {
+		if (STRCMP_EQ(line, "[img]"))    { data->read_flg[RESOURCE_TAG_IMG]   = true;  return; }
+		if (STRCMP_EQ(line, "[/img]"))   { data->read_flg[RESOURCE_TAG_IMG]   = false; return; }
+		if (STRCMP_EQ(line, "[font]"))   { data->read_flg[RESOURCE_TAG_FONT]  = true;  return; }
+		if (STRCMP_EQ(line, "[/font]"))  { data->read_flg[RESOURCE_TAG_FONT]  = false; return; }
+		if (STRCMP_EQ(line, "[music]"))  { data->read_flg[RESOURCE_TAG_MUSIC] = true;  return; }
+		if (STRCMP_EQ(line, "[/music]")) { data->read_flg[RESOURCE_TAG_MUSIC] = false; return; }
+		if (STRCMP_EQ(line, "[snd]"))    { data->read_flg[RESOURCE_TAG_SOUND] = true;  return; }
+		if (STRCMP_EQ(line, "[/snd]"))   { data->read_flg[RESOURCE_TAG_SOUND] = false; return; }
+	}
+
+	if (data->read_flg[RESOURCE_TAG_IMG]) {
+		resource_manager_getTextureFromPath(line);
+	}
+	if (data->read_flg[RESOURCE_TAG_FONT]) {
+		resource_manager_getFontTextureFromPath(line);
+	}
+	if (data->read_flg[RESOURCE_TAG_MUSIC]) {
+		resource_manager_getMusicFromPath(line);
+	}
+	if (data->read_flg[RESOURCE_TAG_SOUND]) {
+		resource_manager_getChunkFromPath(line);
+	}
+}
+
+int resource_manager_load_dat(char* path)
+{
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
 	if (tmp_path_size == 0) {
-		LOG_ERROR("resource_manager_load_dat failed get %s\n", path.c_str());
+		LOG_ERROR("resource_manager_load_dat failed get %s\n", path);
 		return 1;
 	}
 
-	std::ifstream inFile(full_path);
-	if (inFile.is_open()) {
-		std::string line;
-		while (std::getline(inFile, line)) {
-			if (line == "") continue;
-			if (line[0] == '#') continue;
-
-			if (line == "[img]")    { img_flg   = true;  continue; }
-			if (line == "[/img]")   { img_flg   = false; continue; }
-			if (line == "[font]")   { font_flg  = true;  continue; }
-			if (line == "[/font]")  { font_flg  = false; continue; }
-			if (line == "[music]")  { music_flg = true;  continue; }
-			if (line == "[/music]") { music_flg = false; continue; }
-			if (line == "[snd]")    { snd_flg   = true;  continue; }
-			if (line == "[/snd]")   { snd_flg   = false; continue; }
-
-			if (img_flg) {
-				resource_manager_getTextureFromPath(line);
-			}
-			if (font_flg) {
-				resource_manager_getFontTextureFromPath(line);
-			}
-			if (music_flg) {
-				resource_manager_getMusicFromPath(line);
-			}
-			if (snd_flg) {
-				resource_manager_getChunkFromPath(line);
-			}
-		}
-		inFile.close();
-	}
-	else {
-		LOG_ERROR("resource_manager_load_dat %s error\n", path.c_str());
+	// read file
+	memset(load_dat_callback_data.read_flg, 0, sizeof(bool) * RESOURCE_TAG_END);
+	int ret = game_utils_files_read_line(full_path, load_dat_callback, (void*)&load_dat_callback_data);
+	if (ret != 0) {
+		LOG_ERROR("resource_manager_load_dat %s error\n", path);
 		return 1;
 	}
+
 	return 0;
 }
 

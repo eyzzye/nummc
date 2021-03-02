@@ -146,5 +146,5 @@ extern void animation_manager_delete_anim_stat_data(anim_data_t* delete_data);
 extern anim_frame_data_t* animation_manager_new_anim_frame();
 extern void animation_manager_new_anim_stat_base_data(anim_data_t* anim_data);
 extern anim_data_t* animation_manager_new_anim_data();
-extern int animation_manager_load_file(std::string path, anim_data_t* anim_data, int stat);
+extern int animation_manager_load_file(char* path, anim_data_t* anim_data, int stat);
 extern int animation_manager_get_base_size_index(int base_size);
