@@ -8,6 +8,7 @@
 #include "game_event.h"
 
 #include "resource_manager.h"
+#include "memory_manager.h"
 #include "stage_manager.h"
 #include "map_manager.h"
 #include "sound_manager.h"
@@ -127,18 +128,18 @@ void unit_manager_unload_enemy()
 {
 	for (int i = 0; i < UNIT_ENEMY_BASE_LIST_SIZE; i++) {
 		if (enemy_base[i].obj) {
-			game_utils_string_delete((char*)enemy_base[i].obj);
+			memory_manager_delete_char_buff((char*)enemy_base[i].obj);
 			enemy_base[i].obj = NULL;
 		}
 		if (enemy_base[i].next_level) {
-			game_utils_string_delete((char*)enemy_base[i].next_level);
+			memory_manager_delete_char_buff((char*)enemy_base[i].next_level);
 			enemy_base[i].next_level = NULL;
 		}
 
 		for (int bi = 0; bi < UNIT_ENEMY_BULLET_NUM; bi++) {
 			if (enemy_base[i].bullet[bi]) {
 				if (enemy_base[i].bullet[bi]->obj) {
-					game_utils_string_delete((char*)enemy_base[i].bullet[bi]->obj); // g_enemy_bullet_path
+					memory_manager_delete_char_buff((char*)enemy_base[i].bullet[bi]->obj); // g_enemy_bullet_path
 					enemy_base[i].bullet[bi]->obj = NULL;
 				}
 			}
@@ -357,7 +358,7 @@ static void load_enemy_callback(char* line, int line_size, int line_num, void* a
 			data->read_flg[UNIT_TAG_UNIT] = true;
 
 			// set base unit data
-			char* path_c_str = game_utils_string_new();
+			char* path_c_str = memory_manager_new_char_buff((int)strlen(data->path));
 			game_utils_string_copy(path_c_str, data->path);
 			enemy_base[enemy_base_index_end].obj             = (void*)path_c_str;
 			enemy_base[enemy_base_index_end].type            = UNIT_TYPE_ENEMY;
@@ -499,7 +500,7 @@ static void load_unit_enemy(char* line, unit_enemy_data_t* enemy_data)
 		return;
 	}
 	if (STRCMP_EQ(key,"next_level")) {
-		char* next_level_c_str = game_utils_string_new();
+		char* next_level_c_str = memory_manager_new_char_buff((int)strlen(value));
 		game_utils_string_copy(next_level_c_str, value);
 		enemy_data->next_level = next_level_c_str;
 		return;

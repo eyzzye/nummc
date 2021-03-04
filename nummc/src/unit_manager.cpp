@@ -8,6 +8,7 @@
 #include "game_event.h"
 
 #include "resource_manager.h"
+#include "memory_manager.h"
 #include "gui_common.h"
 #include "stage_manager.h"
 #include "map_manager.h"
@@ -220,7 +221,7 @@ void load_anim(char* line, anim_data_t* anim)
 	}
 
 	// set anim path
-	char* path_c_str = game_utils_string_new();
+	char* path_c_str = memory_manager_new_char_buff((int)strlen(line));
 	game_utils_string_copy(path_c_str, line);
 	anim->anim_stat_base_list[stat_val]->obj = (void*)path_c_str;
 }
@@ -264,7 +265,7 @@ void load_bullet(char* line, ai_data_t** bullet_data)
 		bullet_data[0] = ai_manager_new_ai_base_data();
 		bullet_data[0]->type = AI_TYPE_BULLET;
 
-		char* path_c_str = game_utils_string_new();
+		char* path_c_str = memory_manager_new_char_buff((int)strlen(value));
 		game_utils_string_copy(path_c_str, value);
 		((ai_bullet_t*)bullet_data[0])->obj = (void*)path_c_str;
 		return;
@@ -273,7 +274,7 @@ void load_bullet(char* line, ai_data_t** bullet_data)
 		bullet_data[1] = ai_manager_new_ai_base_data();
 		bullet_data[1]->type = AI_TYPE_BULLET;
 
-		char* path_c_str = game_utils_string_new();
+		char* path_c_str = memory_manager_new_char_buff((int)strlen(value));
 		game_utils_string_copy(path_c_str, value);
 		((ai_bullet_t*)bullet_data[1])->obj = (void*)path_c_str;
 		return;

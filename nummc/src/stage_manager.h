@@ -122,7 +122,7 @@ struct _items_data_t {
 	node_data_t* prev;
 	node_data_t* next;
 
-	std::string path;
+	char* path;
 	int x;
 	int y;
 };
@@ -133,7 +133,7 @@ struct _trap_data_t {
 	node_data_t* prev;
 	node_data_t* next;
 
-	std::string path;
+	char* path;
 	int x;
 	int y;
 };
@@ -144,7 +144,7 @@ struct _enemy_data_t {
 	node_data_t* prev;
 	node_data_t* next;
 
-	std::string path;
+	char* path;
 	int x;
 	int y;
 	int vec_x;

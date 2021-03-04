@@ -23,7 +23,7 @@ struct _ResourceImg {
 	node_data_t* prev;
 	node_data_t* next;
 
-	std::string path;
+	char* path;
 	SDL_Texture* tex;
 };
 
@@ -33,7 +33,7 @@ struct _ResourceMusic {
 	node_data_t* prev;
 	node_data_t* next;
 
-	std::string path;
+	char* path;
 	Mix_Music* music;
 };
 
@@ -43,7 +43,7 @@ struct _ResourceChunk {
 	node_data_t* prev;
 	node_data_t* next;
 
-	std::string path;
+	char* path;
 	Mix_Chunk* chunk;
 };
 
@@ -61,12 +61,13 @@ extern ResourceProfile g_resource_manager_profile[RESOURCE_MANAGER_PROFILE_LIST_
 
 extern void resource_manager_init();
 extern void resource_manager_unload();
+extern void resource_manager_clean_up();
 extern int resource_manager_load_dat(char* path);
 extern ResourceImg* resource_manager_load_img(std::string path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
-extern ResourceImg* resource_manager_getTextureFromPath(std::string path);
+extern ResourceImg* resource_manager_getTextureFromPath(std::string path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
 extern ResourceImg* resource_manager_load_font(std::string message, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
-extern ResourceImg* resource_manager_getFontTextureFromPath(std::string message);
+extern ResourceImg* resource_manager_getFontTextureFromPath(std::string message, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
 extern ResourceMusic* resource_manager_load_music(std::string path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
-extern ResourceMusic* resource_manager_getMusicFromPath(std::string path);
+extern ResourceMusic* resource_manager_getMusicFromPath(std::string path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
 extern ResourceChunk* resource_manager_load_chunk(std::string path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
-extern ResourceChunk* resource_manager_getChunkFromPath(std::string path);
+extern ResourceChunk* resource_manager_getChunkFromPath(std::string path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);

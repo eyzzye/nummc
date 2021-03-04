@@ -147,7 +147,7 @@ void scene_loading_set_stage(std::string& id)
 
 	// title
 	std::string title_str = "{48,204:204:204:204,-,-}STAGE " + next_stage_id;
-	tex_info_title.res_img = resource_manager_getFontTextureFromPath(title_str);
+	tex_info_title.res_img = resource_manager_getFontTextureFromPath(title_str, RESOURCE_MANAGER_TYPE_STATIC);
 	int ret = GUI_QueryTexture(tex_info_title.res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = (SCREEN_WIDTH - w) / 2;

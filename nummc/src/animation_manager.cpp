@@ -4,6 +4,7 @@
 #include "game_log.h"
 #include "game_utils.h"
 #include "resource_manager.h"
+#include "memory_manager.h"
 #include "gui_common.h"
 #include "sound_manager.h"
 #include "map_manager.h"
@@ -65,7 +66,7 @@ void animation_manager_unload()
 {
 	for (int i = 0; i < ANIM_STAT_BASE_LIST_SIZE; i++) {
 		if (anim_stat_base_data_list[i].obj) {
-			game_utils_string_delete((char*)anim_stat_base_data_list[i].obj);
+			memory_manager_delete_char_buff((char*)anim_stat_base_data_list[i].obj);
 			anim_stat_base_data_list[i].obj = NULL;
 		}
 

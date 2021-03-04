@@ -135,6 +135,9 @@
     <ClInclude Include="src\quest_log_manager.h">
       <Filter>src\include</Filter>
     </ClInclude>
+    <ClInclude Include="src\memory_manager.h">
+      <Filter>src\include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\unit_manager.cpp">
@@ -261,6 +264,9 @@
       <Filter>src\source</Filter>
     </ClCompile>
     <ClCompile Include="src\ai_manager_boss.cpp">
+      <Filter>src\source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\memory_manager.cpp">
       <Filter>src\source</Filter>
     </ClCompile>
   </ItemGroup>

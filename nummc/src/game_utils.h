@@ -34,7 +34,7 @@ typedef void callback_read_line_func(char* line, int line_size, int line_num, vo
 extern int game_utils_files_read_line(char* path, callback_read_line_func func, void* callback_argv);
 
 // node
-extern void game_utils_node_init(node_buffer_info_t* node_buffer_info, node_data_t* node_data, int node_size, int buffer_size);
+extern void game_utils_node_init(node_buffer_info_t* node_buffer_info, int node_size);
 extern node_data_t* game_utils_node_new(node_buffer_info_t* node_buffer_info);
 extern void game_utils_node_delete(node_data_t* node_data, node_buffer_info_t* node_buffer_info);
 
@@ -42,9 +42,6 @@ extern void game_utils_node_delete(node_data_t* node_data, node_buffer_info_t* n
 #define STRCMP(_X1,_X2)    (game_utils_string_cmp((char*)_X1,(char*)_X2))
 #define STRCMP_EQ(_X1,_X2) (STRCMP(_X1,_X2) == 0)
 
-extern int game_utils_string_init();
-extern char* game_utils_string_new();
-extern void game_utils_string_delete(char* ptr);
 extern int game_utils_string_copy(char* dst, const char* src);
 extern int game_utils_string_copy_n(char* dst, const char* src, int str_size);
 extern int game_utils_string_cmp(char* src1, char* src2);

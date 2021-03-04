@@ -8,6 +8,7 @@
 #include "game_event.h"
 
 #include "resource_manager.h"
+#include "memory_manager.h"
 #include "stage_manager.h"
 #include "map_manager.h"
 #include "sound_manager.h"
@@ -47,7 +48,7 @@ void unit_manager_unload_enemy_bullet()
 {
 	for (int i = 0; i < UNIT_ENEMY_BULLET_BASE_LIST_SIZE; i++) {
 		if (enemy_bullet_base[i].obj) {
-			game_utils_string_delete((char*)enemy_bullet_base[i].obj);
+			memory_manager_delete_char_buff((char*)enemy_bullet_base[i].obj);
 			enemy_bullet_base[i].obj = NULL;
 		}
 	}
@@ -132,7 +133,7 @@ static void load_enemy_bullet_callback(char* line, int line_size, int line_num, 
 			data->read_flg[UNIT_TAG_UNIT] = true;
 
 			// set base unit data
-			char* path_c_str = game_utils_string_new();
+			char* path_c_str = memory_manager_new_char_buff((int)strlen(data->path));
 			game_utils_string_copy(path_c_str, data->path);
 			enemy_bullet_base[enemy_bullet_base_index_end].obj = (void*)path_c_str;
 			enemy_bullet_base[enemy_bullet_base_index_end].type = UNIT_TYPE_ENEMY_BULLET;

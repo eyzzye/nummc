@@ -85,26 +85,15 @@ struct _node_data_t {
 typedef struct _node_buffer_info_t node_buffer_info_t;
 struct _node_buffer_info_t {
 	int node_size;            // sizeof(xxx_data_t)
-	int buffer_size;          // sizeof(buffer) / node_size
 	int used_buffer_size;     // used_buffer < buffer_size
-	node_data_t* head_node;   // buffer[]
 	node_data_t* start_node;  // prev=NULL data
 	node_data_t* end_node;    // next=NULL data
 };
 
 // char buffer
-#define GAME_UTILS_STRING_TYPE_NONE      0
-#define GAME_UTILS_STRING_TYPE_CHAR_BUF  1
-
 #define GAME_UTILS_STRING_LINE_BUF_SIZE  256
 #define GAME_UTILS_STRING_CHAR_BUF_SIZE  128
 #define GAME_UTILS_STRING_NAME_BUF_SIZE   32
-typedef struct _game_utils_string_t game_utils_string_t;
-struct _game_utils_string_t {
-	int type;        // NONE:0, CHAR_BUF:1
-	int buffer_size;
-	char buffer[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-};
 
 // function pointers
 typedef void void_func();
@@ -114,4 +103,4 @@ typedef void int_func(int);
 typedef int ret_int_func();
 
 extern int g_base_path_size;
-extern char g_base_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+extern char g_base_path[];  // [GAME_UTILS_STRING_CHAR_BUF_SIZE]

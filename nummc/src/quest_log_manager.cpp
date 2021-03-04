@@ -25,7 +25,6 @@ struct _quest_log_data_t {
 };
 
 #define QUEST_LOG_LIST_SIZE (20)
-static quest_log_data_t quest_log_list[QUEST_LOG_LIST_SIZE];
 static tex_info_t tex_info_quest_log_list[QUEST_LOG_LIST_SIZE];
 static node_buffer_info_t quest_log_buffer_info;
 
@@ -43,9 +42,8 @@ static void all_message_reset();
 
 int quest_log_manager_init()
 {
-	memset(quest_log_list, 0, sizeof(quest_log_list));
 	memset(tex_info_quest_log_list, 0, sizeof(tex_info_quest_log_list));
-	game_utils_node_init(&quest_log_buffer_info, (node_data_t*)quest_log_list, (int)sizeof(quest_log_data_t), QUEST_LOG_LIST_SIZE);
+	game_utils_node_init(&quest_log_buffer_info, (int)sizeof(quest_log_data_t));
 
 	tex_info_init();
 	return 0;
@@ -53,6 +51,14 @@ int quest_log_manager_init()
 
 void quest_log_manager_unload()
 {
+	if (quest_log_buffer_info.used_buffer_size > 0) {
+		node_data_t* node = quest_log_buffer_info.start_node;
+		while (node != NULL) {
+			node_data_t* del_node = node;
+			node = node->next;
+			game_utils_node_delete(del_node, &quest_log_buffer_info);
+		}
+	}
 }
 
 void quest_log_manager_reset()
@@ -120,9 +126,14 @@ void quest_log_manager_message(const char* message_fmt, ...)
 void quest_log_manager_set_new_message(char* message, int message_length, int regist_timer)
 {
 	quest_log_data_t* new_node = NULL;
-	if (quest_log_buffer_info.used_buffer_size >= quest_log_buffer_info.buffer_size) {
+	int new_id = 0;
+	if (quest_log_buffer_info.used_buffer_size >= QUEST_LOG_LIST_SIZE) {
 		// delete start node
+		new_id = ((quest_log_data_t*)quest_log_buffer_info.start_node)->id;
 		game_utils_node_delete(quest_log_buffer_info.start_node, &quest_log_buffer_info);
+	}
+	else {
+		new_id = quest_log_buffer_info.used_buffer_size;
 	}
 	new_node = (quest_log_data_t*)game_utils_node_new(&quest_log_buffer_info);
 
@@ -130,6 +141,7 @@ void quest_log_manager_set_new_message(char* message, int message_length, int re
 		strcpy_s(new_node->message, (QUEST_LOG_MESSAGE_SIZE - 1), message);
 		new_node->message_length = message_length;
 		new_node->regist_timer = regist_timer;
+		new_node->id = new_id;
 
 		// create message texture
 		int w, h;

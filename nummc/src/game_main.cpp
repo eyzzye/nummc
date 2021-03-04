@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "game_common.h"
 
+#include "memory_manager.h"
 #include "game_window.h"
 #include "game_loop.h"
 #include "game_utils.h"
@@ -49,6 +50,14 @@ static void quit_sdl2()
 int main(int argc, char** argv)
 {
 	int error = 0;
+
+	// init memory
+	if (memory_manager_init() != 0) {
+		memory_manager_unload();
+		return 1;
+	}
+
+	// init SDL2
 	if (init_sdl2() != 0) {
 		return 1;
 	}
@@ -98,5 +107,6 @@ int main(int argc, char** argv)
 	game_log_close();
 	game_save_close();
 	quit_sdl2();
+	memory_manager_unload();
 	return 0;
 }

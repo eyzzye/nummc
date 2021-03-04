@@ -1,10 +1,10 @@
-#include <fstream>
 #include "game_common.h"
 #include "resource_manager.h"
 
 #include "game_window.h"
 #include "game_utils.h"
 #include "game_log.h"
+#include "memory_manager.h"
 
 #define RESOURCE_TAG_IMG        0
 #define RESOURCE_TAG_FONT       1
@@ -12,16 +12,8 @@
 #define RESOURCE_TAG_SOUND      3
 #define RESOURCE_TAG_END        4
 
-#define RESOURCE_IMG_BUFFER_SIZE  (ANIM_DATA_LIST_SIZE)
-static ResourceImg resource_img_buffer[RESOURCE_IMG_BUFFER_SIZE];
 static node_buffer_info_t resource_img_buffer_info;
-
-#define RESOURCE_MUSIC_BUFFER_SIZE  (32)
-static ResourceMusic resource_music_buffer[RESOURCE_MUSIC_BUFFER_SIZE];
 static node_buffer_info_t resource_music_buffer_info;
-
-#define RESOURCE_CHUNK_BUFFER_SIZE  (64)
-static ResourceChunk resource_chunk_buffer[RESOURCE_CHUNK_BUFFER_SIZE];
 static node_buffer_info_t resource_chunk_buffer_info;
 
 ResourceProfile g_resource_manager_profile[RESOURCE_MANAGER_PROFILE_LIST_SIZE] = {
@@ -54,9 +46,9 @@ ResourceProfile g_resource_manager_profile[RESOURCE_MANAGER_PROFILE_LIST_SIZE] =
 
 void resource_manager_init()
 {
-	game_utils_node_init(&resource_img_buffer_info, (node_data_t*)resource_img_buffer, (int)sizeof(ResourceImg), RESOURCE_IMG_BUFFER_SIZE);
-	game_utils_node_init(&resource_music_buffer_info, (node_data_t*)resource_music_buffer, (int)sizeof(ResourceMusic), RESOURCE_MUSIC_BUFFER_SIZE);
-	game_utils_node_init(&resource_chunk_buffer_info, (node_data_t*)resource_chunk_buffer, (int)sizeof(ResourceChunk), RESOURCE_CHUNK_BUFFER_SIZE);
+	game_utils_node_init(&resource_img_buffer_info,   (int)sizeof(ResourceImg));
+	game_utils_node_init(&resource_music_buffer_info, (int)sizeof(ResourceMusic));
+	game_utils_node_init(&resource_chunk_buffer_info, (int)sizeof(ResourceChunk));
 }
 
 void resource_manager_unload()
@@ -86,6 +78,45 @@ void resource_manager_unload()
 	}
 }
 
+void resource_manager_clean_up()
+{
+	// Delete Texture
+	node_data_t* node = resource_img_buffer_info.start_node;
+	while (node != NULL) {
+		node_data_t* del_node = node;
+		node = node->next;
+		if (del_node->type == RESOURCE_MANAGER_TYPE_STATIC) continue;
+
+		SDL_Texture* tmp_tex = ((ResourceImg*)del_node)->tex;
+		if (tmp_tex != NULL) SDL_DestroyTexture(tmp_tex);
+		game_utils_node_delete(del_node, &resource_img_buffer_info);
+	}
+
+	// Delete Music
+	node = resource_music_buffer_info.start_node;
+	while (node != NULL) {
+		node_data_t* del_node = node;
+		node = node->next;
+		if (del_node->type == RESOURCE_MANAGER_TYPE_STATIC) continue;
+
+		Mix_Music* tmp_music = ((ResourceMusic*)del_node)->music;
+		if (tmp_music != NULL) Mix_FreeMusic(tmp_music);
+		game_utils_node_delete(del_node, &resource_music_buffer_info);
+	}
+
+	// Delete Chunk
+	node = resource_chunk_buffer_info.start_node;
+	while (node != NULL) {
+		node_data_t* del_node = node;
+		node = node->next;
+		if (del_node->type == RESOURCE_MANAGER_TYPE_STATIC) continue;
+
+		Mix_Chunk* tmp_chunk = ((ResourceChunk*)del_node)->chunk;
+		if (tmp_chunk != NULL) Mix_FreeChunk(tmp_chunk);
+		game_utils_node_delete(del_node, &resource_chunk_buffer_info);
+	}
+}
+
 typedef struct _load_dat_callback_data_t load_dat_callback_data_t;
 struct _load_dat_callback_data_t {
 	bool read_flg[RESOURCE_TAG_END];
@@ -110,16 +141,16 @@ static void load_dat_callback(char* line, int line_size, int line_num, void* arg
 	}
 
 	if (data->read_flg[RESOURCE_TAG_IMG]) {
-		resource_manager_getTextureFromPath(line);
+		resource_manager_getTextureFromPath(line, RESOURCE_MANAGER_TYPE_STATIC);
 	}
 	if (data->read_flg[RESOURCE_TAG_FONT]) {
-		resource_manager_getFontTextureFromPath(line);
+		resource_manager_getFontTextureFromPath(line, RESOURCE_MANAGER_TYPE_STATIC);
 	}
 	if (data->read_flg[RESOURCE_TAG_MUSIC]) {
-		resource_manager_getMusicFromPath(line);
+		resource_manager_getMusicFromPath(line, RESOURCE_MANAGER_TYPE_STATIC);
 	}
 	if (data->read_flg[RESOURCE_TAG_SOUND]) {
-		resource_manager_getChunkFromPath(line);
+		resource_manager_getChunkFromPath(line, RESOURCE_MANAGER_TYPE_STATIC);
 	}
 }
 
@@ -245,22 +276,23 @@ ResourceImg* resource_manager_load_img(std::string path, int type)
 	}
 	SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
 	ResourceImg* resImg = (ResourceImg*)game_utils_node_new(&resource_img_buffer_info);
-	resImg->path = path;
+	resImg->path = memory_manager_new_char_buff((int)path.size());
+	game_utils_string_copy(resImg->path, (char*)path.c_str());
 	resImg->tex = tex;
 	resImg->type = type;
 	return resImg;
 }
 
-ResourceImg* resource_manager_getTextureFromPath(std::string path)
+ResourceImg* resource_manager_getTextureFromPath(std::string path, int type)
 {
 	node_data_t* node = resource_img_buffer_info.start_node;
 	while (node != NULL) {
-		if (((ResourceImg*)node)->path == path) {
+		if (STRCMP_EQ(((ResourceImg*)node)->path, path.c_str())) {
 			return (ResourceImg*)node;
 		}
 		node = node->next;
 	}
-	return resource_manager_load_img(path);
+	return resource_manager_load_img(path, type);
 }
 
 //
@@ -360,22 +392,27 @@ ResourceImg* resource_manager_load_font(std::string message, int type)
 	SDL_SetTextureScaleMode(tex, SDL_ScaleModeLinear);
 	SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
 	ResourceImg* resFont = (ResourceImg*)game_utils_node_new(&resource_img_buffer_info);
-	resFont->path = "font:" + message;
+	game_utils_string_cat(font_path, (char*)"font:", (char*)message.c_str());
+	resFont->path = memory_manager_new_char_buff((int)strlen(font_path));
+	game_utils_string_copy(resFont->path, font_path);
 	resFont->tex = tex;
 	resFont->type = type;
 	return resFont;
 }
 
-ResourceImg* resource_manager_getFontTextureFromPath(std::string message)
+ResourceImg* resource_manager_getFontTextureFromPath(std::string message, int type)
 {
 	node_data_t* node = resource_img_buffer_info.start_node;
+	char font_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	game_utils_string_cat(font_path, (char*)"font:", (char*)message.c_str());
+
 	while (node != NULL) {
-		if (((ResourceImg*)node)->path == "font:" + message) {
+		if (STRCMP_EQ(((ResourceImg*)node)->path, font_path)) {
 			return (ResourceImg*)node;
 		}
 		node = node->next;
 	}
-	return resource_manager_load_font(message);
+	return resource_manager_load_font(message, type);
 }
 
 //
@@ -398,22 +435,23 @@ ResourceMusic* resource_manager_load_music(std::string path, int type)
 		return NULL;
 	}
 	ResourceMusic* resMusic = (ResourceMusic*)game_utils_node_new(&resource_music_buffer_info);
-	resMusic->path = path;
+	resMusic->path = memory_manager_new_char_buff((int)path.size());
+	game_utils_string_copy(resMusic->path, (char*)path.c_str());
 	resMusic->music = music;
 	resMusic->type = type;
 	return resMusic;
 }
 
-ResourceMusic* resource_manager_getMusicFromPath(std::string path)
+ResourceMusic* resource_manager_getMusicFromPath(std::string path, int type)
 {
 	node_data_t* node = resource_music_buffer_info.start_node;
 	while (node != NULL) {
-		if (((ResourceMusic*)node)->path == path) {
+		if (STRCMP_EQ(((ResourceMusic*)node)->path, path.c_str())) {
 			return (ResourceMusic*)node;
 		}
 		node = node->next;
 	}
-	return resource_manager_load_music(path);
+	return resource_manager_load_music(path, type);
 }
 
 //
@@ -436,20 +474,21 @@ ResourceChunk* resource_manager_load_chunk(std::string path, int type)
 		return NULL;
 	}
 	ResourceChunk* resChunk = (ResourceChunk*)game_utils_node_new(&resource_chunk_buffer_info);
-	resChunk->path = path;
+	resChunk->path = memory_manager_new_char_buff((int)path.size());
+	game_utils_string_copy(resChunk->path, (char*)path.c_str());
 	resChunk->chunk = chunk;
 	resChunk->type = type;
 	return resChunk;
 }
 
-ResourceChunk* resource_manager_getChunkFromPath(std::string path)
+ResourceChunk* resource_manager_getChunkFromPath(std::string path, int type)
 {
 	node_data_t* node = resource_chunk_buffer_info.start_node;
 	while (node != NULL) {
-		if (((ResourceChunk*)node)->path == path) {
+		if (STRCMP_EQ(((ResourceChunk*)node)->path, path.c_str())) {
 			return (ResourceChunk*)node;
 		}
 		node = node->next;
 	}
-	return resource_manager_load_chunk(path);
+	return resource_manager_load_chunk(path, type);
 }

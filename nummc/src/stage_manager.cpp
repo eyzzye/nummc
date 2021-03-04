@@ -4,6 +4,7 @@
 #include "stage_manager.h"
 
 #include "resource_manager.h"
+#include "memory_manager.h"
 #include "game_utils.h"
 #include "game_log.h"
 #include "unit_manager.h"
@@ -46,33 +47,14 @@ static section_data_t section_data_buffer[SECTION_DATA_BUFFER_SIZE];
 int section_data_buffer_index_end;
 static section_data_t* section_list_buffer[SECTION_DATA_BUFFER_SIZE];
 
-// BGM
-#define BGM_LIST_SIZE_MAX     5
-#define BGM_LIST_BUFFER_SIZE  (BGM_LIST_SIZE_MAX * SECTION_DATA_BUFFER_SIZE)
-static BGM_data_t bgm_list_buffer[BGM_LIST_BUFFER_SIZE];
+// node data
 static node_buffer_info_t bgm_list_buffer_info[SECTION_DATA_BUFFER_SIZE];
-
-// enemy
-#define ENEMY_LIST_SIZE_MAX     (UNIT_ENEMY_LIST_SIZE)  /* 32 */
-#define ENEMY_LIST_BUFFER_SIZE  (ENEMY_LIST_SIZE_MAX * SECTION_DATA_BUFFER_SIZE + ENEMY_LIST_SIZE_MAX * SECTION_ENEMY_PHASE_SIZE)
-static enemy_data_t enemy_list_buffer[ENEMY_LIST_BUFFER_SIZE];
 static node_buffer_info_t enemy_list_buffer_info[SECTION_DATA_BUFFER_SIZE * SECTION_ENEMY_PHASE_SIZE];
-
-// trap
-#define TRAP_LIST_SIZE_MAX     (UNIT_TRAP_LIST_SIZE)  /* 64 */
-#define TRAP_LIST_BUFFER_SIZE  (TRAP_LIST_SIZE_MAX * SECTION_DATA_BUFFER_SIZE)
-static trap_data_t trap_list_buffer[TRAP_LIST_BUFFER_SIZE];
 static node_buffer_info_t trap_list_buffer_info[SECTION_DATA_BUFFER_SIZE];
-
-// items
-#define ITEMS_LIST_SIZE_MAX     (UNIT_ITEMS_LIST_SIZE)  /* 64 */
-#define ITEMS_LIST_BUFFER_SIZE  (ITEMS_LIST_SIZE_MAX * SECTION_DATA_BUFFER_SIZE)
-static items_data_t items_list_buffer[ITEMS_LIST_BUFFER_SIZE];
 static node_buffer_info_t items_list_buffer_info[SECTION_DATA_BUFFER_SIZE];
 
 // stock item
 #define SECTION_STOCK_ITEM_SIZE  (UNIT_ITEMS_LIST_SIZE * STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM)
-static section_stock_item_t section_stock_item[SECTION_STOCK_ITEM_SIZE];
 static node_buffer_info_t section_stock_item_buffer_info[SECTION_DATA_BUFFER_SIZE];
 
 // stage
@@ -115,36 +97,35 @@ void stage_manager_init()
 	g_stage_data->section_list = &section_list_buffer[0];
 
 	// BGM node
-	memset(bgm_list_buffer, 0, sizeof(bgm_list_buffer));
+	//memset(bgm_list_buffer, 0, sizeof(bgm_list_buffer));
 	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
-		game_utils_node_init(&bgm_list_buffer_info[i], (node_data_t*)&bgm_list_buffer[0], (int)sizeof(BGM_data_t), BGM_LIST_BUFFER_SIZE);
+		game_utils_node_init(&bgm_list_buffer_info[i], (int)sizeof(BGM_data_t));
 	}
 
 	// enemy node
-	memset(enemy_list_buffer, 0, sizeof(enemy_list_buffer));
+	//memset(enemy_list_buffer, 0, sizeof(enemy_list_buffer));
 	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
 		for (int phase = 0; phase < SECTION_ENEMY_PHASE_SIZE; phase++) {
-			game_utils_node_init(&enemy_list_buffer_info[i* SECTION_ENEMY_PHASE_SIZE + phase],
-				(node_data_t*)&enemy_list_buffer[0], (int)sizeof(enemy_data_t), ENEMY_LIST_BUFFER_SIZE);
+			game_utils_node_init(&enemy_list_buffer_info[i* SECTION_ENEMY_PHASE_SIZE + phase], (int)sizeof(enemy_data_t));
 		}
 	}
 
 	// trap node
-	memset(trap_list_buffer, 0, sizeof(trap_list_buffer));
+	//memset(trap_list_buffer, 0, sizeof(trap_list_buffer));
 	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
-		game_utils_node_init(&trap_list_buffer_info[i], (node_data_t*)&trap_list_buffer[0], (int)sizeof(trap_data_t), TRAP_LIST_BUFFER_SIZE);
+		game_utils_node_init(&trap_list_buffer_info[i], (int)sizeof(trap_data_t));
 	}
 
 	// items node
-	memset(items_list_buffer, 0, sizeof(items_list_buffer));
+	//memset(items_list_buffer, 0, sizeof(items_list_buffer));
 	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
-		game_utils_node_init(&items_list_buffer_info[i], (node_data_t*)&items_list_buffer[0], (int)sizeof(items_data_t), ITEMS_LIST_BUFFER_SIZE);
+		game_utils_node_init(&items_list_buffer_info[i], (int)sizeof(items_data_t));
 	}
 
 	// item stocker
-	memset(section_stock_item, 0, sizeof(section_stock_item));
+	//memset(section_stock_item, 0, sizeof(section_stock_item));
 	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
-		game_utils_node_init(&section_stock_item_buffer_info[i], (node_data_t*)&section_stock_item[0], (int)sizeof(section_stock_item_t), SECTION_STOCK_ITEM_SIZE);
+		game_utils_node_init(&section_stock_item_buffer_info[i], (int)sizeof(section_stock_item_t));
 	}
 
 	// stage_map
@@ -208,6 +189,22 @@ void stage_manager_unload()
 			g_stage_data->section_list[sec_i] = NULL;
 		}
 		g_stage_data->section_list = NULL;
+
+		// g_stage_data->stage_map[]-> stock_item
+		for (int sec_i = 0; sec_i < SECTION_DATA_BUFFER_SIZE; sec_i++) {
+			node_buffer_info_t* node_buffer_info = g_stage_data->stage_map[sec_i].stock_item;
+			if (node_buffer_info == NULL) continue;
+
+			node_data_t* node = node_buffer_info->start_node;
+			while (node != NULL) {
+				node_data_t* del_node = (node_data_t*)node;
+				node = del_node->next;
+
+				game_utils_node_delete(del_node, node_buffer_info);
+			}
+
+			g_stage_data->stage_map[sec_i].stock_item = NULL;
+		}
 
 		// common item
 		g_stage_data->common_items_list.clear();
@@ -685,7 +682,9 @@ static void load_items(char* line) {
 
 	if (STRCMP_EQ(key,"type")) {
 		items_data_t* new_item = (items_data_t*)game_utils_node_new(&items_list_buffer_info[current_section_id]);
-		new_item->path = value;
+		//new_item->path = value;
+		new_item->path = memory_manager_new_char_buff((int)strlen(value));
+		game_utils_string_copy(new_item->path, value);
 		new_item->x = -1; // disable
 		new_item->y = -1; // disable
 		current_section_data->items_list = &items_list_buffer_info[current_section_id];
@@ -694,7 +693,7 @@ static void load_items(char* line) {
 		return;
 	}
 
-	std::string item_type = ((items_data_t*)tmp_new_node)->path;
+	char* item_type = ((items_data_t*)tmp_new_node)->path;
 	if (STRCMP_EQ(key,"x")) {
 		val_list_size = game_utils_split_conmma_int(value, val_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX);
 
@@ -739,7 +738,9 @@ static void load_trap(char* line) {
 
 	if (STRCMP_EQ(key,"type")) {
 		trap_data_t* new_trap = (trap_data_t*)game_utils_node_new(&trap_list_buffer_info[current_section_id]);
-		new_trap->path = value;
+		//new_trap->path = value;
+		new_trap->path = memory_manager_new_char_buff((int)strlen(value));
+		game_utils_string_copy(new_trap->path, value);
 		new_trap->x = -1; // disable
 		new_trap->y = -1; // disable
 		current_section_data->trap_list = &trap_list_buffer_info[current_section_id];
@@ -748,7 +749,7 @@ static void load_trap(char* line) {
 		return;
 	}
 
-	std::string trap_type = ((trap_data_t*)tmp_new_node)->path;
+	char* trap_type = ((trap_data_t*)tmp_new_node)->path;
 	if (STRCMP_EQ(key,"x")) {
 		val_list_size = game_utils_split_conmma_int(value, val_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX);
 
@@ -798,14 +799,17 @@ static void load_enemy(char* line) {
 		enemy_data_t* new_enemy = (enemy_data_t*)game_utils_node_new(&enemy_list_buffer_info[enemy_list_buffer_index]);
 		clear_enemy(new_enemy);
 
-		new_enemy->path = value;
+		//new_enemy->path = value;
+		new_enemy->path = memory_manager_new_char_buff((int)strlen(value));
+		game_utils_string_copy(new_enemy->path, value);
 		current_section_data->enemy_list[tmp_current_enemy_phase] = &enemy_list_buffer_info[enemy_list_buffer_index];
 
 		tmp_new_node = (node_data_t*)new_enemy;
 		return;
 	}
 
-	std::string enemy_type = ((enemy_data_t*)tmp_new_node)->path;
+	//std::string enemy_type = ((enemy_data_t*)tmp_new_node)->path;
+	char* enemy_type = ((enemy_data_t*)tmp_new_node)->path;
 	if (STRCMP_EQ(key,"x")) {
 		val_list_size = game_utils_split_conmma_int(value, val_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX);
 

@@ -40,9 +40,6 @@ void game_loop_main()
 	game_timer_init();
 	game_timer_start();
 
-	// common char buffer
-	game_utils_string_init();
-
 	// common dialog
 	dialog_message_init();
 

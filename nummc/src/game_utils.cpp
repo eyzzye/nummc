@@ -7,6 +7,7 @@
 #include "game_utils.h"
 #include "game_window.h"
 #include "game_log.h"
+#include "memory_manager.h"
 #include "resource_manager.h"
 
 //
@@ -408,42 +409,21 @@ int game_utils_files_read_line(char* path, callback_read_line_func func, void* c
 //
 // node data utils
 //
-void game_utils_node_init(node_buffer_info_t* node_buffer_info, node_data_t* node_data, int node_size, int buffer_size)
+void game_utils_node_init(node_buffer_info_t* node_buffer_info, int node_size)
 {
 	node_buffer_info->node_size        = node_size;
-	node_buffer_info->buffer_size      = buffer_size;
 	node_buffer_info->used_buffer_size = 0;
-	node_buffer_info->head_node        = node_data;
 	node_buffer_info->start_node       = NULL;
 	node_buffer_info->end_node         = NULL;
 }
 
 node_data_t* game_utils_node_new(node_buffer_info_t* node_buffer_info)
 {
-	int search_start_index = 0;
-	if (node_buffer_info->end_node != NULL) {
-		search_start_index = (int)((size_t)node_buffer_info->end_node - (size_t)node_buffer_info->head_node) / node_buffer_info->node_size;
-		search_start_index += 1;
+	node_data_t* new_node = memory_manager_new_node_buff(node_buffer_info->node_size);
+	if (new_node) {
+		node_buffer_info->used_buffer_size += 1;
 	}
-
-	node_data_t* new_node = NULL;
-	for (int i = 0; i < node_buffer_info->buffer_size; i++) {
-		if (search_start_index >= node_buffer_info->buffer_size) {
-			search_start_index -= node_buffer_info->buffer_size;
-		}
-
-		node_data_t*  tmp_node = (node_data_t*)((char*)node_buffer_info->head_node + (size_t)node_buffer_info->node_size * search_start_index);
-		if (tmp_node->type == GAME_UTILS_NODE_TYPE_NONE) {
-			new_node = tmp_node;
-			new_node->type = GAME_UTILS_NODE_TYPE_USED;
-			new_node->id = search_start_index;
-			node_buffer_info->used_buffer_size += 1;
-			break;
-		}
-		search_start_index++;
-	}
-
-	if (new_node == NULL) {
+	else {
 		LOG_ERROR("Error: game_utils_node_new() buffer overflow\n");
 		return NULL;
 	}
@@ -483,66 +463,12 @@ void game_utils_node_delete(node_data_t* node_data, node_buffer_info_t* node_buf
 	}
 
 	node_buffer_info->used_buffer_size -= 1;
-	node_data->type = GAME_UTILS_NODE_TYPE_NONE;
+	memory_manager_delete_node_buff(node_data);
 }
 
 //
 // char buffer utils
 //
-static char tmp_char_buf[GAME_UTILS_STRING_NAME_BUF_SIZE];
-
-#define GAME_UTILS_STRING_SIZE  (256 * 8)  /* *.unit, SPAWN.anim, IDLE.anim, MOVE.anim, DIE.anim, ATTACK1.anim, ATTACK2.anim, *.unit->next_level */
-static game_utils_string_t game_utils_string[GAME_UTILS_STRING_SIZE];
-static int game_utils_string_index_end;
-
-int game_utils_string_init()
-{
-	memset(game_utils_string, 0, sizeof(game_utils_string));
-	game_utils_string_index_end = 0;
-	return 0;
-}
-
-char* game_utils_string_new()
-{
-	int ret = -1;
-
-	int index = game_utils_string_index_end;
-	for (int i = 0; i < GAME_UTILS_STRING_SIZE; i++) {
-		if (index >= GAME_UTILS_STRING_SIZE) index -= GAME_UTILS_STRING_SIZE;
-		if (game_utils_string[index].type == GAME_UTILS_STRING_TYPE_NONE) {
-			ret = index;
-			break;
-		}
-		index++;
-	}
-
-	if (ret == -1) {
-		LOG_ERROR("Error: game_utils_string_new() overflow.");
-		return NULL;
-	}
-
-	game_utils_string[index].type = GAME_UTILS_STRING_TYPE_CHAR_BUF;
-	memset(game_utils_string[index].buffer, 0, sizeof(char) * GAME_UTILS_STRING_CHAR_BUF_SIZE);
-	game_utils_string_index_end = index + 1;
-
-	if (game_utils_string_index_end >= GAME_UTILS_STRING_SIZE) {
-		game_utils_string_index_end = 0;
-	}
-	return game_utils_string[index].buffer;
-}
-
-void game_utils_string_delete(char* ptr)
-{
-	size_t head_index = (size_t)game_utils_string[0].buffer;
-	size_t delete_index = (size_t)ptr;
-	int index = (int)((delete_index - head_index) / sizeof(game_utils_string_t));
-
-	if (game_utils_string[index].buffer != ptr) {
-		LOG_ERROR("ERROR: game_utils_string_delete() address is invalid\n");
-		return;
-	}
-	game_utils_string[index].type = GAME_UTILS_STRING_TYPE_NONE;
-}
 
 // return: success(0), error(1)
 int game_utils_string_copy(char* dst, const char* src)
@@ -1103,6 +1029,8 @@ int game_utils_expand_value(char* str, char* expand_str)
 		int end_num = 0;
 		for (; hyphen_cursor < hyphen_list_size; hyphen_cursor++) {
 			if ((hyphen_list[hyphen_cursor] > head_list[i]) && (hyphen_list[hyphen_cursor] < end_list[i])) {
+				char tmp_char_buf[GAME_UTILS_STRING_NAME_BUF_SIZE];
+
 				// get first number
 				int length = (hyphen_list[hyphen_cursor] - 1) - (head_list[i] + 1) + 1;
 				game_utils_string_copy_n(tmp_char_buf, &str[head_list[i] + 1], length);
@@ -1227,6 +1155,8 @@ int game_utils_split_conmma_int(char* str, int* int_list, int int_list_size)
 	int list_size = 0;
 	size_t pre_end = 0;
 	for (size_t i = 0; i < str_size; i++) {
+		char tmp_char_buf[GAME_UTILS_STRING_NAME_BUF_SIZE];
+
 		if (str[i] == ',') {
 			game_utils_string_copy_n(tmp_char_buf, &str[pre_end], (int)(i - pre_end));
 			pre_end = i + 1;

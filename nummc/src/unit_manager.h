@@ -101,7 +101,7 @@ struct _unit_data_t {
 	int stat;
 	int reserve2;
 
-	Uint32 data_field[20];
+	Uint64 data_field[20];
 };
 
 struct _unit_player_data_t {

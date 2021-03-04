@@ -685,6 +685,8 @@ static void unload_event() {
 	collision_manager_unload();
 	stage_manager_unload();
 
+	resource_manager_clean_up();
+
 	scene_stat = SCENE_STAT_NONE;
 }
 static int get_stat_event() {
@@ -733,8 +735,9 @@ static void main_event_next_load()
 			reload_player = true;
 
 			set_stat_event(SCENE_STAT_IDLE);
-			scene_manager_load(SCENE_ID_PLAY_STAGE, true);
 			unload_event();
+
+			scene_manager_load(SCENE_ID_PLAY_STAGE, true);
 		}
 		// _endNN -> end scroll
 		else {
@@ -759,6 +762,8 @@ static void main_event_next_load()
 			}
 
 			set_stat_event(SCENE_STAT_IDLE);
+			unload_event();
+
 			std::string story_path = "scenes/story/infinity/ending.dat";
 			for (int prof_i = 0; prof_i < RESOURCE_MANAGER_PROFILE_LIST_SIZE; prof_i++) {
 				if (strcmp(g_resource_manager_profile[prof_i].unit_path, (char*)g_player.obj) == 0) {
@@ -768,7 +773,6 @@ static void main_event_next_load()
 			}
 			scene_play_story_set_story(story_path);
 			scene_manager_load(SCENE_ID_PLAY_STORY);
-			unload_event();
 		}
 	}
 }
@@ -859,10 +863,10 @@ static void section_init()
 		node_data_t* node = (p_section->trap_list == NULL) ? NULL : p_section->trap_list->start_node;
 		while (node != NULL) {
 			trap_data_t* spawn_trap_data = (trap_data_t*)node;
-			unit_manager_load_trap((char*)spawn_trap_data->path.c_str());
+			unit_manager_load_trap(spawn_trap_data->path);
 			if ((spawn_trap_data->x >= 0) && (spawn_trap_data->y >= 0)) {
 				unit_manager_create_trap(spawn_trap_data->x, spawn_trap_data->y,
-					unit_manager_search_trap((char*)spawn_trap_data->path.c_str()));
+					unit_manager_search_trap(spawn_trap_data->path));
 			}
 			node = node->next;
 		}
@@ -875,10 +879,10 @@ static void section_init()
 		node_data_t* node = (p_section->trap_list == NULL) ? NULL : p_section->trap_list->start_node;
 		while (node != NULL) {
 			trap_data_t* spawn_trap_data = (trap_data_t*)node;
-			unit_manager_load_trap((char*)spawn_trap_data->path.c_str());
+			unit_manager_load_trap(spawn_trap_data->path);
 			if ((spawn_trap_data->x >= 0) && (spawn_trap_data->y >= 0)) {
 				unit_manager_create_trap(spawn_trap_data->x, spawn_trap_data->y,
-					unit_manager_search_trap((char*)spawn_trap_data->path.c_str()));
+					unit_manager_search_trap(spawn_trap_data->path));
 			}
 			node = node->next;
 		}
@@ -889,9 +893,9 @@ static void section_init()
 		node_data_t* node = (p_section->items_list == NULL) ? NULL : p_section->items_list->start_node;
 		while (node != NULL) {
 			items_data_t* spawn_items_data = (items_data_t*)node;
-			unit_manager_load_items((char*)spawn_items_data->path.c_str());
+			unit_manager_load_items(spawn_items_data->path);
 			if ((spawn_items_data->x >= 0) && (spawn_items_data->y >= 0)) {
-				unit_manager_create_items(spawn_items_data->x, spawn_items_data->y, unit_manager_search_items((char*)spawn_items_data->path.c_str()));
+				unit_manager_create_items(spawn_items_data->x, spawn_items_data->y, unit_manager_search_items(spawn_items_data->path));
 			}
 			node = node->next;
 		}
@@ -912,10 +916,10 @@ static void section_init()
 		node = (p_section->trap_list == NULL) ? NULL : p_section->trap_list->start_node;
 		while (node != NULL) {
 			trap_data_t* spawn_trap_data = (trap_data_t*)node;
-			unit_manager_load_trap((char*)spawn_trap_data->path.c_str());
+			unit_manager_load_trap(spawn_trap_data->path);
 			if ((spawn_trap_data->x >= 0) && (spawn_trap_data->y >= 0)) {
 				unit_manager_create_trap(spawn_trap_data->x, spawn_trap_data->y,
-					unit_manager_search_trap((char*)spawn_trap_data->path.c_str()));
+					unit_manager_search_trap(spawn_trap_data->path));
 			}
 			node = node->next;
 		}
@@ -924,9 +928,9 @@ static void section_init()
 		node = (p_section->enemy_list[0] == NULL) ? NULL : p_section->enemy_list[0]->start_node;
 		while (node != NULL) {
 			enemy_data_t* spawn_enemy_data = (enemy_data_t*)node;
-			unit_manager_load_enemy((char*)spawn_enemy_data->path.c_str());
+			unit_manager_load_enemy(spawn_enemy_data->path);
 			int enemy_id = unit_manager_create_enemy(spawn_enemy_data->x, spawn_enemy_data->y, spawn_enemy_data->face,
-				unit_manager_search_enemy((char*)spawn_enemy_data->path.c_str()));
+				unit_manager_search_enemy(spawn_enemy_data->path));
 			if (spawn_enemy_data->ai_step != 0) {
 				unit_manager_set_ai_step(enemy_id, spawn_enemy_data->ai_step);
 			}
@@ -955,9 +959,9 @@ static void load_next_enemy_phase()
 	node_data_t* node = (p_section->enemy_list[phase] == NULL) ? NULL : p_section->enemy_list[phase]->start_node;
 	while (node != NULL) {
 		enemy_data_t* spawn_enemy_data = (enemy_data_t*)node;
-		unit_manager_load_enemy((char*)spawn_enemy_data->path.c_str());
+		unit_manager_load_enemy(spawn_enemy_data->path);
 		int enemy_id = unit_manager_create_enemy(spawn_enemy_data->x, spawn_enemy_data->y, spawn_enemy_data->face,
-			unit_manager_search_enemy((char*)spawn_enemy_data->path.c_str()));
+			unit_manager_search_enemy(spawn_enemy_data->path));
 		if (spawn_enemy_data->ai_step != 0) {
 			unit_manager_set_ai_step(enemy_id, spawn_enemy_data->ai_step);
 		}
