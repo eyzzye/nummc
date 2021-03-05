@@ -4,11 +4,13 @@
 #include "scene_play_story.h"
 
 #include "resource_manager.h"
+#include "memory_manager.h"
 #include "sound_manager.h"
 #include "story_manager.h"
 #include "game_key_event.h"
 #include "game_window.h"
 #include "game_timer.h"
+#include "game_utils.h"
 #include "game_log.h"
 #include "game_save.h"
 #include "scene_loading.h"
@@ -16,6 +18,7 @@
 
 #define SCENE_PLAY_STORY_AUTO_TEXT_END  32
 tex_info_t tex_info_auto_text[SCENE_PLAY_STORY_AUTO_TEXT_END];
+static int tex_info_auto_text_size;
 
 tex_info_t tex_info_background;
 
@@ -28,7 +31,7 @@ static bool enter_text_disp;
 static int auto_text_timer;
 static int auto_text_wait_time;
 static int auto_text_index;
-static std::string story_path;
+static char story_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 
 static void tex_info_reset();
 static void unload_event();
@@ -55,7 +58,7 @@ static void main_event() {
 		auto_text_index += 1;
 		draw_dirt = true;
 
-		if (auto_text_index >= g_story_data->auto_text_list.size()) {
+		if (auto_text_index >= tex_info_auto_text_size) {
 			auto_text_finish = true;
 		}
 	}
@@ -70,7 +73,7 @@ static void main_event() {
 
 	if (game_key_event_get(SDL_SCANCODE_RETURN, GUI_SELECT_WAIT_TIMER)) {
 		if (is_opening) {
-			std::string start_stage = "1";
+			const char* start_stage = "1";
 
 			// set loading data (set bin data)
 			scene_loading_set_stage(start_stage);
@@ -78,13 +81,15 @@ static void main_event() {
 
 			// loading play stage
 			set_stat_event(SCENE_STAT_NONE);
-			scene_manager_load(SCENE_ID_PLAY_STAGE, true);
 			unload_event();
+
+			scene_manager_load(SCENE_ID_PLAY_STAGE, true);
 		}
 		else {
 			set_stat_event(SCENE_STAT_NONE);
-			scene_manager_load(SCENE_ID_TOP_MENU);
 			unload_event();
+
+			scene_manager_load(SCENE_ID_TOP_MENU);
 		}
 	}
 }
@@ -124,7 +129,7 @@ static void load_event() {
 	// load story data
 	auto_text_finish = false;
 	story_manager_init();
-	story_manager_load((char*)story_path.c_str());
+	story_manager_load(story_path);
 
 	// reset size
 	tex_info_reset();
@@ -148,6 +153,10 @@ static void load_event() {
 }
 static void unload_event() {
 	story_manager_unload();
+	resource_manager_clean_up();
+
+	story_path[0] = '\0';
+	tex_info_auto_text_size = 0;
 }
 static int get_stat_event() {
 	return scene_stat;
@@ -179,7 +188,7 @@ static void tex_info_reset()
 	}
 
 	// enter
-	std::string enter_text_str = "{-,204:204:204:204,-,-}Press enter";
+	const char* enter_text_str = "{-,204:204:204:204,-,-}Press enter";
 	tex_info_enter.res_img = resource_manager_getFontTextureFromPath(enter_text_str);
 	ret = GUI_QueryTexture(tex_info_enter.res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
@@ -189,25 +198,38 @@ static void tex_info_reset()
 	}
 
 	// auto_text
-	for (int i = 0; i < SCENE_PLAY_STORY_AUTO_TEXT_END; i++) {
-		if (i >= g_story_data->auto_text_list.size()) {
-			break;
-		}
+	int auto_text_index = 0;
+	node_data_t* node = g_story_data->auto_text_list->start_node;
+	while(node != NULL) {
+		node_data_t* current_node = node;
+		node = node->next;
+		if (auto_text_index > SCENE_PLAY_STORY_AUTO_TEXT_END) break;  // overflow tex_info
 
-		std::string auto_text_str = "{-,204:204:204:204,-,-}" + g_story_data->auto_text_list[i];
-		tex_info_auto_text[i].res_img = resource_manager_getFontTextureFromPath(auto_text_str);
-		ret = GUI_QueryTexture(tex_info_auto_text[i].res_img, NULL, NULL, &w, &h);
+		char* auto_text = ((auto_text_data_t*)current_node)->auto_text;
+		char auto_text_str[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		int auto_text_str_size = game_utils_string_cat(auto_text_str, (char*)"{-,204:204:204:204,-,-}", auto_text);
+		if (auto_text_str_size <= 0) { LOG_ERROR("Error: scene_play_story tex_info_reset() get auto_text_str\n"); continue; }
+
+		tex_info_auto_text[auto_text_index].res_img = resource_manager_getFontTextureFromPath(auto_text_str);
+		ret = GUI_QueryTexture(tex_info_auto_text[auto_text_index].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			w_pos = SCREEN_WIDTH / 2 - w / 2;
 			h_pos = SCREEN_HEIGHT - 40 - h;
-			GUI_tex_info_init_rect(&tex_info_auto_text[i], w, h, w_pos, h_pos);
+			GUI_tex_info_init_rect(&tex_info_auto_text[auto_text_index], w, h, w_pos, h_pos);
 		}
+
+		auto_text_index++;
 	}
+
+	tex_info_auto_text_size = auto_text_index;
 }
 
-void scene_play_story_set_story(std::string& path, bool is_opening_)
+void scene_play_story_set_story(const char* path, bool is_opening_)
 {
-	story_path = path;
+	//story_path = path;
+	int ret = game_utils_string_copy(story_path, path);
+	if (ret != 0) { LOG_ERROR("Error: scene_play_story_set_story() copy path\n"); return; }
+
 	is_opening = is_opening_;
 }
 
@@ -229,6 +251,8 @@ void scene_play_story_init()
 
 	// load resource files
 	resource_manager_load_dat((char*)"scenes/scene_play_story.dat");
+
+	story_path[0] = '\0';
 }
 
 SceneManagerFunc* scene_play_story_get_func()

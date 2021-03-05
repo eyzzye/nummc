@@ -89,6 +89,8 @@ void resource_manager_clean_up()
 
 		SDL_Texture* tmp_tex = ((ResourceImg*)del_node)->tex;
 		if (tmp_tex != NULL) SDL_DestroyTexture(tmp_tex);
+		char* tmp_path = ((ResourceImg*)del_node)->path;
+		if (tmp_path != NULL) memory_manager_delete_char_buff(tmp_path);
 		game_utils_node_delete(del_node, &resource_img_buffer_info);
 	}
 
@@ -101,6 +103,8 @@ void resource_manager_clean_up()
 
 		Mix_Music* tmp_music = ((ResourceMusic*)del_node)->music;
 		if (tmp_music != NULL) Mix_FreeMusic(tmp_music);
+		char* tmp_path = ((ResourceMusic*)del_node)->path;
+		if (tmp_path != NULL) memory_manager_delete_char_buff(tmp_path);
 		game_utils_node_delete(del_node, &resource_music_buffer_info);
 	}
 
@@ -113,6 +117,8 @@ void resource_manager_clean_up()
 
 		Mix_Chunk* tmp_chunk = ((ResourceChunk*)del_node)->chunk;
 		if (tmp_chunk != NULL) Mix_FreeChunk(tmp_chunk);
+		char* tmp_path = ((ResourceChunk*)del_node)->path;
+		if (tmp_path != NULL) memory_manager_delete_char_buff(tmp_path);
 		game_utils_node_delete(del_node, &resource_chunk_buffer_info);
 	}
 }
@@ -159,18 +165,12 @@ int resource_manager_load_dat(char* path)
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
 	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
-	if (tmp_path_size == 0) {
-		LOG_ERROR("resource_manager_load_dat failed get %s\n", path);
-		return 1;
-	}
+	if (tmp_path_size == 0) { LOG_ERROR("resource_manager_load_dat failed get %s\n", path); return 1; }
 
 	// read file
 	memset(load_dat_callback_data.read_flg, 0, sizeof(bool) * RESOURCE_TAG_END);
 	int ret = game_utils_files_read_line(full_path, load_dat_callback, (void*)&load_dat_callback_data);
-	if (ret != 0) {
-		LOG_ERROR("resource_manager_load_dat %s error\n", path);
-		return 1;
-	}
+	if (ret != 0) { LOG_ERROR("resource_manager_load_dat %s error\n", path); return 1; }
 
 	return 0;
 }
@@ -178,8 +178,9 @@ int resource_manager_load_dat(char* path)
 //
 // Image
 //
-ResourceImg* resource_manager_load_img(std::string path, int type)
+ResourceImg* resource_manager_load_img(const char* path, int type)
 {
+	int path_size = (int)strlen(path);
 	int scale_mode = -1;
 	bool effect_color = false;
 	SDL_Color src_col, dst_col;
@@ -191,7 +192,7 @@ ResourceImg* resource_manager_load_img(std::string path, int type)
 	// read effect header {effect}
 	if (path[0] == '{') {
 		header_found = true;
-		while ((path[read_index] != '}') && (read_index < path.size())) {
+		while ((path[read_index] != '}') && (read_index < path_size)) {
 			read_index++;
 		}
 
@@ -239,23 +240,23 @@ ResourceImg* resource_manager_load_img(std::string path, int type)
 		}
 	}
 
-	std::string* raw_path = NULL;
-	std::string new_path;
+	char* raw_path = NULL;
+	char new_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 	if (header_found) {
-		new_path = path.substr((size_t)read_index + 1, path.size() - read_index);
-		raw_path = &new_path;
+		//new_path = path.substr((size_t)read_index + 1, path.size() - read_index);
+		int ret = game_utils_string_copy_n(new_path, &path[read_index + 1], path_size - read_index);
+		if (ret != 0) { LOG_ERROR("resource_manager_load_img failed get new_path\n"); return NULL; }
+
+		raw_path = new_path;
 	}
 	else {
-		raw_path = &path;
+		raw_path = (char*)path;
 	}
 
 	//std::string full_path = g_base_path + "data/" + *raw_path;
 	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)raw_path->c_str());
-	if (tmp_path_size == 0) {
-		LOG_ERROR("resource_manager_load_img failed get %s\n", path.c_str());
-		return NULL;
-	}
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)raw_path);
+	if (tmp_path_size == 0) { LOG_ERROR("resource_manager_load_img failed get %s\n", path); return NULL; }
 
 	g_render_mtx.lock();
 	SDL_Texture* tex;
@@ -276,18 +277,18 @@ ResourceImg* resource_manager_load_img(std::string path, int type)
 	}
 	SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
 	ResourceImg* resImg = (ResourceImg*)game_utils_node_new(&resource_img_buffer_info);
-	resImg->path = memory_manager_new_char_buff((int)path.size());
-	game_utils_string_copy(resImg->path, (char*)path.c_str());
+	resImg->path = memory_manager_new_char_buff((int)strlen(path));
+	game_utils_string_copy(resImg->path, path);
 	resImg->tex = tex;
 	resImg->type = type;
 	return resImg;
 }
 
-ResourceImg* resource_manager_getTextureFromPath(std::string path, int type)
+ResourceImg* resource_manager_getTextureFromPath(const char* path, int type)
 {
 	node_data_t* node = resource_img_buffer_info.start_node;
 	while (node != NULL) {
-		if (STRCMP_EQ(((ResourceImg*)node)->path, path.c_str())) {
+		if (STRCMP_EQ(((ResourceImg*)node)->path, path)) {
 			return (ResourceImg*)node;
 		}
 		node = node->next;
@@ -298,11 +299,13 @@ ResourceImg* resource_manager_getTextureFromPath(std::string path, int type)
 //
 // Font
 //
-ResourceImg* resource_manager_load_font(std::string message, int type)
+ResourceImg* resource_manager_load_font(const char* message, int type)
 {
+	int ret = 0;
+	int message_size = (int)strlen(message);
 	int font_size = 0;
 	int font_color[4] = { 0 };
-	std::string font_file_name = "";
+	char font_file_name[GAME_UTILS_STRING_CHAR_BUF_SIZE]; font_file_name[0] = '\0';
 
 	// read effect header {size,color,font_name,effect}
 	bool header_found = false;
@@ -312,7 +315,7 @@ ResourceImg* resource_manager_load_font(std::string message, int type)
 
 	if (message[0] == '{') {
 		header_found = true;
-		while ((message[read_index] != '}') && (read_index < message.size())) {
+		while ((message[read_index] != '}') && (read_index < message_size)) {
 			if (read_flg > 3) continue;
 			if (message[read_index] == ',') {
 				read_flg++;
@@ -340,7 +343,19 @@ ResourceImg* resource_manager_load_font(std::string message, int type)
 			// read font name
 			else if (read_flg == 2) {
 				if (message[read_index] != '-') {
-					font_file_name = font_file_name + message[read_index];
+					//font_file_name = font_file_name + message[read_index];
+					ret = game_utils_string_copy(font_file_name, &message[read_index]);
+					if (ret != 0) LOG_ERROR("Error: resource_manager_load_font() copy font_file_name\n");
+
+					// set terminator string
+					int font_file_name_index = 0;
+					while (font_file_name[font_file_name_index] != '\0') {
+						if ((font_file_name[font_file_name_index] == ',') || (font_file_name[font_file_name_index] == '}')) {
+							font_file_name[font_file_name_index] = '\0';
+							break;
+						}
+						font_file_name_index++;
+					}
 				}
 			}
 			// read effect
@@ -352,7 +367,7 @@ ResourceImg* resource_manager_load_font(std::string message, int type)
 		}
 	}
 
-	if ((header_found == true) && (read_index == message.size())) {
+	if ((header_found == true) && (read_index == message_size)) {
 		LOG_ERROR("resource_manager_load_font size error\n");
 		return NULL;
 	}
@@ -360,30 +375,31 @@ ResourceImg* resource_manager_load_font(std::string message, int type)
 	// set default font
 	if (font_size == 0) font_size = 32;
 	if (read_color_i == 0) font_color[3] = 255;
-	if (font_file_name == "") font_file_name = "DejaVuSans.ttf";
+	if (font_file_name[0] == '\0') {
+		ret = game_utils_string_copy(font_file_name, "DejaVuSans.ttf");
+		if (ret != 0) LOG_ERROR("Error: resource_manager_load_font() get font_file_name\n");
+	}
 
 	// set message
-	std::string* disp_msg = NULL;
-	std::string new_message;
+	char* disp_msg = NULL;
+	char new_message[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 	if (header_found) {
-		new_message = message.substr((size_t)read_index + 1, message.size() - read_index);
-		disp_msg = &new_message;
+		//new_message = message.substr((size_t)read_index + 1, message.size() - read_index);
+		int new_message_size = game_utils_string_copy_n(new_message, &message[read_index + 1], message_size - read_index);
+		disp_msg = new_message;
 	}
 	else {
-		disp_msg = &message;
+		disp_msg = (char*)message;
 	}
 
 	//const std::string fontFile = g_base_path + "data/font/" + font_file_name;
 	char font_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(font_path, g_base_path, (char*)"data/font/", (char*)font_file_name.c_str());
-	if (tmp_path_size == 0) {
-		LOG_ERROR("SDL_CreateTextureFromSurface failed get %s\n", font_file_name.c_str());
-		return NULL;
-	}
+	int tmp_path_size = game_utils_string_cat(font_path, g_base_path, (char*)"data/font/", (char*)font_file_name);
+	if (tmp_path_size == 0) { LOG_ERROR("SDL_CreateTextureFromSurface failed get %s\n", font_file_name); return NULL; }
 
 	SDL_Color color = { (Uint8)font_color[0], (Uint8)font_color[1], (Uint8)font_color[2], (Uint8)font_color[3] };
 	g_render_mtx.lock();
-	SDL_Texture* tex = game_utils_render_font_tex(*disp_msg, font_path, color, font_size);
+	SDL_Texture* tex = game_utils_render_font_tex(disp_msg, font_path, color, font_size);
 	g_render_mtx.unlock();
 	if (tex == NULL) {
 		LOG_ERROR("SDL_CreateTextureFromSurface Error: %s\n", SDL_GetError());
@@ -392,7 +408,7 @@ ResourceImg* resource_manager_load_font(std::string message, int type)
 	SDL_SetTextureScaleMode(tex, SDL_ScaleModeLinear);
 	SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
 	ResourceImg* resFont = (ResourceImg*)game_utils_node_new(&resource_img_buffer_info);
-	game_utils_string_cat(font_path, (char*)"font:", (char*)message.c_str());
+	game_utils_string_cat(font_path, (char*)"font:", (char*)message);
 	resFont->path = memory_manager_new_char_buff((int)strlen(font_path));
 	game_utils_string_copy(resFont->path, font_path);
 	resFont->tex = tex;
@@ -400,11 +416,11 @@ ResourceImg* resource_manager_load_font(std::string message, int type)
 	return resFont;
 }
 
-ResourceImg* resource_manager_getFontTextureFromPath(std::string message, int type)
+ResourceImg* resource_manager_getFontTextureFromPath(const char* message, int type)
 {
 	node_data_t* node = resource_img_buffer_info.start_node;
 	char font_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-	game_utils_string_cat(font_path, (char*)"font:", (char*)message.c_str());
+	game_utils_string_cat(font_path, (char*)"font:", (char*)message);
 
 	while (node != NULL) {
 		if (STRCMP_EQ(((ResourceImg*)node)->path, font_path)) {
@@ -418,14 +434,11 @@ ResourceImg* resource_manager_getFontTextureFromPath(std::string message, int ty
 //
 // Music
 //
-ResourceMusic* resource_manager_load_music(std::string path, int type)
+ResourceMusic* resource_manager_load_music(const char* path, int type)
 {
 	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
-	if (tmp_path_size == 0) {
-		LOG_ERROR("resource_manager_load_music failed get %s\n", path.c_str());
-		return NULL;
-	}
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path);
+	if (tmp_path_size == 0) { LOG_ERROR("resource_manager_load_music failed get %s\n", path); return NULL; }
 
 	g_render_mtx.lock();
 	Mix_Music* music = Mix_LoadMUS(full_path);
@@ -435,18 +448,18 @@ ResourceMusic* resource_manager_load_music(std::string path, int type)
 		return NULL;
 	}
 	ResourceMusic* resMusic = (ResourceMusic*)game_utils_node_new(&resource_music_buffer_info);
-	resMusic->path = memory_manager_new_char_buff((int)path.size());
-	game_utils_string_copy(resMusic->path, (char*)path.c_str());
+	resMusic->path = memory_manager_new_char_buff((int)strlen(path));
+	game_utils_string_copy(resMusic->path, (char*)path);
 	resMusic->music = music;
 	resMusic->type = type;
 	return resMusic;
 }
 
-ResourceMusic* resource_manager_getMusicFromPath(std::string path, int type)
+ResourceMusic* resource_manager_getMusicFromPath(const char* path, int type)
 {
 	node_data_t* node = resource_music_buffer_info.start_node;
 	while (node != NULL) {
-		if (STRCMP_EQ(((ResourceMusic*)node)->path, path.c_str())) {
+		if (STRCMP_EQ(((ResourceMusic*)node)->path, path)) {
 			return (ResourceMusic*)node;
 		}
 		node = node->next;
@@ -457,14 +470,11 @@ ResourceMusic* resource_manager_getMusicFromPath(std::string path, int type)
 //
 // Chunk
 //
-ResourceChunk* resource_manager_load_chunk(std::string path, int type)
+ResourceChunk* resource_manager_load_chunk(const char* path, int type)
 {
 	char full_path[GAME_FULL_PATH_MAX];
-	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path.c_str());
-	if (tmp_path_size == 0) {
-		LOG_ERROR("resource_manager_load_chunk failed get %s\n", path.c_str());
-		return NULL;
-	}
+	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)path);
+	if (tmp_path_size == 0) { LOG_ERROR("resource_manager_load_chunk failed get %s\n", path); return NULL; }
 
 	g_render_mtx.lock();
 	Mix_Chunk* chunk = Mix_LoadWAV(full_path);
@@ -474,18 +484,18 @@ ResourceChunk* resource_manager_load_chunk(std::string path, int type)
 		return NULL;
 	}
 	ResourceChunk* resChunk = (ResourceChunk*)game_utils_node_new(&resource_chunk_buffer_info);
-	resChunk->path = memory_manager_new_char_buff((int)path.size());
-	game_utils_string_copy(resChunk->path, (char*)path.c_str());
+	resChunk->path = memory_manager_new_char_buff((int)strlen(path));
+	game_utils_string_copy(resChunk->path, (char*)path);
 	resChunk->chunk = chunk;
 	resChunk->type = type;
 	return resChunk;
 }
 
-ResourceChunk* resource_manager_getChunkFromPath(std::string path, int type)
+ResourceChunk* resource_manager_getChunkFromPath(const char* path, int type)
 {
 	node_data_t* node = resource_chunk_buffer_info.start_node;
 	while (node != NULL) {
-		if (STRCMP_EQ(((ResourceChunk*)node)->path, path.c_str())) {
+		if (STRCMP_EQ(((ResourceChunk*)node)->path, path)) {
 			return (ResourceChunk*)node;
 		}
 		node = node->next;

@@ -9,6 +9,7 @@
 #include "game_mouse_event.h"
 #include "game_window.h"
 #include "game_utils.h"
+#include "game_log.h"
 #include "game_save.h"
 #include "dialog_message.h"
 #include "dialog_select_profile.h"
@@ -382,6 +383,8 @@ static void load_event() {
 	for (int i = 0; i < SLOT_ITEM_END; i++) {
 		game_save_get_config_slot(i, slot_player, slot_stage, slot_timestamp);
 
+		char tmp_string[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		int tmp_string_size = 0;
 		if (display_title_type == SCENE_SAVE_MENU_DISP_TYPE_LOAD) {
 			// select data slot
 			if ((!set_slot_index_flg) && (slot_stage != "")) {
@@ -404,8 +407,10 @@ static void load_event() {
 		tex_info_slot_icon[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath(" ");
 		for (int prof_i = 0; prof_i < RESOURCE_MANAGER_PROFILE_LIST_SIZE; prof_i++) {
 			if (strcmp(slot_player.c_str(), g_resource_manager_profile[prof_i].name) == 0) {
-				std::string icon_path = g_resource_manager_profile[prof_i].icon_img_path;
-				tex_info_slot_icon[SLOT_ITEM_1 + i].res_img = resource_manager_getTextureFromPath("{ scale_mode:linear }" + icon_path);
+				//std::string icon_path = g_resource_manager_profile[prof_i].icon_img_path;
+				char icon_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+				int icon_path_size = game_utils_string_cat(icon_path, (char*)"{ scale_mode:linear }", (char*)g_resource_manager_profile[prof_i].icon_img_path);
+				tex_info_slot_icon[SLOT_ITEM_1 + i].res_img = resource_manager_getTextureFromPath(icon_path);
 				break;
 			}
 		}
@@ -417,8 +422,14 @@ static void load_event() {
 			GUI_tex_info_reset(&tex_info_slot_icon[SLOT_ITEM_1 + i]);
 		}
 
-		if (slot_stage == "") tex_info_slot_stage[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath("(EMPTY)");
-		else tex_info_slot_stage[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath("STAGE" + slot_stage);
+		if (slot_stage == "") {
+			tex_info_slot_stage[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath("(EMPTY)");
+		}
+		else {
+			tmp_string_size = game_utils_string_cat(tmp_string, (char*)"STAGE", (char*)slot_stage.c_str());
+			if (tmp_string_size <= 0) LOG_ERROR("Error: scene_save_menu load_event() get slot_stage\n");
+			tex_info_slot_stage[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath(tmp_string);
+		}
 		ret = GUI_QueryTexture(tex_info_slot_stage[SLOT_ITEM_1 + i].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			tex_info_slot_stage[SLOT_ITEM_1 + i].src_rect = { 0, 0, w, h };
@@ -427,8 +438,14 @@ static void load_event() {
 			GUI_tex_info_reset(&tex_info_slot_stage[SLOT_ITEM_1 + i]);
 		}
 
-		if (slot_stage == "") tex_info_slot_timestamp[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath(" ");
-		else tex_info_slot_timestamp[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath("{18}" + slot_timestamp);
+		if (slot_stage == "") {
+			tex_info_slot_timestamp[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath(" ");
+		}
+		else {
+			tmp_string_size = game_utils_string_cat(tmp_string, (char*)"{18}", (char*)slot_timestamp.c_str());
+			if (tmp_string_size <= 0) LOG_ERROR("Error: scene_save_menu load_event() get slot_timestamp\n");
+			tex_info_slot_timestamp[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath(tmp_string);
+		}
 		ret = GUI_QueryTexture(tex_info_slot_timestamp[SLOT_ITEM_1 + i].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			tex_info_slot_timestamp[SLOT_ITEM_1 + i].src_rect = { 0, 0, w, h };
@@ -558,10 +575,17 @@ static void button_ok() {
 		// load backup
 		game_save_get_config_player_backup(cursor_index);
 
-		std::string player_path = "units/player/" + slot_player + "/" + slot_player + ".unit";
-		scene_play_stage_set_player(player_path, true);
-		scene_loading_set_stage(slot_stage);
-		scene_play_stage_set_stage_id(slot_stage);
+		//std::string player_path = "units/player/" + slot_player + "/" + slot_player + ".unit";
+		char player_dir_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		char player_file_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		int player_path_size = game_utils_string_cat(player_dir_path, (char*)"units/player/", (char*)slot_player.c_str(), (char*)"/");
+		if (player_path_size <= 0) { LOG_ERROR("Error: scene_save_menu button_ok() get player_dir_path\n"); return; }
+		player_path_size = game_utils_string_cat(player_file_path, player_dir_path, (char*)slot_player.c_str(), (char*)".unit");
+		if (player_path_size <= 0) { LOG_ERROR("Error: scene_save_menu button_ok() get player_file_path\n"); return; }
+
+		scene_play_stage_set_player(player_file_path, true);
+		scene_loading_set_stage(slot_stage.c_str());
+		scene_play_stage_set_stage_id(slot_stage.c_str());
 
 		// save default slot for continue
 		if (game_save_set_config_default_slot(cursor_index) == 0) {
@@ -662,10 +686,9 @@ static void dialog_select_profile_ok() {
 		// save slot
 		game_save_set_config_default_slot(cursor_index);
 		std::string start_player = g_resource_manager_profile[profile_index].name;
-		std::string player_path = g_resource_manager_profile[profile_index].unit_path;
-		scene_play_stage_set_player(player_path);
+		scene_play_stage_set_player(g_resource_manager_profile[profile_index].unit_path);
 
-		std::string story_path = "scenes/story/infinity/opening.dat";
+		const char* story_path = "scenes/story/infinity/opening.dat";
 		for (int prof_i = 0; prof_i < RESOURCE_MANAGER_PROFILE_LIST_SIZE; prof_i++) {
 			if (strcmp(g_resource_manager_profile[prof_i].name, start_player.c_str()) == 0) {
 				story_path = g_resource_manager_profile[prof_i].opening_path;

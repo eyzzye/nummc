@@ -4,7 +4,7 @@
 extern bool g_dialog_select_profile_enable;
 
 extern void dialog_select_profile_init();
-extern void dialog_select_profile_reset(std::string message, void_func* yes_func);
+extern void dialog_select_profile_reset(const char* message, void_func* yes_func);
 extern void dialog_select_profile_set_enable(bool enable);
 extern void dialog_select_profile_event();
 extern void dialog_select_profile_draw();

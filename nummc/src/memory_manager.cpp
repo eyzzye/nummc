@@ -316,10 +316,12 @@ static int memory_manager_delete_memory_block(void* addr, memory_buffer_info_t* 
 			// release block
 			int index = (int)(((size_t)addr - (size_t)head_addr->buffer) / head_addr->buffer_size);
 			memory_block_t* block = &head_addr[index];
-			block->stat = MEMORY_MANAGER_STAT_NONE;
+			if (block->stat != MEMORY_MANAGER_STAT_NONE) {
+				block->stat = MEMORY_MANAGER_STAT_NONE;
 
-			// update info
-			memory_info[i].used_block_count -= 1;
+				// update info
+				memory_info[i].used_block_count -= 1;
+			}
 			return 0;
 		}
 	}

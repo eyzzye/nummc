@@ -322,7 +322,7 @@ void map_manager_create_stage_map()
 
 	// load basic map settings from section1
 	if (g_stage_data->section_list[1] != NULL) {
-		char* path = (char*)g_stage_data->section_list[1]->map_path.c_str();
+		char* path = g_stage_data->section_list[1]->map_path;
 		map_manager_load(path);
 
 		//full_path = g_base_path + "data/" + game_utils_upper_folder(path) + "/*.tile";
@@ -392,7 +392,7 @@ void map_manager_create_stage_map()
 
 		// load section map
 		write_section_map_index = i;
-		map_manager_load_data_element((char*)g_stage_data->section_list[section_id]->map_path.c_str());
+		map_manager_load_data_element(g_stage_data->section_list[section_id]->map_path);
 	}
 }
 
@@ -1156,19 +1156,13 @@ static int map_manager_load_tile(char* path, tile_data_t* tile)
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
 	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
-	if (tmp_path_size == 0) {
-		LOG_ERROR("map_manager_load_tile failed get %s\n", path);
-		return 1;
-	}
+	if (tmp_path_size == 0) { LOG_ERROR("map_manager_load_tile failed get %s\n", path); return 1; }
 
 	// read file
 	memset(load_tile_callback_data.read_flg, 0, sizeof(bool) * TILE_TAG_END);
 	load_tile_callback_data.tile = tile;
 	int ret = game_utils_files_read_line(full_path, load_tile_callback, (void*)&load_tile_callback_data);
-	if (ret != 0) {
-		LOG_ERROR("map_manager_load_tile %s error\n", path);
-		return 1;
-	}
+	if (ret != 0) { LOG_ERROR("map_manager_load_tile %s error\n", path); return 1; }
 
 	return 0;
 }
@@ -1428,10 +1422,7 @@ int map_manager_load(char* path)
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
 	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
-	if (tmp_path_size == 0) {
-		LOG_ERROR("map_manager_load failed get %s\n", path);
-		return 1;
-	}
+	if (tmp_path_size == 0) { LOG_ERROR("map_manager_load failed get %s\n", path); return 1; }
 
 	// init static variables
 	layer_width = 0;
@@ -1442,10 +1433,7 @@ int map_manager_load(char* path)
 	// read file
 	memset(load_map_callback_data.read_flg, 0, sizeof(bool)* MAP_TAG_END);
 	int ret = game_utils_files_read_line(full_path, load_map_callback, (void*)&load_map_callback_data);
-	if (ret != 0) {
-		LOG_ERROR("map_manager_load %s error\n", path);
-		return 1;
-	}
+	if (ret != 0) { LOG_ERROR("map_manager_load %s error\n", path); return 1; }
 
 	return 0;
 }
@@ -1520,19 +1508,13 @@ static int map_manager_load_data_element(char* path)
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
 	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
-	if (tmp_path_size == 0) {
-		LOG_ERROR("map_manager_load_data_element failed get %s\n", path);
-		return 1;
-	}
+	if (tmp_path_size == 0) { LOG_ERROR("map_manager_load_data_element failed get %s\n", path); return 1; }
 
 	// read file
 	memset(load_data_element_callback_data.read_flg, 0, sizeof(bool) * MAP_TAG_END);
 	load_data_element_callback_data.read_tile_type_ = -1;
 	int ret = game_utils_files_read_line(full_path, load_data_element_callback, (void*)&load_data_element_callback_data);
-	if (ret != 0) {
-		LOG_ERROR("map_manager_load_data_element %s error\n", path);
-		return 1;
-	}
+	if (ret != 0) { LOG_ERROR("map_manager_load_data_element %s error\n", path); return 1; }
 
 	return 0;
 }

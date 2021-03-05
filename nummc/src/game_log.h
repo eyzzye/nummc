@@ -8,6 +8,7 @@
 #define GAME_LOG_DEBUG_ENABLE   1
 
 #ifdef GAME_LOG_CONSOLE_ENABLE
+#include <stdio.h>
 #define LOG_ERROR_CONSOLE(...) { char buff[256]; sprintf_s(buff, __VA_ARGS__); OutputDebugStringA(buff); }
 #define LOG_DEBUG_CONSOLE(...) { char buff[256]; sprintf_s(buff, __VA_ARGS__); OutputDebugStringA(buff); }
 

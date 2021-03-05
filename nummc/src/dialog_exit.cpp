@@ -82,7 +82,7 @@ static void tex_info_init()
 	}
 }
 
-void dialog_exit_init(std::string message, void_func* ok_func, void_func* cancel_func) {
+void dialog_exit_init(void_func* ok_func, void_func* cancel_func) {
 	tex_info_init();
 
 	button_items[BUTTON_ITEM_OK].mouse_stat = 0;

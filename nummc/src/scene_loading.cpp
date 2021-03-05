@@ -8,6 +8,7 @@
 #include "game_key_event.h"
 #include "game_window.h"
 #include "game_timer.h"
+#include "game_utils.h"
 #include "game_log.h"
 
 static tex_info_t tex_info_title;
@@ -25,7 +26,7 @@ static int title_wait_timer;
 static int progress_timer;
 static int progress_index;
 static bool progress_dirt;
-static std::string next_stage_id;
+static char next_stage_id[GAME_UTILS_STRING_NAME_BUF_SIZE];
 
 static SceneManagerFunc scene_func;
 static int scene_stat;
@@ -99,7 +100,7 @@ static void load_event() {
 	progress_index = 0;
 	progress_timer = 0;
 	progress_dirt = true;
-	next_stage_id = "";
+	next_stage_id[0] = '\0';
 
 	// play music
 	sound_manager_play(resource_manager_getChunkFromPath("music/loading.ogg"), SOUND_MANAGER_CH_MUSIC, -1);
@@ -125,11 +126,19 @@ static void tex_info_init()
 	int w_pos = 0, h_pos = 0;
 
 	// progress
-	std::string progress_str = "{-,204:204:204:204,-,-}Loading ...";
+	const char* progress_str = "{-,204:204:204:204,-,-}Loading ...";
+	int progress_str_size = (int)strlen(progress_str);
 	for (int i = 0; i < SCENE_LOADING_ID_PROGRESS_END; i++) {
-		size_t progress_str_length = progress_str.size() - (SCENE_LOADING_ID_PROGRESS_END - 1 - i);
-		tex_info_progress[SCENE_LOADING_ID_PROGRESS_1 + i].res_img = resource_manager_getFontTextureFromPath(progress_str.substr(0, progress_str_length));
-		int ret = GUI_QueryTexture(tex_info_progress[SCENE_LOADING_ID_PROGRESS_1 + i].res_img, NULL, NULL, &w, &h);
+		char progress_substr[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		int progress_substr_size = progress_str_size - (SCENE_LOADING_ID_PROGRESS_END - 1 - i);
+		int ret = game_utils_string_copy_n(progress_substr, progress_str, progress_substr_size);
+		if (ret != 0) {
+			LOG_ERROR("Error: scene_loading tex_info_init() get progress_substr\n");
+			continue;
+		}
+
+		tex_info_progress[SCENE_LOADING_ID_PROGRESS_1 + i].res_img = resource_manager_getFontTextureFromPath(progress_substr);
+		ret = GUI_QueryTexture(tex_info_progress[SCENE_LOADING_ID_PROGRESS_1 + i].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			w_pos = 20;
 			h_pos = SCREEN_HEIGHT - 20 - h;
@@ -138,17 +147,23 @@ static void tex_info_init()
 	}
 }
 
-void scene_loading_set_stage(std::string& id)
+void scene_loading_set_stage(const char* id)
 {
-	next_stage_id = id;
+	//next_stage_id = id;
+	int ret = game_utils_string_copy(next_stage_id, id);
+	if (ret != 0) { LOG_ERROR("Error: scene_loading_set_stage get next_stage_id\n"); return; }
 
 	int w, h;
 	int w_pos = 0, h_pos = 0;
 
 	// title
-	std::string title_str = "{48,204:204:204:204,-,-}STAGE " + next_stage_id;
+	//std::string title_str = "{48,204:204:204:204,-,-}STAGE " + next_stage_id;
+	char title_str[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	int title_str_size = game_utils_string_cat(title_str, (char*)"{48,204:204:204:204,-,-}STAGE ", (char*)id);
+	if (title_str_size <= 0) { LOG_ERROR("Error: scene_loading_set_stage get title_str\n");	}
+
 	tex_info_title.res_img = resource_manager_getFontTextureFromPath(title_str, RESOURCE_MANAGER_TYPE_STATIC);
-	int ret = GUI_QueryTexture(tex_info_title.res_img, NULL, NULL, &w, &h);
+	ret = GUI_QueryTexture(tex_info_title.res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		w_pos = (SCREEN_WIDTH - w) / 2;
 		h_pos = (SCREEN_HEIGHT - h) / 2;

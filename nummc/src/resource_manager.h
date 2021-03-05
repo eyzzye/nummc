@@ -1,6 +1,4 @@
 #pragma once
-#include <vector>
-#include <string>
 #include "game_common.h"
 
 #define RESOURCE_MANAGER_TYPE_NONE    0
@@ -63,11 +61,11 @@ extern void resource_manager_init();
 extern void resource_manager_unload();
 extern void resource_manager_clean_up();
 extern int resource_manager_load_dat(char* path);
-extern ResourceImg* resource_manager_load_img(std::string path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
-extern ResourceImg* resource_manager_getTextureFromPath(std::string path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
-extern ResourceImg* resource_manager_load_font(std::string message, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
-extern ResourceImg* resource_manager_getFontTextureFromPath(std::string message, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
-extern ResourceMusic* resource_manager_load_music(std::string path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
-extern ResourceMusic* resource_manager_getMusicFromPath(std::string path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
-extern ResourceChunk* resource_manager_load_chunk(std::string path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
-extern ResourceChunk* resource_manager_getChunkFromPath(std::string path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
+extern ResourceImg* resource_manager_load_img(const char* path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
+extern ResourceImg* resource_manager_getTextureFromPath(const char* path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
+extern ResourceImg* resource_manager_load_font(const char* message, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
+extern ResourceImg* resource_manager_getFontTextureFromPath(const char* message, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
+extern ResourceMusic* resource_manager_load_music(const char* path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
+extern ResourceMusic* resource_manager_getMusicFromPath(const char* path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
+extern ResourceChunk* resource_manager_load_chunk(const char* path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);
+extern ResourceChunk* resource_manager_getChunkFromPath(const char* path, int type = RESOURCE_MANAGER_TYPE_DYNAMIC);

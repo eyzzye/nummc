@@ -414,19 +414,13 @@ int unit_manager_load_enemy(char* path)
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
 	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
-	if (tmp_path_size == 0) {
-		LOG_ERROR("unit_manager_load_enemy failed get %s\n", path);
-		return 1;
-	}
+	if (tmp_path_size == 0) { LOG_ERROR("unit_manager_load_enemy failed get %s\n", path); return 1; }
 
 	// read file
 	memset(load_enemy_callback_data.read_flg, 0, sizeof(bool) * UNIT_TAG_END);
 	load_enemy_callback_data.path = path;
 	int ret = game_utils_files_read_line(full_path, load_enemy_callback, (void*)&load_enemy_callback_data);
-	if (ret != 0) {
-		LOG_ERROR("unit_manager_load_enemy %s error\n", path);
-		return 1;
-	}
+	if (ret != 0) { LOG_ERROR("unit_manager_load_enemy %s error\n", path); return 1; }
 
 	// load anim files
 	if (enemy_base[enemy_base_index_end].anim) {
@@ -858,10 +852,32 @@ void unit_manager_enemy_drop_item(unit_enemy_data_t* unit_data) {
 		int current_rate = UNIT_PLAYER_LUCK_VAL(g_stage_data->current_section_data->item_drop_rate, player_luck);
 
 		if (g_stage_data->drop_judge_count >= current_rate) {
+			int item_id = -1;
+			if ((g_stage_data->current_section_data->drop_items_list == NULL) ||
+				(g_stage_data->current_section_data->drop_items_list->used_buffer_size <= 0)) {
+				return;  // items_list are empty
+			}
+
 			// drop random
-			int max = (int)g_stage_data->current_section_data->drop_items_id_list.size() - 1;
-			int item_id = (max <= 0) ? 0 : game_utils_random_gen(max, 0);
-			spawn_id = unit_manager_create_items(pos_x, pos_y, g_stage_data->current_section_data->drop_items_id_list[item_id]);
+			int max = g_stage_data->current_section_data->drop_items_list->used_buffer_size - 1;
+			int item_seek_count = (max <= 0) ? 0 : game_utils_random_gen(max, 0);
+
+			// set item_id
+			node_data_t* node = g_stage_data->current_section_data->drop_items_list->start_node;
+			while (node != NULL) {
+				node_data_t* current_node = node;
+				node = node->next;
+
+				if (item_seek_count <= 0) {
+					item_id = unit_manager_search_items(((items_data_t*)current_node)->path);
+					break;
+				}
+				item_seek_count--;
+			}
+			if (item_id == -1) return;
+
+			// spawn item
+			spawn_id = unit_manager_create_items(pos_x, pos_y, item_id);
 
 			// star effect
 			unit_items_data_t* new_item = unit_manager_get_items(spawn_id);

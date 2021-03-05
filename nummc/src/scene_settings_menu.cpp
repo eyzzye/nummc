@@ -613,9 +613,8 @@ static void tex_info_reset_music_volume()
 
 	char c_buf_vol[4] = { '\0' };
 	_itoa_s(music_volume_value, c_buf_vol, 10);
-	std::string vol_str = c_buf_vol;
 
-	tex_info_music_text.res_img = resource_manager_getFontTextureFromPath(vol_str);
+	tex_info_music_text.res_img = resource_manager_getFontTextureFromPath(c_buf_vol);
 	int ret = GUI_QueryTexture(tex_info_music_text.res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info_music_text, w, h, w_pos, h_pos);
@@ -635,9 +634,8 @@ static void tex_info_reset_sfx_volume()
 
 	char c_buf_vol[4] = { '\0' };
 	_itoa_s(sfx_volume_value, c_buf_vol, 10);
-	std::string vol_str = c_buf_vol;
 
-	tex_info_sfx_text.res_img = resource_manager_getFontTextureFromPath(vol_str);
+	tex_info_sfx_text.res_img = resource_manager_getFontTextureFromPath(c_buf_vol);
 	int ret = GUI_QueryTexture(tex_info_sfx_text.res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
 		GUI_tex_info_init_rect(&tex_info_sfx_text, w, h, w_pos, h_pos);

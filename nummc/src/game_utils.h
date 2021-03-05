@@ -78,5 +78,5 @@ extern bool game_utils_decision_internal(SDL_Rect* rect, int x, int y);
 
 // resource
 extern SDL_Texture* game_utils_render_img_tex(char* path, SDL_Color src_color, SDL_Color dst_color);
-extern SDL_Texture* game_utils_render_font_tex(const std::string& message, char* fontFile, SDL_Color color, int fontSize);
+extern SDL_Texture* game_utils_render_font_tex(const char* message, char* fontFile, SDL_Color color, int fontSize);
 extern ResourceImg* game_utils_render_number_font_tex(int number);

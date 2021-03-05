@@ -580,7 +580,7 @@ static void tex_info_init()
 	hud_tex_info_reset_space_val(NULL);
 
 	// progress label
-	hud_tex_info_reset_progress((char*)g_stage_data->id.c_str());
+	hud_tex_info_reset_progress(g_stage_data->id);
 }
 
 void hud_manager_update()

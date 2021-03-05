@@ -145,8 +145,7 @@ void quest_log_manager_set_new_message(char* message, int message_length, int re
 
 		// create message texture
 		int w, h;
-		std::string tex_message = message;
-		tex_info_quest_log_list[new_node->id].res_img = resource_manager_getFontTextureFromPath(tex_message);
+		tex_info_quest_log_list[new_node->id].res_img = resource_manager_getFontTextureFromPath(message);
 		int ret = GUI_QueryTexture(tex_info_quest_log_list[new_node->id].res_img, NULL, NULL, &w, &h);
 		if (ret == 0) {
 			tex_info_quest_log_list[new_node->id].src_rect = { 0, 0, w, h };

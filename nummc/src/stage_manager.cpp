@@ -1,5 +1,3 @@
-#include <vector>
-#include <string>
 #include "game_common.h"
 #include "stage_manager.h"
 
@@ -32,6 +30,8 @@
 
 #define STAGE_FRICTION_DEFAULT  (1.0f / 800.0f)  // 1.0->0.0[m/s] / 800[msec]
 
+static const char* empty_map_path = "map/common/n_empty.tmx";
+
 stage_data_t* g_stage_data;
 static section_data_t* current_section_data;
 static int current_section_id;
@@ -40,6 +40,7 @@ static int tmp_current_enemy_phase;
 
 // stage data instance
 static stage_data_t stage_data_buffer;
+static node_buffer_info_t common_items_list_buffer_info;
 
 // section data list
 #define SECTION_DATA_BUFFER_SIZE  (STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM)
@@ -52,6 +53,9 @@ static node_buffer_info_t bgm_list_buffer_info[SECTION_DATA_BUFFER_SIZE];
 static node_buffer_info_t enemy_list_buffer_info[SECTION_DATA_BUFFER_SIZE * SECTION_ENEMY_PHASE_SIZE];
 static node_buffer_info_t trap_list_buffer_info[SECTION_DATA_BUFFER_SIZE];
 static node_buffer_info_t items_list_buffer_info[SECTION_DATA_BUFFER_SIZE];
+
+static node_buffer_info_t drop_items_list_buffer_info[SECTION_DATA_BUFFER_SIZE];
+static node_buffer_info_t goal_items_list_buffer_info[SECTION_DATA_BUFFER_SIZE];
 
 // stock item
 #define SECTION_STOCK_ITEM_SIZE  (UNIT_ITEMS_LIST_SIZE * STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM)
@@ -80,11 +84,16 @@ void stage_manager_init()
 {
 	// stage_data
 	g_stage_data = &stage_data_buffer;
+	g_stage_data->id = NULL;
+	g_stage_data->next_stage_id = NULL;
 	g_stage_data->friction_coef = STAGE_FRICTION_DEFAULT;
 	g_stage_data->stat = STAGE_STAT_NONE;
 	g_stage_data->result = STAGE_RESULT_NONE;
 	g_stage_data->next_load = STAGE_NEXT_LOAD_OFF;
 	g_stage_data->section_stat = SECTION_STAT_NONE;
+
+	// stage_data common_items
+	game_utils_node_init(&common_items_list_buffer_info, (int)sizeof(items_data_t));
 
 	// section_data
 	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
@@ -96,35 +105,24 @@ void stage_manager_init()
 	memset(section_list_buffer, 0, sizeof(section_list_buffer));
 	g_stage_data->section_list = &section_list_buffer[0];
 
-	// BGM node
-	//memset(bgm_list_buffer, 0, sizeof(bgm_list_buffer));
 	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
+		// BGM node
 		game_utils_node_init(&bgm_list_buffer_info[i], (int)sizeof(BGM_data_t));
-	}
 
-	// enemy node
-	//memset(enemy_list_buffer, 0, sizeof(enemy_list_buffer));
-	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
+		// enemy node
 		for (int phase = 0; phase < SECTION_ENEMY_PHASE_SIZE; phase++) {
-			game_utils_node_init(&enemy_list_buffer_info[i* SECTION_ENEMY_PHASE_SIZE + phase], (int)sizeof(enemy_data_t));
+			game_utils_node_init(&enemy_list_buffer_info[i * SECTION_ENEMY_PHASE_SIZE + phase], (int)sizeof(enemy_data_t));
 		}
-	}
 
-	// trap node
-	//memset(trap_list_buffer, 0, sizeof(trap_list_buffer));
-	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
+		// trap node
 		game_utils_node_init(&trap_list_buffer_info[i], (int)sizeof(trap_data_t));
-	}
 
-	// items node
-	//memset(items_list_buffer, 0, sizeof(items_list_buffer));
-	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
+		// items node
 		game_utils_node_init(&items_list_buffer_info[i], (int)sizeof(items_data_t));
-	}
+		game_utils_node_init(&drop_items_list_buffer_info[i], (int)sizeof(items_data_t));
+		game_utils_node_init(&goal_items_list_buffer_info[i], (int)sizeof(items_data_t));
 
-	// item stocker
-	//memset(section_stock_item, 0, sizeof(section_stock_item));
-	for (int i = 0; i < SECTION_DATA_BUFFER_SIZE; i++) {
+		// item stocker
 		game_utils_node_init(&section_stock_item_buffer_info[i], (int)sizeof(section_stock_item_t));
 	}
 
@@ -141,12 +139,14 @@ void stage_manager_init()
 void stage_manager_unload()
 {
 	if (g_stage_data) {
+		node_data_t* node = NULL;
+
 		for (int sec_i = 0; sec_i < SECTION_DATA_BUFFER_SIZE; sec_i++) {
 			section_data_t* p_section = g_stage_data->section_list[sec_i];
 			if (p_section == NULL) continue;
 
 			// bgm
-			node_data_t* node = (p_section->bgm_list == NULL) ? NULL : p_section->bgm_list->start_node;
+			node = (p_section->bgm_list == NULL) ? NULL : p_section->bgm_list->start_node;
 			while (node != NULL) {
 				node_data_t* del_node = node;
 				node = del_node->next;
@@ -159,6 +159,9 @@ void stage_manager_unload()
 				while (node != NULL) {
 					node_data_t* del_node = node;
 					node = del_node->next;
+
+					char* tmp_path = ((enemy_data_t*)del_node)->path;
+					if (tmp_path != NULL) memory_manager_delete_char_buff(tmp_path);
 					game_utils_node_delete(del_node, p_section->enemy_list[phase]);
 				}
 			}
@@ -168,6 +171,9 @@ void stage_manager_unload()
 			while (node != NULL) {
 				node_data_t* del_node = node;
 				node = del_node->next;
+
+				char* tmp_path = ((trap_data_t*)del_node)->path;
+				if (tmp_path != NULL) memory_manager_delete_char_buff(tmp_path);
 				game_utils_node_delete(del_node, p_section->trap_list);
 			}
 
@@ -176,13 +182,45 @@ void stage_manager_unload()
 			while (node != NULL) {
 				node_data_t* del_node = node;
 				node = del_node->next;
+
+				char* tmp_path = ((items_data_t*)del_node)->path;
+				if (tmp_path != NULL) memory_manager_delete_char_buff(tmp_path);
 				game_utils_node_delete(del_node, p_section->items_list);
 			}
 
-			p_section->drop_items_id_list.clear();
-			p_section->drop_items_list.clear();
-			p_section->goal_items_id_list.clear();
-			p_section->goal_items_list.clear();
+
+			//p_section->drop_items_list.clear();
+			node = (p_section->drop_items_list == NULL) ? NULL : p_section->drop_items_list->start_node;
+			while (node != NULL) {
+				node_data_t* del_node = node;
+				node = del_node->next;
+
+				char* tmp_path = ((items_data_t*)del_node)->path;
+				if (tmp_path != NULL) memory_manager_delete_char_buff(tmp_path);
+				game_utils_node_delete(del_node, p_section->drop_items_list);
+			}
+
+			//p_section->goal_items_list.clear();
+			node = (p_section->goal_items_list == NULL) ? NULL : p_section->goal_items_list->start_node;
+			while (node != NULL) {
+				node_data_t* del_node = node;
+				node = del_node->next;
+
+				char* tmp_path = ((items_data_t*)del_node)->path;
+				if (tmp_path != NULL) memory_manager_delete_char_buff(tmp_path);
+				game_utils_node_delete(del_node, p_section->goal_items_list);
+			}
+
+			// release char_buff
+			if (p_section->map_path) { memory_manager_delete_char_buff(p_section->map_path); p_section->map_path = NULL; }
+			if (p_section->bgm_path) { memory_manager_delete_char_buff(p_section->bgm_path); p_section->bgm_path = NULL; }
+			for (int i = 0; i < SECTION_ENEMY_PHASE_SIZE; i++) {
+				if (p_section->enemy_path[i] == NULL) continue;
+				memory_manager_delete_char_buff(p_section->enemy_path[i]);
+				p_section->enemy_path[i] = NULL;
+			}
+			if (p_section->trap_path) { memory_manager_delete_char_buff(p_section->trap_path); p_section->trap_path = NULL; }
+			if (p_section->items_path) { memory_manager_delete_char_buff(p_section->items_path); p_section->items_path = NULL; }
 
 			// section
 			p_section->section_type = SECTION_TYPE_NONE;
@@ -207,7 +245,19 @@ void stage_manager_unload()
 		}
 
 		// common item
-		g_stage_data->common_items_list.clear();
+		node = (g_stage_data->common_items_list == NULL) ? NULL : g_stage_data->common_items_list->start_node;
+		while (node != NULL) {
+			node_data_t* del_node = node;
+			node = del_node->next;
+
+			char* tmp_path = ((items_data_t*)del_node)->path;
+			if (tmp_path != NULL) memory_manager_delete_char_buff(tmp_path);
+			game_utils_node_delete(del_node, g_stage_data->common_items_list);
+		}
+
+		// release char_buf
+		if(g_stage_data->id) memory_manager_delete_char_buff(g_stage_data->id);
+		if(g_stage_data->next_stage_id) memory_manager_delete_char_buff(g_stage_data->next_stage_id);
 
 		// stage
 		g_stage_data = NULL;
@@ -240,10 +290,7 @@ section_stock_item_t* stage_manager_register_stock_item(void* unit_data)
 
 	// search empty node
 	section_stock_item_t* new_node = (section_stock_item_t*)game_utils_node_new(&section_stock_item_buffer_info[stage_map_index]);
-	if (new_node == NULL) {
-		LOG_ERROR("ERROR: stage_manager_register_stock_item() overflow\n");
-		return NULL;
-	}
+	if (new_node == NULL) { LOG_ERROR("ERROR: stage_manager_register_stock_item() overflow\n"); return NULL; }
 
 	unit_items_data_t* items_data = (unit_items_data_t*)unit_data;
 	new_node->type = items_data->base->type;
@@ -389,13 +436,12 @@ static void load_stage_callback(char* line, int line_size, int line_num, void* a
 
 int stage_manager_load(char* path)
 {
+	int ret = 0;
+
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
 	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
-	if (tmp_path_size == 0) {
-		LOG_ERROR("stage_manager_load failed get %s\n", path);
-		return 1;
-	}
+	if (tmp_path_size == 0) { LOG_ERROR("stage_manager_load failed get %s\n", path); return 1; }
 
 	// init section 0
 	{
@@ -405,20 +451,22 @@ int stage_manager_load(char* path)
 		current_section_data->section_type = SECTION_TYPE_NORMAL;
 		g_stage_data->section_list[current_section_id] = current_section_data;
 		current_section_data->item_drop_rate = 4;
-		current_section_data->map_path = "map/common/n_empty.tmx";
-		current_section_data->bgm_path = "";
-		current_section_data->enemy_path[0] = "";
-		current_section_data->trap_path = "";
-		current_section_data->items_path = "";
+
+		//current_section_data->map_path = "map/common/n_empty.tmx";
+		current_section_data->map_path = memory_manager_new_char_buff((int)strlen(empty_map_path));
+		ret = game_utils_string_copy(current_section_data->map_path, empty_map_path);
+		if (ret != 0) { LOG_ERROR("Error: stage_manager_load() copy empty_map_path\n"); return 1; }
+
+		current_section_data->bgm_path = NULL;
+		for (int i = 0; i < SECTION_ENEMY_PHASE_SIZE; i++) current_section_data->enemy_path[i] = NULL;
+		current_section_data->trap_path = NULL;
+		current_section_data->items_path = NULL;
 	}
 
 	// read file
 	memset(load_stage_callback_data.read_flg, 0, sizeof(bool)* STAGE_ID_END);
-	int ret = game_utils_files_read_line(full_path, load_stage_callback, (void*)&load_stage_callback_data);
-	if (ret != 0) {
-		LOG_ERROR("stage_manager_load %s error\n", path);
-		return 1;
-	}
+	ret = game_utils_files_read_line(full_path, load_stage_callback, (void*)&load_stage_callback_data);
+	if (ret != 0) { LOG_ERROR("stage_manager_load %s error\n", path); return 1; }
 
 	// load section files
 	ret = stage_manager_load_section_files();
@@ -432,7 +480,10 @@ static void load_basic_info(char* line) {
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "id")) {
-		g_stage_data->id = value;
+		//g_stage_data->id = value;
+		g_stage_data->id = memory_manager_new_char_buff((int)strlen(value));
+		int ret = game_utils_string_copy(g_stage_data->id, value);
+		if (ret != 0) { LOG_ERROR("Error: stage_manager load_basic_info() get id\n"); return; }
 		return;
 	}
 	if (STRCMP_EQ(key, "bonus_exp")) {
@@ -518,15 +569,26 @@ static void load_goal(char* line) {
 }
 
 static void load_next_stage(char* line) {
-	g_stage_data->next_stage_id = line;
+	//g_stage_data->next_stage_id = line;
+	g_stage_data->next_stage_id = memory_manager_new_char_buff((int)strlen(line));
+	int ret = game_utils_string_copy(g_stage_data->next_stage_id, line);
+	if (ret != 0) { LOG_ERROR("Error: stage_manager load_next_stage() get next_stage_id\n"); return; }
 }
 
 static void load_items_def(char* line) {
-	std::string items_def = line;
-	g_stage_data->common_items_list.push_back(items_def);
+	items_data_t* new_item = (items_data_t*)game_utils_node_new(&common_items_list_buffer_info);
+
+	//std::string items_def = line;
+	new_item->path = memory_manager_new_char_buff((int)strlen(line));
+	int ret = game_utils_string_copy(new_item->path, line);
+	if (ret != 0) { LOG_ERROR("Error: stage_manager load_items_def() copy path \n"); return; }
+
+	//g_stage_data->common_items_list.push_back(items_def);
+	g_stage_data->common_items_list = &common_items_list_buffer_info;
 }
 
 static void load_section(char* line) {
+	int ret = 0;
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
@@ -536,11 +598,11 @@ static void load_section(char* line) {
 		current_section_data = new_section_data();
 		current_section_data->id = atoi(value);
 		current_section_data->section_type = SECTION_TYPE_NORMAL;
-		current_section_data->map_path = "";
-		current_section_data->bgm_path = "";
-		for (int i = 0; i < SECTION_ENEMY_PHASE_SIZE; i++) current_section_data->enemy_path[i] = "";
-		current_section_data->trap_path = "";
-		current_section_data->items_path = "";
+		current_section_data->map_path = NULL;
+		current_section_data->bgm_path = NULL;
+		for (int i = 0; i < SECTION_ENEMY_PHASE_SIZE; i++) current_section_data->enemy_path[i] = NULL;
+		current_section_data->trap_path = NULL;
+		current_section_data->items_path = NULL;
 
 		g_stage_data->section_list[current_section_id] = current_section_data;
 		tmp_current_enemy_phase = -1;
@@ -562,11 +624,18 @@ static void load_section(char* line) {
 	}
 
 	if (STRCMP_EQ(key, "map_path")) {
-		current_section_data->map_path = value;
+		//current_section_data->map_path = value;
+		current_section_data->map_path = memory_manager_new_char_buff((int)strlen(value));
+		ret = game_utils_string_copy(current_section_data->map_path, value);
+		if (ret != 0) { LOG_ERROR("Error: stage_manager load_section() copy map_path\n"); return; }
 		return;
 	}
 	if (STRCMP_EQ(key,"bgm_path")) {
-		current_section_data->bgm_path = value;
+		//current_section_data->bgm_path = value;
+		current_section_data->bgm_path = memory_manager_new_char_buff((int)strlen(value));
+		ret = game_utils_string_copy(current_section_data->bgm_path, value);
+		if (ret != 0) { LOG_ERROR("Error: stage_manager load_section() copy bgm_path\n"); return; }
+
 		BGM_data_t* new_bgm = (BGM_data_t*)game_utils_node_new(&bgm_list_buffer_info[current_section_id]);
 		new_bgm->res_chunk = resource_manager_getChunkFromPath(value);
 		current_section_data->bgm_list = &bgm_list_buffer_info[current_section_id];
@@ -579,16 +648,25 @@ static void load_section(char* line) {
 			LOG_ERROR("ERROR: section %d enemy_path overflow", current_section_data->id);
 		}
 		else {
-			current_section_data->enemy_path[tmp_current_enemy_phase] = value;
+			//current_section_data->enemy_path[tmp_current_enemy_phase] = value;
+			current_section_data->enemy_path[tmp_current_enemy_phase] = memory_manager_new_char_buff((int)strlen(value));
+			ret = game_utils_string_copy(current_section_data->enemy_path[tmp_current_enemy_phase], value);
+			if (ret != 0) { LOG_ERROR("Error: stage_manager load_section() copy enemy_path %d\n", tmp_current_enemy_phase); return; }
 		}
 		return;
 	}
 	if (STRCMP_EQ(key, "trap_path")) {
-		current_section_data->trap_path = value;
+		//current_section_data->trap_path = value;
+		current_section_data->trap_path = memory_manager_new_char_buff((int)strlen(value));
+		ret = game_utils_string_copy(current_section_data->trap_path, value);
+		if (ret != 0) { LOG_ERROR("Error: stage_manager load_section() copy trap_path\n"); return; }
 		return;
 	}
 	if (STRCMP_EQ(key, "items_path")) {
-		current_section_data->items_path = value;
+		//current_section_data->items_path = value;
+		current_section_data->items_path = memory_manager_new_char_buff((int)strlen(value));
+		ret = game_utils_string_copy(current_section_data->items_path, value);
+		if (ret != 0) { LOG_ERROR("Error: stage_manager load_section() copy items_path\n"); return; }
 		return;
 	}
 }
@@ -602,10 +680,10 @@ static int stage_manager_load_section_files()
 
 		for (int phase = 0; phase < SECTION_ENEMY_PHASE_SIZE; phase++) {
 			tmp_current_enemy_phase = phase;
-			if (current_section_data->enemy_path[phase].size() > 0) load_section_file((char*)current_section_data->enemy_path[phase].c_str());
+			if (current_section_data->enemy_path[phase] != NULL) load_section_file(current_section_data->enemy_path[phase]);
 		}
-		if (current_section_data->trap_path.size() > 0) load_section_file((char*)current_section_data->trap_path.c_str());
-		if (current_section_data->items_path.size() > 0) load_section_file((char*)current_section_data->items_path.c_str());
+		if (current_section_data->trap_path != NULL) load_section_file(current_section_data->trap_path);
+		if (current_section_data->items_path != NULL) load_section_file(current_section_data->items_path);
 	}
 	return 0;
 }
@@ -657,18 +735,12 @@ static int load_section_file(char* path)
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
 	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
-	if (tmp_path_size == 0) {
-		LOG_ERROR("load_section_file failed get %s\n", path);
-		return 1;
-	}
+	if (tmp_path_size == 0) { LOG_ERROR("load_section_file failed get %s\n", path); return 1; }
 
 	// read file
 	memset(load_section_file_callback_data.read_flg, 0, sizeof(bool) * SECTION_ID_END);
 	int ret = game_utils_files_read_line(full_path, load_section_file_callback, (void*)&load_section_file_callback_data);
-	if (ret != 0) {
-		LOG_ERROR("load_section_file %s error\n", path);
-		return 1;
-	}
+	if (ret != 0) { LOG_ERROR("load_section_file %s error\n", path); return 1; }
 
 	return 0;
 }
@@ -682,9 +754,12 @@ static void load_items(char* line) {
 
 	if (STRCMP_EQ(key,"type")) {
 		items_data_t* new_item = (items_data_t*)game_utils_node_new(&items_list_buffer_info[current_section_id]);
+
 		//new_item->path = value;
 		new_item->path = memory_manager_new_char_buff((int)strlen(value));
-		game_utils_string_copy(new_item->path, value);
+		int ret = game_utils_string_copy(new_item->path, value);
+		if (ret != 0) { LOG_ERROR("Error: stage_manager load_items() copy path \n"); return; }
+
 		new_item->x = -1; // disable
 		new_item->y = -1; // disable
 		current_section_data->items_list = &items_list_buffer_info[current_section_id];
@@ -720,13 +795,27 @@ static void load_items(char* line) {
 }
 
 static void load_drop_items(char* line) {
-	std::string drop_items = line;
-	current_section_data->drop_items_list.push_back(drop_items);
+	items_data_t* new_item = (items_data_t*)game_utils_node_new(&drop_items_list_buffer_info[current_section_id]);
+
+	//std::string drop_items = line;
+	new_item->path = memory_manager_new_char_buff((int)strlen(line));
+	int ret = game_utils_string_copy(new_item->path, line);
+	if (ret != 0) { LOG_ERROR("Error: stage_manager load_drop_items() copy path \n"); return; }
+
+	//current_section_data->drop_items_list.push_back(drop_items);
+	current_section_data->drop_items_list = &drop_items_list_buffer_info[current_section_id];
 }
 
 static void load_goal_items(char* line) {
-	std::string goal_items = line;
-	current_section_data->goal_items_list.push_back(goal_items);
+	items_data_t* new_item = (items_data_t*)game_utils_node_new(&goal_items_list_buffer_info[current_section_id]);
+
+	//std::string goal_items = line;
+	new_item->path = memory_manager_new_char_buff((int)strlen(line));
+	int ret = game_utils_string_copy(new_item->path, line);
+	if (ret != 0) { LOG_ERROR("Error: stage_manager load_goal_items() copy path \n"); return; }
+
+	//current_section_data->goal_items_list.push_back(goal_items);
+	current_section_data->goal_items_list = &goal_items_list_buffer_info[current_section_id];
 }
 
 static void load_trap(char* line) {

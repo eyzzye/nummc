@@ -190,10 +190,7 @@ int game_utils_files_get_file_list(char* path, char* filter, char* file_list, in
 #ifdef _WIN32
 	char full_filename[256];
 	int flie_size = game_utils_string_cat(full_filename, path, filter);
-	if (flie_size <= 0) {
-		LOG_ERROR("Error: game_utils_files_get_file_list() failed string_cat\n");
-		return 0;
-	}
+	if (flie_size <= 0) { LOG_ERROR("Error: game_utils_files_get_file_list() failed string_cat\n"); return 0; }
 
 	WIN32_FIND_DATAA find_file_data;
 	HANDLE h_find = FindFirstFileA(full_filename, &find_file_data);
@@ -1299,7 +1296,7 @@ SDL_Texture* game_utils_render_img_tex(char* path, SDL_Color src_color, SDL_Colo
 //
 // font render utils
 //
-SDL_Texture* game_utils_render_font_tex(const std::string& message, char* fontFile, SDL_Color color, int fontSize)
+SDL_Texture* game_utils_render_font_tex(const char* message, char* fontFile, SDL_Color color, int fontSize)
 {
 	TTF_Font* font = TTF_OpenFont(fontFile, fontSize);
 	if (font == NULL) {
@@ -1308,7 +1305,7 @@ SDL_Texture* game_utils_render_font_tex(const std::string& message, char* fontFi
 	}
 
 	//SDL_Surface* surf = TTF_RenderText_Blended(font, message.c_str(), color);
-	SDL_Surface* surf = TTF_RenderUTF8_Blended(font, message.c_str(), color);
+	SDL_Surface* surf = TTF_RenderUTF8_Blended(font, message, color);
 	if (surf == NULL) {
 		TTF_CloseFont(font);
 		LOG_ERROR("TTF_RenderText_Blended Error: %s", SDL_GetError());

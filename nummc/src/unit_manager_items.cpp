@@ -264,18 +264,12 @@ int unit_manager_load_items_def(char* path)
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
 	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
-	if (tmp_path_size == 0) {
-		LOG_ERROR("unit_manager_load_items_def failed get %s\n", path);
-		return 1;
-	}
+	if (tmp_path_size == 0) { LOG_ERROR("unit_manager_load_items_def failed get %s\n", path); return 1; }
 
 	// read file
 	load_items_def_callback_data.read_flg = false;
 	int ret = game_utils_files_read_line(full_path, load_items_def_callback, (void*)&load_items_def_callback_data);
-	if (ret != 0) {
-		LOG_ERROR("unit_manager_load_items_def %s error\n", path);
-		return 1;
-	}
+	if (ret != 0) { LOG_ERROR("unit_manager_load_items_def %s error\n", path); return 1; }
 
 	return 0;
 }
@@ -335,19 +329,13 @@ int unit_manager_load_items(char* path)
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
 	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
-	if (tmp_path_size == 0) {
-		LOG_ERROR("unit_manager_load_items failed get %s\n", path);
-		return 1;
-	}
+	if (tmp_path_size == 0) { LOG_ERROR("unit_manager_load_items failed get %s\n", path); return 1; }
 
 	// read file
 	memset(load_items_callback_data.read_flg, 0, sizeof(bool) * UNIT_TAG_END);
 	load_items_callback_data.path = path;
 	int ret = game_utils_files_read_line(full_path, load_items_callback, (void*)&load_items_callback_data);
-	if (ret != 0) {
-		LOG_ERROR("unit_manager_load_items %s error\n", path);
-		return 1;
-	}
+	if (ret != 0) { LOG_ERROR("unit_manager_load_items %s error\n", path); return 1; }
 
 	// load anim files
 	if (items_base[items_base_index_end].anim) {

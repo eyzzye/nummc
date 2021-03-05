@@ -239,10 +239,17 @@ static void menu_continue() {
 		game_save_get_config_slot(load_slot_index, slot_player, slot_stage, slot_timestamp);
 		game_save_get_config_player_backup(load_slot_index);
 
-		std::string player_path = "units/player/" + slot_player + "/" + slot_player + ".unit";
-		scene_play_stage_set_player(player_path, true);
-		scene_loading_set_stage(slot_stage);
-		scene_play_stage_set_stage_id(slot_stage);
+		//std::string player_path = "units/player/" + slot_player + "/" + slot_player + ".unit";
+		char player_dir_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		char player_file_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		int player_path_size = game_utils_string_cat(player_dir_path, (char*)"units/player/", (char*)slot_player.c_str(), (char*)"/");
+		if (player_path_size <= 0) { LOG_ERROR("Error: scene_top_menu menu_continue() get player_dir_path\n"); return; }
+		player_path_size = game_utils_string_cat(player_file_path, player_dir_path, (char*)slot_player.c_str(), (char*)".unit");
+		if (player_path_size <= 0) { LOG_ERROR("Error: scene_top_menu menu_continue() get player_file_path\n"); return; }
+
+		scene_play_stage_set_player(player_file_path, true);
+		scene_loading_set_stage(slot_stage.c_str());
+		scene_play_stage_set_stage_id(slot_stage.c_str());
 
 		set_stat_event(SCENE_STAT_IDLE);
 		scene_manager_load(SCENE_ID_PLAY_STAGE, true);
@@ -400,7 +407,7 @@ void scene_top_menu_init()
 	menu_index = 0;
 
 	// set dialog
-	dialog_exit_init("Exit to DeskTop?", dialog_exit_ok, dialog_exit_cancel);
+	dialog_exit_init(dialog_exit_ok, dialog_exit_cancel);
 }
 
 SceneManagerFunc* scene_top_menu_get_func()

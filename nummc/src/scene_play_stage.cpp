@@ -51,7 +51,7 @@ static void event_msg_handler();
 static SceneManagerFunc scene_func;
 static int scene_stat;
 static int return_scene_id;
-static std::string stage_id;
+static char stage_id[GAME_UTILS_STRING_NAME_BUF_SIZE];
 
 // draw variables
 static rect_region_t tex_veil_region;
@@ -574,9 +574,22 @@ static void pre_load_event(void* null) {
 	map_manager_init();
 
 	// load stage
-	stage_manager_init();
-	std::string stage_path = (stage_id == "final") ? ("scenes/stages/final.dat") : ("scenes/stages/stage" + stage_id + ".dat");
-	stage_manager_load((char*)stage_path.c_str());
+	{
+		stage_manager_init();
+		//std::string stage_path = (stage_id == "final") ? ("scenes/stages/final.dat") : ("scenes/stages/stage" + stage_id + ".dat");
+		const char* stage_path = NULL;
+		char stage_name_str[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		if (STRCMP_EQ(stage_id, "final")) {
+			stage_path = "scenes/stages/final.dat";
+		}
+		else {
+			int stage_name_str_size = game_utils_string_cat(stage_name_str, (char*)"scenes/stages/stage", stage_id, (char*)".dat");
+			if (stage_name_str_size <= 0) { LOG_ERROR("Error: scene_play_stage pre_load_event() get stage_name_str\n"); return; }
+
+			stage_path = stage_name_str;
+		}
+		stage_manager_load((char*)stage_path);
+	}
 
 	// init unit manager
 	unit_manager_init();
@@ -602,8 +615,13 @@ static void pre_load_event(void* null) {
 	unit_manager_load_effect((char*)"units/effect/rampage/rampage.unit");
 
 	// load common items
-	for (int i = 0; i < g_stage_data->common_items_list.size(); i++) {
-		unit_manager_load_items_def((char*)g_stage_data->common_items_list[i].c_str());
+	node_data_t* node = (g_stage_data->common_items_list == NULL) ? NULL : g_stage_data->common_items_list->start_node;
+	while (node != NULL) {
+		node_data_t* current_node = node;
+		node = node->next;
+
+		char* tmp_path = ((items_data_t*)current_node)->path;
+		if (tmp_path != NULL) unit_manager_load_items_def(tmp_path);
 	}
 
 	// load goal (trap)
@@ -625,9 +643,8 @@ static void pre_load_event(void* null) {
 		int cursor_index = 0;
 		game_save_get_config_default_slot(&cursor_index);
 
-		std::string start_stage = g_stage_data->id;
 		game_utils_get_filename(player_path, tmp_char_buf);
-		if (game_save_set_config_slot(cursor_index, tmp_char_buf, start_stage) == 0) {
+		if (game_save_set_config_slot(cursor_index, tmp_char_buf, g_stage_data->id) == 0) {
 			game_save_config_save();
 		}
 	}
@@ -712,7 +729,7 @@ static void main_event_next_load()
 	if (game_next_stage_wait_timer > GAME_NEXT_STAGE_WAIT_TIMER) {
 		// NN -> load next stage
 		if (g_stage_data->next_stage_id[0] != '_') {
-			if (g_stage_data->next_stage_id != "final") { // exclude "final"
+			if (STRCMP_EQ(g_stage_data->next_stage_id,"final") == false) { // exclude "final"
 				// auto save
 				int load_slot_index;
 				game_save_get_config_default_slot(&load_slot_index);
@@ -764,7 +781,7 @@ static void main_event_next_load()
 			set_stat_event(SCENE_STAT_IDLE);
 			unload_event();
 
-			std::string story_path = "scenes/story/infinity/ending.dat";
+			const char* story_path = "scenes/story/infinity/ending.dat";
 			for (int prof_i = 0; prof_i < RESOURCE_MANAGER_PROFILE_LIST_SIZE; prof_i++) {
 				if (strcmp(g_resource_manager_profile[prof_i].unit_path, (char*)g_player.obj) == 0) {
 					story_path = g_resource_manager_profile[prof_i].ending_path;
@@ -900,18 +917,6 @@ static void section_init()
 			node = node->next;
 		}
 
-		// load drop items
-		for (int i = 0; i < p_section->drop_items_list.size(); i++) {
-			int drop_item_id = unit_manager_search_items((char*)p_section->drop_items_list[i].c_str());
-			p_section->drop_items_id_list.push_back(drop_item_id);
-		}
-
-		// load goal items
-		for (int i = 0; i < p_section->goal_items_list.size(); i++) {
-			int goal_item_id = unit_manager_search_items((char*)p_section->goal_items_list[i].c_str());
-			p_section->goal_items_id_list.push_back(goal_item_id);
-		}
-
 		// load trap
 		node = (p_section->trap_list == NULL) ? NULL : p_section->trap_list->start_node;
 		while (node != NULL) {
@@ -1003,14 +1008,20 @@ static void drop_goal_items()
 		drop_x = g_map_x_max * g_tile_width * 3 / 4;
 	}
 
-	int count = (int)g_stage_data->current_section_data->goal_items_id_list.size();
-	int i = 0;
-	for (int h = 0; h < 3; h++) {
-		if (i >= count) break;
-		for (int w = 0; w < 3; w++) {
-			if (i >= count) break;
-			unit_manager_create_items(drop_x + w * g_tile_width, drop_y + h * g_tile_height, g_stage_data->current_section_data->goal_items_id_list[i]);
-			i += 1;
+	int count = 0;
+	if (g_stage_data->current_section_data->goal_items_list != NULL) {
+		node_data_t* node = g_stage_data->current_section_data->goal_items_list->start_node;
+		while (node != NULL) {
+			node_data_t* current_node = node;
+			node = node->next;
+
+			int w = count % 3;
+			int h = count / 3;
+
+			//g_stage_data->current_section_data->goal_items_id_list[i];
+			int goal_item_id = unit_manager_search_items(((items_data_t*)current_node)->path);
+			unit_manager_create_items(drop_x + w * g_tile_width, drop_y + h * g_tile_height, goal_item_id);
+			count++;
 		}
 	}
 }
@@ -1295,6 +1306,7 @@ void scene_play_stage_init() {
 	scene_func.get_stat_event = &get_stat_event;
 	scene_func.set_stat_event = &set_stat_event;
 
+	stage_id[0] = '\0';
 	reload_player = false;
 }
 
@@ -1302,13 +1314,15 @@ SceneManagerFunc* scene_play_stage_get_func() {
 	return &scene_func;
 }
 
-void scene_play_stage_set_stage_id(std::string& id) {
-	stage_id = id;
+void scene_play_stage_set_stage_id(const char* id) {
+	//stage_id = id;
+	int ret = game_utils_string_copy(stage_id, id);
+	if (ret != 0) { LOG_ERROR("Error: scene_play_stage_set_stage_id() copy id\n"); return;	}
 }
 
-void scene_play_stage_set_player(std::string& path, bool reload_on) {
+void scene_play_stage_set_player(const char* path, bool reload_on) {
 	//player_path = path;
-	if (game_utils_string_copy(player_path, path.c_str()) != 0) {
+	if (game_utils_string_copy(player_path, path) != 0) {
 		LOG_ERROR("Error: scene_play_stage_set_player() failed copying path\n");
 	}
 	reload_player = reload_on;

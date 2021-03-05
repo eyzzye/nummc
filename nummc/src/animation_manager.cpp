@@ -256,20 +256,14 @@ int animation_manager_load_file(char* path, anim_data_t* anim_data, int stat)
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
 	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
-	if (tmp_path_size == 0) {
-		LOG_ERROR("animation_manager_load_file failed get %s\n", path);
-		return 1;
-	}
+	if (tmp_path_size == 0) { LOG_ERROR("animation_manager_load_file failed get %s\n", path); return 1; }
 
 	// read file
 	memset(load_file_callback_data.read_flg, 0, sizeof(bool)* ANIM_TAG_END);
 	load_file_callback_data.anim_data = anim_data;
 	load_file_callback_data.stat = stat;
 	int ret = game_utils_files_read_line(full_path, load_file_callback, (void*)&load_file_callback_data);
-	if (ret != 0) {
-		LOG_ERROR("animation_manager_load_file %s error\n", path);
-		return 1;
-	}
+	if (ret != 0) { LOG_ERROR("animation_manager_load_file %s error\n", path); return 1; }
 
 	return 0;
 }

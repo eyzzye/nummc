@@ -216,10 +216,7 @@ static int game_save_load_ini_file(char* path)
 	memset(load_ini_file_callback_data.read_player_flg,  0, sizeof(bool)* GAME_SAVE_SLOT_NUM);
 	memset(load_ini_file_callback_data.read_stocker_flg, 0, sizeof(bool)* GAME_SAVE_SLOT_NUM);
 	int ret = game_utils_files_read_line(path, load_ini_file_callback, (void*)&load_ini_file_callback_data);
-	if (ret != 0) {
-		LOG_ERROR("game_save_load_ini_file %s error\n", path);
-		return 1;
-	}
+	if (ret != 0) { LOG_ERROR("game_save_load_ini_file %s error\n", path); return 1; }
 
 	return 0;
 }

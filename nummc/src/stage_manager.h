@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 #include "game_common.h"
 #include "map_manager.h"
 
@@ -123,6 +122,7 @@ struct _items_data_t {
 	node_data_t* next;
 
 	char* path;
+	int items_id;
 	int x;
 	int y;
 };
@@ -159,23 +159,19 @@ struct _section_data_t {
 	int section_type;  // SECTION_TYPE_XXX
 	int item_drop_rate;
 
-	std::string map_path;
-	std::string bgm_path;
-	std::string enemy_path[SECTION_ENEMY_PHASE_SIZE];
-	std::string trap_path;
-	std::string items_path;
+	char* map_path;
+	char* bgm_path;
+	char* enemy_path[SECTION_ENEMY_PHASE_SIZE];
+	char* trap_path;
+	char* items_path;
 
 	node_buffer_info_t* bgm_list;
 	node_buffer_info_t* enemy_list[SECTION_ENEMY_PHASE_SIZE];
 	node_buffer_info_t* trap_list;
 
 	node_buffer_info_t* items_list;
-	std::vector<std::string> drop_items_list;
-	std::vector<std::string> goal_items_list;
-
-	// tmp region
-	std::vector<int> drop_items_id_list;
-	std::vector<int> goal_items_id_list;
+	node_buffer_info_t* drop_items_list;
+	node_buffer_info_t* goal_items_list;
 };
 
 struct _section_stock_item_t {
@@ -204,7 +200,7 @@ struct _stage_map_data_t {
 };
 
 struct _stage_data_t {
-	std::string id;
+	char* id;
 	int stat;
 	int result;
 	int next_load;
@@ -222,8 +218,8 @@ struct _stage_data_t {
 	int bonus_exp;
 	float friction_coef;
 
-	std::string next_stage_id;
-	std::vector<std::string> common_items_list;
+	char* next_stage_id;
+	node_buffer_info_t* common_items_list;
 
 	// section values
 	section_data_t** section_list;  // section_list[STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM] head data pointer

@@ -154,19 +154,13 @@ int ai_manager_load_bullet_file(char* path, ai_bullet_t* bullet_base)
 	// full_path = g_base_path + "data/" + path;
 	char full_path[GAME_FULL_PATH_MAX];
 	int tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", path);
-	if (tmp_path_size == 0) {
-		LOG_ERROR("ai_manager_load_bullet_file failed get %s\n", path);
-		return 1;
-	}
+	if (tmp_path_size == 0) { LOG_ERROR("ai_manager_load_bullet_file failed get %s\n", path); return 1;	}
 
 	// read file
 	memset(load_bullet_file_callback_data.read_flg, 0, sizeof(bool) * AI_BULLET_TAG_END);
 	load_bullet_file_callback_data.bullet_base = bullet_base;
 	int ret = game_utils_files_read_line(full_path, load_bullet_file_callback, (void*)&load_bullet_file_callback_data);
-	if (ret != 0) {
-		LOG_ERROR("ai_manager_load_bullet_file %s error\n", path);
-		return 1;
-	}
+	if (ret != 0) { LOG_ERROR("ai_manager_load_bullet_file %s error\n", path); return 1; }
 
 	return 0;
 }

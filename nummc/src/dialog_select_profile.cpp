@@ -9,6 +9,7 @@
 #include "sound_manager.h"
 #include "game_utils.h"
 #include "game_save.h"
+#include "game_log.h"
 
 // draw data
 static tex_info_t tex_info_message;
@@ -74,7 +75,7 @@ static void profile_button_right() {
 }
 
 // init draw items
-static void tex_info_init_message(std::string message)
+static void tex_info_init_message(const char* message)
 {
 	int w, h;
 	int w_pos = 0, h_pos = 0;
@@ -124,8 +125,14 @@ static void tex_info_init()
 	// profile img
 	int profile_stat_flag = 0x00000001 << 1;
 	for (int prof_i = 0; prof_i < PROFILE_ITEM_SIZE; prof_i++) {
-		std::string profile_img = g_resource_manager_profile[0].portrait_img_path; // "unlock"
-		tex_info_profile[prof_i].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}" + profile_img);
+		//std::string profile_img = g_resource_manager_profile[0].portrait_img_path; // "unlock"
+		char profile_img[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		int profile_img_size = game_utils_string_cat(profile_img, (char*)"{scale_mode:linear}", (char*)g_resource_manager_profile[0].portrait_img_path);
+		if (profile_img_size <= 0) {
+			LOG_ERROR("Error: dilog_select_profile tex_info_init() get profile_img");
+			continue;
+		}
+		tex_info_profile[prof_i].res_img = resource_manager_getTextureFromPath(profile_img);
 		if (current_profile_stat & profile_stat_flag) { // enable charactor
 			tex_info_profile[prof_i].res_img = resource_manager_getTextureFromPath(g_resource_manager_profile[prof_i + 1].portrait_img_path);
 		}
@@ -179,7 +186,7 @@ void dialog_select_profile_init() {
 	// do nothing
 }
 
-void dialog_select_profile_reset(std::string message, void_func* yes_func)
+void dialog_select_profile_reset(const char* message, void_func* yes_func)
 {
 	game_save_get_config_unlock_stat(&current_profile_stat);
 	profile_item_index = 0;

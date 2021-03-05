@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include "game_common.h"
 #include "unit_manager.h"
 #include "inventory_manager.h"

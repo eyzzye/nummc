@@ -37,7 +37,7 @@ static int gui_active_button_index;
 bool g_dialog_message_enable;
 
 // init draw items
-static void tex_info_init_message(std::string message)
+static void tex_info_init_message(const char* message)
 {
 	int w, h;
 	int w_pos = 0, h_pos = 0;
@@ -111,7 +111,7 @@ void dialog_message_init() {
 	// do nothing
 }
 
-void dialog_message_reset(std::string message, void_func* no_func, void_func* yes_func, int dialog_type_)
+void dialog_message_reset(const char* message, void_func* no_func, void_func* yes_func, int dialog_type_)
 {
 	dialog_type = dialog_type_;
 	tex_info_init_message(message);
