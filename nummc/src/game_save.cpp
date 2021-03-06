@@ -1,8 +1,9 @@
-#include <io.h>
-#include <fstream>
-#include <time.h>
 #include "game_common.h"
 #include "game_save.h"
+
+#ifdef _WIN32
+#include <io.h>
+#endif
 
 #include "memory_manager.h"
 #include "game_utils.h"
@@ -372,77 +373,105 @@ static int game_save_load_ini_file(char* path)
 	return 0;
 }
 
-static int game_save_save_ini_file(std::string path) {
-	std::ofstream outFile(path);
-	if (outFile.is_open()) {
-		int ret = 0;
-		char tmp_char_buf[MEMORY_MANAGER_LINE_BUF_SIZE];
-		char* new_line_str = (char*)"\n";
-		int new_line_str_size = (int)strlen(new_line_str);
-
-		{
-			const char* line = "[settings]\n";
-			outFile.write(line, strlen(line));
-
-			for (int i = 0; i < GAME_SAVE_SETTINGS_ID_END; i++) {
-				ret = game_utils_string_cat(tmp_char_buf, (char*)settings_key_str[i], (char*)"=", game_config_data.settings[i]);
-				if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get settings %d", i); continue; }
-				outFile.write(tmp_char_buf, strlen(tmp_char_buf));
-				outFile.write(new_line_str, new_line_str_size);
-			}
-		}
-
-		for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-			char slot_num_str[4] = { '\0' };
-			game_utils_string_itoa((i+1), slot_num_str, (4-1), 10);
-			ret = game_utils_string_cat(tmp_char_buf, (char*)"[slot", slot_num_str, (char*)"]\n");
-			if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get [slot%d]", i); continue; }
-			outFile.write(tmp_char_buf, strlen(tmp_char_buf));
-
-			for (int s_i = 0; s_i < GAME_SAVE_SLOT_ID_END; s_i++) {
-				ret = game_utils_string_cat(tmp_char_buf, (char*)slot_key_str[s_i], (char*)"=", game_config_data.slot[i][s_i]);
-				if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get slot %d %d", i, s_i); continue; }
-				outFile.write(tmp_char_buf, strlen(tmp_char_buf));
-				outFile.write(new_line_str, new_line_str_size);
-			}
-		}
-
-		for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-			char player_num_str[4] = { '\0' };
-			game_utils_string_itoa((i + 1), player_num_str, (4 - 1), 10);
-			ret = game_utils_string_cat(tmp_char_buf, (char*)"[player", player_num_str, (char*)"]\n");
-			if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get [player%d]", i); continue; }
-			outFile.write(tmp_char_buf, strlen(tmp_char_buf));
-
-			for (int p_i = 0; p_i < GAME_SAVE_PLAYER_ID_END; p_i++) {
-				ret = game_utils_string_cat(tmp_char_buf, (char*)player_key_str[p_i], (char*)"=", game_config_data.player[i][p_i]);
-				if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get player %d %d", i, p_i); continue; }
-				outFile.write(tmp_char_buf, strlen(tmp_char_buf));
-				outFile.write(new_line_str, new_line_str_size);
-			}
-		}
-
-		for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-			char stocker_num_str[4] = { '\0' };
-			game_utils_string_itoa((i + 1), stocker_num_str, (4 - 1), 10);
-			ret = game_utils_string_cat(tmp_char_buf, (char*)"[stocker", stocker_num_str, (char*)"]\n");
-			if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get [stocker%d]", i); continue; }
-			outFile.write(tmp_char_buf, strlen(tmp_char_buf));
-
-			for (int st_i = 0; st_i < GAME_SAVE_STOCKER_ID_END; st_i++) {
-				ret = game_utils_string_cat(tmp_char_buf, (char*)stocker_key_str[st_i], (char*)"=", game_config_data.stocker[i][st_i]);
-				if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get stocker %d %d", i, st_i); continue; }
-				outFile.write(tmp_char_buf, strlen(tmp_char_buf));
-				outFile.write(new_line_str, new_line_str_size);
-			}
-		}
-
-		outFile.close();
-	}
-	else {
-		LOG_ERROR("game_save_save_ini_file %s error\n", path.c_str());
+static int game_save_save_ini_file(char* path) {
+	SDL_RWops* out_file = SDL_RWFromFile(path, "w");
+	if (out_file == NULL) {
+		LOG_ERROR("Error: game_save_save_ini_file() SDL_RWFromFile() failed\n");
 		return 1;
 	}
+
+	int ret = 0;
+	size_t ret_size = 0;
+	char tmp_char_buf[MEMORY_MANAGER_LINE_BUF_SIZE];
+	char* new_line_str = (char*)"\n";
+	int new_line_str_size = (int)strlen(new_line_str);
+
+	{
+		const char* line = "[settings]\n";
+		ret_size = SDL_RWwrite(out_file, line, strlen(line), 1);
+		if (ret_size <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() write %s\n", line); }
+
+		for (int i = 0; i < GAME_SAVE_SETTINGS_ID_END; i++) {
+			ret = game_utils_string_cat(tmp_char_buf, (char*)settings_key_str[i], (char*)"=", game_config_data.settings[i]);
+			if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get settings %d\n", i); continue; }
+
+			ret_size = SDL_RWwrite(out_file, tmp_char_buf, strlen(tmp_char_buf), 1);
+			if (ret_size <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() write %s\n", tmp_char_buf); }
+
+			ret_size = SDL_RWwrite(out_file, new_line_str, new_line_str_size, 1);
+			if (ret_size <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() write new_line_str\n"); }
+		}
+	}
+
+	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
+		char slot_num_str[4] = { '\0' };
+		game_utils_string_itoa((i+1), slot_num_str, (4-1), 10);
+		ret = game_utils_string_cat(tmp_char_buf, (char*)"[slot", slot_num_str, (char*)"]\n");
+		if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get [slot%d]", i); continue; }
+
+		ret_size = SDL_RWwrite(out_file, tmp_char_buf, strlen(tmp_char_buf), 1);
+		if (ret_size <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() write %s\n", tmp_char_buf); }
+
+		for (int s_i = 0; s_i < GAME_SAVE_SLOT_ID_END; s_i++) {
+			ret = game_utils_string_cat(tmp_char_buf, (char*)slot_key_str[s_i], (char*)"=", game_config_data.slot[i][s_i]);
+			if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get slot %d %d", i, s_i); continue; }
+
+			ret_size = SDL_RWwrite(out_file, tmp_char_buf, strlen(tmp_char_buf), 1);
+			if (ret_size <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() write %s\n", tmp_char_buf); }
+
+			ret_size = SDL_RWwrite(out_file, new_line_str, new_line_str_size, 1);
+			if (ret_size <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() write new_line_str\n"); }
+		}
+	}
+
+	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
+		char player_num_str[4] = { '\0' };
+		game_utils_string_itoa((i + 1), player_num_str, (4 - 1), 10);
+		ret = game_utils_string_cat(tmp_char_buf, (char*)"[player", player_num_str, (char*)"]\n");
+		if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get [player%d]", i); continue; }
+
+		ret_size = SDL_RWwrite(out_file, tmp_char_buf, strlen(tmp_char_buf), 1);
+		if (ret_size <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() write %s\n", tmp_char_buf); }
+
+		for (int p_i = 0; p_i < GAME_SAVE_PLAYER_ID_END; p_i++) {
+			ret = game_utils_string_cat(tmp_char_buf, (char*)player_key_str[p_i], (char*)"=", game_config_data.player[i][p_i]);
+			if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get player %d %d", i, p_i); continue; }
+
+			ret_size = SDL_RWwrite(out_file, tmp_char_buf, strlen(tmp_char_buf), 1);
+			if (ret_size <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() write %s\n", tmp_char_buf); }
+
+			ret_size = SDL_RWwrite(out_file, new_line_str, new_line_str_size, 1);
+			if (ret_size <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() write new_line_str\n"); }
+		}
+	}
+
+	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
+		char stocker_num_str[4] = { '\0' };
+		game_utils_string_itoa((i + 1), stocker_num_str, (4 - 1), 10);
+		ret = game_utils_string_cat(tmp_char_buf, (char*)"[stocker", stocker_num_str, (char*)"]\n");
+		if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get [stocker%d]", i); continue; }
+
+		ret_size = SDL_RWwrite(out_file, tmp_char_buf, strlen(tmp_char_buf), 1);
+		if (ret_size <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() write %s\n", tmp_char_buf); }
+
+		for (int st_i = 0; st_i < GAME_SAVE_STOCKER_ID_END; st_i++) {
+			ret = game_utils_string_cat(tmp_char_buf, (char*)stocker_key_str[st_i], (char*)"=", game_config_data.stocker[i][st_i]);
+			if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get stocker %d %d", i, st_i); continue; }
+
+			ret_size = SDL_RWwrite(out_file, tmp_char_buf, strlen(tmp_char_buf), 1);
+			if (ret_size <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() write %s\n", tmp_char_buf); }
+
+			ret_size = SDL_RWwrite(out_file, new_line_str, new_line_str_size, 1);
+			if (ret_size <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() write new_line_str\n"); }
+		}
+	}
+
+	ret = SDL_RWclose(out_file);
+	if (ret != 0) {
+		LOG_ERROR("Error: game_save_save_ini_file() SDL_RWclose() failed\n");
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -477,6 +506,12 @@ int game_save_init()
 		// check file exist & load
 		if (_access(g_save_path, 6) != -1) {
 			if (game_save_load_ini_file(g_save_path) != 0) return 1;
+
+			// save backup
+			char backup_save_path[GAME_FULL_PATH_MAX];
+			ret = game_utils_string_cat(backup_save_path, g_save_path, (char*)".backup");
+			if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_init() get backup_save_path\n"); return 1; }
+			if (game_save_save_ini_file(backup_save_path) != 0) return 1;
 		}
 		else {
 			//save_template_path = g_base_path + "data/_temp/save_data_template.ini";

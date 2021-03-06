@@ -1,5 +1,3 @@
-#include <io.h>
-#include <fstream>
 #include "game_common.h"
 #include "game_log.h"
 
@@ -13,7 +11,7 @@ static char error_stack[ERROR_STACK_SIZE][ERROR_STRING_SIZE];
 static int error_index;
 static char error_file_path[GAME_FULL_PATH_MAX];
 static char tmp_char_buf_error[ERROR_STRING_SIZE];
-static std::ofstream* error_file_stream;
+static SDL_RWops* error_file_stream;
 #endif // GAME_LOG_ERROR_ENABLE
 
 #ifdef GAME_LOG_DEBUG_ENABLE
@@ -23,7 +21,7 @@ static char debug_stack[DEBUG_STACK_SIZE][DEBUG_STRING_SIZE];
 static int debug_index;
 static char debug_file_path[GAME_FULL_PATH_MAX];
 static char tmp_char_buf_debug[DEBUG_STRING_SIZE];
-static std::ofstream* debug_file_stream;
+static SDL_RWops* debug_file_stream;
 #endif // GAME_LOG_DEBUG_ENABLE
 
 int game_log_init()
@@ -36,7 +34,8 @@ int game_log_init()
 	if (game_utils_string_copy(&error_file_path[g_save_folder_size], "error.log") != 0) return 1;
 #ifdef GAME_LOG_FILE_ENABLE
 	if (game_utils_backup_file(error_file_path)) return 1;
-	error_file_stream = new std::ofstream(error_file_path, std::ostream::app);
+	error_file_stream = SDL_RWFromFile(error_file_path, "a");
+	if (error_file_stream == NULL) { LOG_ERROR_CONSOLE("Error: game_log_init() can't open error_file_path\n"); return 1; }
 #endif
 #endif // GAME_LOG_ERROR_ENABLE
 
@@ -49,7 +48,8 @@ int game_log_init()
 
 #ifdef GAME_LOG_FILE_ENABLE
 	if (game_utils_backup_file(debug_file_path)) return 1;
-	debug_file_stream = new std::ofstream(debug_file_path, std::ostream::app);
+	debug_file_stream = SDL_RWFromFile(debug_file_path, "a");
+	if (debug_file_stream == NULL) { LOG_ERROR_CONSOLE("Error: game_log_init() can't open debug_file_path\n"); return 1; }
 #endif
 #endif // GAME_LOG_DEBUG_ENABLE
 
@@ -60,16 +60,18 @@ void game_log_close()
 {
 #ifdef GAME_LOG_ERROR_ENABLE
 #ifdef GAME_LOG_FILE_ENABLE
-	error_file_stream->close();
-	delete error_file_stream;
+	if (SDL_RWclose(error_file_stream) != 0) {
+		LOG_ERROR_CONSOLE("Error: game_log_close() can't close error_file_stream\n");
+	}
 	error_file_stream = NULL;
 #endif
 #endif // GAME_LOG_ERROR_ENABLE
 
 #ifdef GAME_LOG_DEBUG_ENABLE
 #ifdef GAME_LOG_FILE_ENABLE
-	debug_file_stream->close();
-	delete debug_file_stream;
+	if (SDL_RWclose(debug_file_stream) != 0) {
+		LOG_ERROR_CONSOLE("Error: game_log_close() can't close debug_file_stream\n");
+	}
 	debug_file_stream = NULL;
 #endif
 #endif // GAME_LOG_DEBUG_ENABLE
@@ -101,11 +103,13 @@ void game_log_error(const char* format, ...)
 	game_utils_string_copy(error_stack[error_index], tmp_char_buf_error);
 
 #ifdef GAME_LOG_FILE_ENABLE
-	if (error_file_stream->is_open()) {
-		error_file_stream->write(tmp_char_buf_error, log_str_size);
+	if (error_file_stream) {
+		if (SDL_RWwrite(error_file_stream, tmp_char_buf_error, log_str_size, 1) <= 0) {
+			LOG_ERROR_CONSOLE("Error: game_log_error() write error\n");
+		}
 	}
 	else {
-		LOG_ERROR_CONSOLE("game_log_error write error\n");
+		LOG_ERROR_CONSOLE("Error: game_log_error() error_file_stream is NULL\n");
 	}
 #endif
 
@@ -140,11 +144,13 @@ void game_log_debug(const char* format, ...)
 	game_utils_string_copy(debug_stack[debug_index], tmp_char_buf_debug);
 
 #ifdef GAME_LOG_FILE_ENABLE
-	if (debug_file_stream->is_open()) {
-		debug_file_stream->write(tmp_char_buf_debug, log_str_size);
+	if (debug_file_stream) {
+		if (SDL_RWwrite(debug_file_stream, tmp_char_buf_debug, log_str_size, 1) <= 0) {
+			LOG_ERROR_CONSOLE("Error: game_log_debug() write error\n");
+		}
 	}
 	else {
-		LOG_ERROR_CONSOLE("game_log_debug write error\n");
+		LOG_ERROR_CONSOLE("Error: game_log_debug() debug_file_stream is NULL\n");
 	}
 #endif
 

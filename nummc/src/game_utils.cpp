@@ -1,10 +1,13 @@
-#include <string.h>
-#include <random>
-#include <io.h>
-#include <time.h>
-#include <fstream>
 #include "game_common.h"
 #include "game_utils.h"
+
+#include <string.h>
+#include <random>
+#include <time.h>
+#ifdef _WIN32
+#include <io.h>
+#endif
+
 #include "game_window.h"
 #include "game_log.h"
 #include "memory_manager.h"
@@ -136,13 +139,11 @@ int game_utils_create_folder(char* path)
 
 int game_utils_backup_file(char* path, int max_size)
 {
+#ifdef _WIN32
 	HANDLE logFile = CreateFileA(path,
 		GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_NO_BUFFERING, NULL);
 	if (logFile == INVALID_HANDLE_VALUE) {
 		if (GetLastError() == ERROR_FILE_NOT_FOUND) {
-			// new create
-			std::ofstream newFile(path, std::ostream::out);
-			newFile.close();
 			return 0;
 		}
 		else {
@@ -169,10 +170,6 @@ int game_utils_backup_file(char* path, int max_size)
 			}
 			else {
 				CloseHandle(logFile);
-
-				// new create
-				std::ofstream newFile(path, std::ostream::out);
-				newFile.close();
 				return 0;
 			}
 		}
@@ -181,6 +178,7 @@ int game_utils_backup_file(char* path, int max_size)
 			return 0;
 		}
 	}
+#endif
 }
 
 int game_utils_files_get_file_list(char* path, char* filter, char* file_list, int file_list_size, int file_list_line_size)

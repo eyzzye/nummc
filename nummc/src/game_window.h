@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 #include <mutex>
 #include "game_common.h"
 #include "hud_manager.h"
