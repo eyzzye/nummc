@@ -1,39 +1,112 @@
-#include <vector>
-#include <map>
 #include <io.h>
 #include <fstream>
 #include <time.h>
 #include "game_common.h"
 #include "game_save.h"
 
+#include "memory_manager.h"
 #include "game_utils.h"
 #include "game_log.h"
 
 #define GAME_SAVE_SLOT_NUM 8
 
-// .ini data
-typedef struct _ini_data_t ini_data_t;
-struct _ini_data_t {
-	std::string section;
-	std::map<std::string, std::string> values;
+// settings
+#define GAME_SAVE_SETTINGS_ID_DEFAULT_SLOT  0
+#define GAME_SAVE_SETTINGS_ID_UNLOCK_STAT   1
+#define GAME_SAVE_SETTINGS_ID_RESOLUTION_W  2
+#define GAME_SAVE_SETTINGS_ID_RESOLUTION_H  3
+#define GAME_SAVE_SETTINGS_ID_MUSIC_VOLUME  4
+#define GAME_SAVE_SETTINGS_ID_SFX_VOLUME    5
+#define GAME_SAVE_SETTINGS_ID_END           6
+
+static const char* settings_key_str[GAME_SAVE_SETTINGS_ID_END] = {
+	"default_slot",
+	"unlock_stat",
+	"resolution_w",
+	"resolution_h",
+	"music_volume",
+	"sfx_volume",
 };
-#define INI_DATA_BUFFER_SIZE  (1 + GAME_SAVE_SLOT_NUM * 3)  /* settings, slot, player, stocker */
-static ini_data_t ini_data_buffer[INI_DATA_BUFFER_SIZE];
+
+// slot
+#define GAME_SAVE_SLOT_ID_PLAYER     0
+#define GAME_SAVE_SLOT_ID_STAGE      1
+#define GAME_SAVE_SLOT_ID_TIMESTAMP  2
+#define GAME_SAVE_SLOT_ID_END        3
+
+static const char* slot_key_str[GAME_SAVE_SLOT_ID_END] = {
+	"player",
+	"stage",
+	"timestamp",
+};
+
+// player
+#define GAME_SAVE_PLAYER_ID_PATH               0
+#define GAME_SAVE_PLAYER_ID_HP                 1
+#define GAME_SAVE_PLAYER_ID_EXP                2
+#define GAME_SAVE_PLAYER_ID_ATTACK_WAIT_TIMER  3
+#define GAME_SAVE_PLAYER_ID_BULLET_LIFE_TIMER  4
+#define GAME_SAVE_PLAYER_ID_BULLET_SPEC        5
+#define GAME_SAVE_PLAYER_ID_SPEED              6
+#define GAME_SAVE_PLAYER_ID_WEAPON             7
+#define GAME_SAVE_PLAYER_ID_ARMOR              8
+#define GAME_SAVE_PLAYER_ID_SPEC               9
+#define GAME_SAVE_PLAYER_ID_HP_MAX            10
+#define GAME_SAVE_PLAYER_ID_EXP_MAX           11
+#define GAME_SAVE_PLAYER_ID_LEVEL             12
+#define GAME_SAVE_PLAYER_ID_END               13
+
+static const char* player_key_str[GAME_SAVE_PLAYER_ID_END] = {
+	"path",
+	"hp",
+	"exp",
+	"attack_wait_timer",
+	"bullet_life_timer",
+	"bullet_spec",
+	"speed",
+	"weapon",
+	"armor",
+	"spec",
+	"hp_max",
+	"exp_max",
+	"level",
+};
+
+// stocker
+#define GAME_SAVE_STOCKER_ID_WEAPON_ITEM_LIST_IDX   0
+#define GAME_SAVE_STOCKER_ID_WEAPON_ITEM_COUNT      1
+#define GAME_SAVE_STOCKER_ID_CHARGE_ITEM_LIST_IDX   2
+#define GAME_SAVE_STOCKER_ID_CHARGE_ITEM_COUNT      3
+#define GAME_SAVE_STOCKER_ID_CHARGE_CHARGE_VAL      4
+#define GAME_SAVE_STOCKER_ID_CHARGE_CHARGE_TIMER    5
+#define GAME_SAVE_STOCKER_ID_SPECIAL_ITEM_LIST_IDX  6
+#define GAME_SAVE_STOCKER_ID_SPECIAL_ITEM_COUNT     7
+#define GAME_SAVE_STOCKER_ID_END                    8
+
+static const char* stocker_key_str[GAME_SAVE_STOCKER_ID_END] = {
+	"weapon_item_list_idx",
+	"weapon_item_count",
+	"charge_item_list_idx",
+	"charge_item_count",
+	"charge_charge_val",
+	"charge_charge_timer",
+	"special_item_list_idx",
+	"special_item_count",
+};
 
 // config data
 typedef struct _game_config_data_t game_config_data_t;
 struct _game_config_data_t {
-	ini_data_t* settings;
-	ini_data_t* slot[GAME_SAVE_SLOT_NUM];
-	ini_data_t* player[GAME_SAVE_SLOT_NUM];
-	ini_data_t* stocker[GAME_SAVE_SLOT_NUM];
+	char* settings[GAME_SAVE_SETTINGS_ID_END];
+	char* slot[GAME_SAVE_SLOT_NUM][GAME_SAVE_SLOT_ID_END];
+	char* player[GAME_SAVE_SLOT_NUM][GAME_SAVE_PLAYER_ID_END];
+	char* stocker[GAME_SAVE_SLOT_NUM][GAME_SAVE_STOCKER_ID_END];
 };
 static game_config_data_t game_config_data;
 
 // tmp region
 static char g_save_path[GAME_FULL_PATH_MAX];
 static char save_template_path[GAME_FULL_PATH_MAX];
-static char tmp_char_buf[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 
 // extern variables
 int g_save_folder_size;
@@ -41,24 +114,32 @@ char g_save_folder[GAME_FULL_PATH_MAX];
 
 static int game_config_data_alloc()
 {
-	int index = 0;
-
-	game_config_data.settings = &ini_data_buffer[index];
-	index++;
-
-	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-		game_config_data.slot[i] = &ini_data_buffer[index];
-		index++;
+	for (int i = 0; i < GAME_SAVE_SETTINGS_ID_END; i++) {
+		game_config_data.settings[i] = memory_manager_new_char_buff(MEMORY_MANAGER_NAME_BUF_SIZE - 1);
+		if (game_config_data.settings[i] == NULL) return 1;
 	}
 
 	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-		game_config_data.player[i] = &ini_data_buffer[index];
-		index++;
-	}
+		// slot
+		for (int s_i = 0; s_i < GAME_SAVE_SLOT_ID_END; s_i++) {
+			game_config_data.slot[i][s_i] = memory_manager_new_char_buff(MEMORY_MANAGER_NAME_BUF_SIZE - 1);
+			if (game_config_data.slot[i][s_i] == NULL) return 1;
+		}
 
-	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-		game_config_data.stocker[i] = &ini_data_buffer[index];
-		index++;
+		// player
+		for (int p_i = 0; p_i < GAME_SAVE_PLAYER_ID_END; p_i++) {
+			int memory_size = MEMORY_MANAGER_NAME_BUF_SIZE - 1;
+			if (p_i == GAME_SAVE_PLAYER_ID_PATH) memory_size = MEMORY_MANAGER_STRING_BUF_SIZE - 1;
+
+			game_config_data.player[i][p_i] = memory_manager_new_char_buff(memory_size);
+			if (game_config_data.player[i][p_i] == NULL) return 1;
+		}
+
+		// stocker
+		for (int st_i = 0; st_i < GAME_SAVE_STOCKER_ID_END; st_i++) {
+			game_config_data.stocker[i][st_i] = memory_manager_new_char_buff(MEMORY_MANAGER_NAME_BUF_SIZE - 1);
+			if (game_config_data.stocker[i][st_i] == NULL) return 1;
+		}
 	}
 
 	return 0;
@@ -66,20 +147,84 @@ static int game_config_data_alloc()
 
 static void game_config_data_delete()
 {
-	game_config_data.settings = NULL;
-
-	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-		game_config_data.slot[i] = NULL;
+	for (int i = 0; i < GAME_SAVE_SETTINGS_ID_END; i++) {
+		if (game_config_data.settings[i] != NULL) {
+			memory_manager_delete_char_buff(game_config_data.settings[i]);
+			game_config_data.settings[i] = NULL;
+		}
 	}
 
 	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-		game_config_data.player[i] = NULL;
-	}
+		// slot
+		for (int s_i = 0; s_i < GAME_SAVE_SLOT_ID_END; s_i++) {
+			if (game_config_data.slot[i][s_i] != NULL) {
+				memory_manager_delete_char_buff(game_config_data.slot[i][s_i]);
+				game_config_data.slot[i][s_i] = NULL;
+			}
+		}
 
-	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-		game_config_data.stocker[i] = NULL;
+		// player
+		for (int p_i = 0; p_i < GAME_SAVE_PLAYER_ID_END; p_i++) {
+			if (game_config_data.player[i][p_i] != NULL) {
+				memory_manager_delete_char_buff(game_config_data.player[i][p_i]);
+				game_config_data.player[i][p_i] = NULL;
+			}
+		}
+
+		// stocker
+		for (int st_i = 0; st_i < GAME_SAVE_STOCKER_ID_END; st_i++) {
+			if (game_config_data.stocker[i][st_i] != NULL) {
+				memory_manager_delete_char_buff(game_config_data.stocker[i][st_i]);
+				game_config_data.stocker[i][st_i] = NULL;
+			}
+		}
 	}
 }
+
+static int get_settings_key_id(char* key)
+{
+	for (int i = 0; i < GAME_SAVE_SETTINGS_ID_END; i++) {
+		if (STRCMP_EQ(key, settings_key_str[i])) {
+			return i;
+		}
+	}
+	LOG_ERROR_CONSOLE("Error: get_settings_key_id() not found %s", key);
+	return -1;
+}
+
+static int get_slot_key_id(char* key)
+{
+	for (int i = 0; i < GAME_SAVE_SLOT_ID_END; i++) {
+		if (STRCMP_EQ(key, slot_key_str[i])) {
+			return i;
+		}
+	}
+	LOG_ERROR_CONSOLE("Error: get_slot_key_id() not found %s", key);
+	return -1;
+}
+
+static int get_player_key_id(char* key)
+{
+	for (int i = 0; i < GAME_SAVE_PLAYER_ID_END; i++) {
+		if (STRCMP_EQ(key, player_key_str[i])) {
+			return i;
+		}
+	}
+	LOG_ERROR_CONSOLE("Error: get_player_key_id() not found %s", key);
+	return -1;
+}
+
+static int get_stocker_key_id(char* key)
+{
+	for (int i = 0; i < GAME_SAVE_STOCKER_ID_END; i++) {
+		if (STRCMP_EQ(key, stocker_key_str[i])) {
+			return i;
+		}
+	}
+	LOG_ERROR_CONSOLE("Error: get_stocker_key_id() not found %s", key);
+	return -1;
+}
+
 
 typedef struct _load_ini_file_callback_data_t load_ini_file_callback_data_t;
 struct _load_ini_file_callback_data_t {
@@ -91,6 +236,8 @@ struct _load_ini_file_callback_data_t {
 static load_ini_file_callback_data_t load_ini_file_callback_data;
 static void load_ini_file_callback(char* line, int line_size, int line_num, void* argv)
 {
+	int ret = 0;
+
 	load_ini_file_callback_data_t* data = (load_ini_file_callback_data_t*)argv;
 	char tag_name[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
@@ -107,12 +254,11 @@ static void load_ini_file_callback(char* line, int line_size, int line_num, void
 			memset(data->read_stocker_flg, 0, sizeof(bool) * GAME_SAVE_SLOT_NUM);
 
 			data->read_flg = true;
-			game_config_data.settings->section = line;
 			return;
 		}
 
 		int ret = game_utils_string_copy(tag_name, (char*)"[slot1]"); // [slot1...8]
-		if (ret != 0) { LOG_ERROR("Error: load_ini_file_callback() [slot1] %d\n", line_num);  return; }
+		if (ret != 0) { LOG_ERROR_CONSOLE("Error: load_ini_file_callback() [slot1] %d\n", line_num);  return; }
 		bool found_slot = false;
 		for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
 			if (STRCMP_EQ(line,tag_name)) {
@@ -124,7 +270,6 @@ static void load_ini_file_callback(char* line, int line_size, int line_num, void
 
 				data->read_slot_flg[i] = true;
 				found_slot = true;
-				game_config_data.slot[i]->section = line;
 				break;
 			}
 			tag_name[5] += 1;
@@ -132,7 +277,7 @@ static void load_ini_file_callback(char* line, int line_size, int line_num, void
 		if (found_slot) return;
 
 		ret = game_utils_string_copy(tag_name, (char*)"[player1]"); // [player1...8]
-		if (ret != 0) { LOG_ERROR("Error: load_ini_file_callback() [player1] %d\n", line_num);  return; }
+		if (ret != 0) { LOG_ERROR_CONSOLE("Error: load_ini_file_callback() [player1] %d\n", line_num);  return; }
 		found_slot = false;
 		for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
 			if (STRCMP_EQ(line,tag_name)) {
@@ -144,7 +289,6 @@ static void load_ini_file_callback(char* line, int line_size, int line_num, void
 
 				data->read_player_flg[i] = true;
 				found_slot = true;
-				game_config_data.player[i]->section = line;
 				break;
 			}
 			tag_name[7] += 1;
@@ -152,7 +296,7 @@ static void load_ini_file_callback(char* line, int line_size, int line_num, void
 		if (found_slot) return;
 
 		ret = game_utils_string_copy(tag_name, (char*)"[stocker1]"); // [stocker1...8]
-		if (ret != 0) { LOG_ERROR("Error: load_ini_file_callback() [stocker1] %d\n", line_num);  return; }
+		if (ret != 0) { LOG_ERROR_CONSOLE("Error: load_ini_file_callback() [stocker1] %d\n", line_num);  return; }
 		found_slot = false;
 		for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
 			if (STRCMP_EQ(line,tag_name)) {
@@ -164,7 +308,6 @@ static void load_ini_file_callback(char* line, int line_size, int line_num, void
 
 				data->read_stocker_flg[i] = true;
 				found_slot = true;
-				game_config_data.stocker[i]->section = line;
 				break;
 			}
 			tag_name[8] += 1;
@@ -174,13 +317,17 @@ static void load_ini_file_callback(char* line, int line_size, int line_num, void
 
 	if (data->read_flg) {
 		if (game_utils_split_key_value(line, key, value) == 0) {
-			game_config_data.settings->values.insert(std::pair<std::string, std::string>(key, value));
+			int id = get_settings_key_id(key);
+			ret = game_utils_string_copy(game_config_data.settings[id], value);
+			if (ret != 0) { LOG_ERROR_CONSOLE("Error: load_ini_file_callback() copy settings %d", id); }
 		}
 	}
 	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
 		if (data->read_slot_flg[i]) {
 			if (game_utils_split_key_value(line, key, value) == 0) {
-				game_config_data.slot[i]->values.insert(std::pair<std::string, std::string>(key, value));
+				int id = get_slot_key_id(key);
+				ret = game_utils_string_copy(game_config_data.slot[i][id], value);
+				if (ret != 0) { LOG_ERROR_CONSOLE("Error: load_ini_file_callback() copy slot %d %d", (i+1), id); }
 			}
 			break;
 		}
@@ -188,7 +335,9 @@ static void load_ini_file_callback(char* line, int line_size, int line_num, void
 	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
 		if (data->read_player_flg[i]) {
 			if (game_utils_split_key_value(line, key, value) == 0) {
-				game_config_data.player[i]->values.insert(std::pair<std::string, std::string>(key, value));
+				int id = get_player_key_id(key);
+				ret = game_utils_string_copy(game_config_data.player[i][id], value);
+				if (ret != 0) { LOG_ERROR_CONSOLE("Error: load_ini_file_callback() copy player %d %d", (i + 1), id); }
 			}
 			break;
 		}
@@ -196,7 +345,9 @@ static void load_ini_file_callback(char* line, int line_size, int line_num, void
 	for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
 		if (data->read_stocker_flg[i]) {
 			if (game_utils_split_key_value(line, key, value) == 0) {
-				game_config_data.stocker[i]->values.insert(std::pair<std::string, std::string>(key, value));
+				int id = get_stocker_key_id(key);
+				ret = game_utils_string_copy(game_config_data.stocker[i][id], value);
+				if (ret != 0) { LOG_ERROR_CONSOLE("Error: load_ini_file_callback() copy stocker %d %d", (i + 1), id); }
 			}
 			break;
 		}
@@ -224,41 +375,65 @@ static int game_save_load_ini_file(char* path)
 static int game_save_save_ini_file(std::string path) {
 	std::ofstream outFile(path);
 	if (outFile.is_open()) {
-		std::string line = game_config_data.settings->section + "\n";
-		outFile.write(line.c_str(), line.size());
+		int ret = 0;
+		char tmp_char_buf[MEMORY_MANAGER_LINE_BUF_SIZE];
+		char* new_line_str = (char*)"\n";
+		int new_line_str_size = (int)strlen(new_line_str);
 
-		for (auto it = game_config_data.settings->values.begin(); it != game_config_data.settings->values.end(); it++) {
-			line = it->first + "=" + it->second + "\n";
-			outFile.write(line.c_str(), line.size());
-		}
+		{
+			const char* line = "[settings]\n";
+			outFile.write(line, strlen(line));
 
-		for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-			std::string line = game_config_data.slot[i]->section + "\n";
-			outFile.write(line.c_str(), line.size());
-
-			for (auto it = game_config_data.slot[i]->values.begin(); it != game_config_data.slot[i]->values.end(); it++) {
-				line = it->first + "=" + it->second + "\n";
-				outFile.write(line.c_str(), line.size());
+			for (int i = 0; i < GAME_SAVE_SETTINGS_ID_END; i++) {
+				ret = game_utils_string_cat(tmp_char_buf, (char*)settings_key_str[i], (char*)"=", game_config_data.settings[i]);
+				if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get settings %d", i); continue; }
+				outFile.write(tmp_char_buf, strlen(tmp_char_buf));
+				outFile.write(new_line_str, new_line_str_size);
 			}
 		}
 
 		for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-			std::string line = game_config_data.player[i]->section + "\n";
-			outFile.write(line.c_str(), line.size());
+			char slot_num_str[4] = { '\0' };
+			game_utils_string_itoa((i+1), slot_num_str, (4-1), 10);
+			ret = game_utils_string_cat(tmp_char_buf, (char*)"[slot", slot_num_str, (char*)"]\n");
+			if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get [slot%d]", i); continue; }
+			outFile.write(tmp_char_buf, strlen(tmp_char_buf));
 
-			for (auto it = game_config_data.player[i]->values.begin(); it != game_config_data.player[i]->values.end(); it++) {
-				line = it->first + "=" + it->second + "\n";
-				outFile.write(line.c_str(), line.size());
+			for (int s_i = 0; s_i < GAME_SAVE_SLOT_ID_END; s_i++) {
+				ret = game_utils_string_cat(tmp_char_buf, (char*)slot_key_str[s_i], (char*)"=", game_config_data.slot[i][s_i]);
+				if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get slot %d %d", i, s_i); continue; }
+				outFile.write(tmp_char_buf, strlen(tmp_char_buf));
+				outFile.write(new_line_str, new_line_str_size);
 			}
 		}
 
 		for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
-			std::string line = game_config_data.stocker[i]->section + "\n";
-			outFile.write(line.c_str(), line.size());
+			char player_num_str[4] = { '\0' };
+			game_utils_string_itoa((i + 1), player_num_str, (4 - 1), 10);
+			ret = game_utils_string_cat(tmp_char_buf, (char*)"[player", player_num_str, (char*)"]\n");
+			if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get [player%d]", i); continue; }
+			outFile.write(tmp_char_buf, strlen(tmp_char_buf));
 
-			for (auto it = game_config_data.stocker[i]->values.begin(); it != game_config_data.stocker[i]->values.end(); it++) {
-				line = it->first + "=" + it->second + "\n";
-				outFile.write(line.c_str(), line.size());
+			for (int p_i = 0; p_i < GAME_SAVE_PLAYER_ID_END; p_i++) {
+				ret = game_utils_string_cat(tmp_char_buf, (char*)player_key_str[p_i], (char*)"=", game_config_data.player[i][p_i]);
+				if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get player %d %d", i, p_i); continue; }
+				outFile.write(tmp_char_buf, strlen(tmp_char_buf));
+				outFile.write(new_line_str, new_line_str_size);
+			}
+		}
+
+		for (int i = 0; i < GAME_SAVE_SLOT_NUM; i++) {
+			char stocker_num_str[4] = { '\0' };
+			game_utils_string_itoa((i + 1), stocker_num_str, (4 - 1), 10);
+			ret = game_utils_string_cat(tmp_char_buf, (char*)"[stocker", stocker_num_str, (char*)"]\n");
+			if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get [stocker%d]", i); continue; }
+			outFile.write(tmp_char_buf, strlen(tmp_char_buf));
+
+			for (int st_i = 0; st_i < GAME_SAVE_STOCKER_ID_END; st_i++) {
+				ret = game_utils_string_cat(tmp_char_buf, (char*)stocker_key_str[st_i], (char*)"=", game_config_data.stocker[i][st_i]);
+				if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_save_ini_file() get stocker %d %d", i, st_i); continue; }
+				outFile.write(tmp_char_buf, strlen(tmp_char_buf));
+				outFile.write(new_line_str, new_line_str_size);
 			}
 		}
 
@@ -331,222 +506,229 @@ void game_save_close()
 
 void game_save_get_config_default_slot(int* default_slot_index)
 {
-	if (game_config_data.settings->values["default_slot"] == "")
+	if (game_config_data.settings[GAME_SAVE_SETTINGS_ID_DEFAULT_SLOT][0] == '\0')
 	{
 		*default_slot_index = -1;
 		return;
 	}
 
-	*default_slot_index = atoi(game_config_data.settings->values["default_slot"].c_str());
+	*default_slot_index = atoi(game_config_data.settings[GAME_SAVE_SETTINGS_ID_DEFAULT_SLOT]);
 	*default_slot_index -= 1;
 }
 int game_save_set_config_default_slot(int default_slot_index)
 {
 	if (default_slot_index < 0) {
-		game_config_data.settings->values["default_slot"] = "";
+		game_config_data.settings[GAME_SAVE_SETTINGS_ID_DEFAULT_SLOT][0] = '\0';
 		return 0;
 	}
 
-	char c_buff[2] = { '\0' };
-	_itoa_s((default_slot_index + 1), c_buff, 10);
-	std::string new_slot_index = c_buff;
-	game_config_data.settings->values["default_slot"] = new_slot_index;
+	char c_buff[4] = { '\0' };
+	game_utils_string_itoa((default_slot_index + 1), c_buff, (4-1), 10);
+	int ret = game_utils_string_copy(game_config_data.settings[GAME_SAVE_SETTINGS_ID_DEFAULT_SLOT], c_buff);
+	if (ret != 0) { LOG_ERROR_CONSOLE("Error: game_save_set_config_default_slot() copy slot\n"); return 1; }
+
 	return 0;
 }
 
 void game_save_get_config_unlock_stat(int* unlock_stat)
 {
-	if (game_config_data.settings->values["unlock_stat"] == "")
+	if (game_config_data.settings[GAME_SAVE_SETTINGS_ID_UNLOCK_STAT][0] == '\0')
 	{
 		*unlock_stat = (0x00000002); // infinity only
 		return;
 	}
 
-	*unlock_stat = atoi(game_config_data.settings->values["unlock_stat"].c_str());
+	*unlock_stat = atoi(game_config_data.settings[GAME_SAVE_SETTINGS_ID_UNLOCK_STAT]);
 }
 int game_save_set_config_unlock_stat(int unlock_stat)
 {
 	char c_buff[10] = { '\0' };
-	_itoa_s(unlock_stat, c_buff, 10);
-	std::string new_unlock_stat = c_buff;
-	game_config_data.settings->values["unlock_stat"] = new_unlock_stat;
+	game_utils_string_itoa(unlock_stat, c_buff, (10 - 1), 10);
+	int ret = game_utils_string_copy(game_config_data.settings[GAME_SAVE_SETTINGS_ID_UNLOCK_STAT], c_buff);
+	if (ret != 0) { LOG_ERROR_CONSOLE("Error: game_save_set_config_unlock_stat() copy unlock_stat\n"); return 1; }
+
 	return 0;
 }
 
 void game_save_get_config_resolution(int* w, int* h)
 {
-	*w = atoi(game_config_data.settings->values["resolution_w"].c_str());
-	*h = atoi(game_config_data.settings->values["resolution_h"].c_str());
+	*w = atoi(game_config_data.settings[GAME_SAVE_SETTINGS_ID_RESOLUTION_W]);
+	*h = atoi(game_config_data.settings[GAME_SAVE_SETTINGS_ID_RESOLUTION_H]);
 }
 int game_save_set_config_resolution(int w, int h)
 {
-	char c_buff_w[5] = { '\0' };
-	char c_buff_h[5] = { '\0' };
-	_itoa_s(w, c_buff_w, 10);
-	_itoa_s(h, c_buff_h, 10);
-	std::string new_w = c_buff_w;
-	std::string new_h = c_buff_h;
+	int ret = 0;
+	char c_buff_w[8] = { '\0' };
+	char c_buff_h[8] = { '\0' };
+	game_utils_string_itoa(w, c_buff_w, (8 - 1), 10);
+	game_utils_string_itoa(h, c_buff_h, (8 - 1), 10);
 
 	// do not overwrite
-	if ((new_w == game_config_data.settings->values["resolution_w"])
-		&& (new_h == game_config_data.settings->values["resolution_h"])) return 1;
+	if ((STRCMP_EQ(c_buff_w,game_config_data.settings[GAME_SAVE_SETTINGS_ID_RESOLUTION_W]))
+		&& (STRCMP_EQ(c_buff_h,game_config_data.settings[GAME_SAVE_SETTINGS_ID_RESOLUTION_H]))) return 1;
 
-	game_config_data.settings->values["resolution_w"] = new_w;
-	game_config_data.settings->values["resolution_h"] = new_h;
+	ret = game_utils_string_copy(game_config_data.settings[GAME_SAVE_SETTINGS_ID_RESOLUTION_W], c_buff_w);
+	if (ret != 0) { LOG_ERROR_CONSOLE("Error: game_save_set_config_resolution() copy resolution_w\n"); return 1; }
+
+	ret = game_utils_string_copy(game_config_data.settings[GAME_SAVE_SETTINGS_ID_RESOLUTION_H], c_buff_h);
+	if (ret != 0) { LOG_ERROR_CONSOLE("Error: game_save_set_config_resolution() copy resolution_h\n"); return 1; }
+
 	return 0;
 }
 
 void game_save_get_config_music_volume(int* volume)
 {
-	if (game_config_data.settings->values["music_volume"] == "")
+	if (game_config_data.settings[GAME_SAVE_SETTINGS_ID_MUSIC_VOLUME][0] == '\0')
 	{
 		*volume = GAME_SAVE_CONFIG_MUSIC_VOLUME_DEFAULT;
 		return;
 	}
 
-	*volume = atoi(game_config_data.settings->values["music_volume"].c_str());
+	*volume = atoi(game_config_data.settings[GAME_SAVE_SETTINGS_ID_MUSIC_VOLUME]);
 }
 int game_save_set_config_music_volume(int volume)
 {
 	if (volume < 0) {
-		game_config_data.settings->values["music_volume"] = "";
+		game_config_data.settings[GAME_SAVE_SETTINGS_ID_MUSIC_VOLUME][0] = '\0';
 		return 0;
 	}
 
 	char c_buff[4] = { '\0' };
-	_itoa_s((volume), c_buff, 10);
-	std::string new_volume = c_buff;
-	if (new_volume == game_config_data.settings->values["music_volume"]) return 1;
+	game_utils_string_itoa(volume, c_buff, (4 - 1), 10);
+	if (STRCMP_EQ(c_buff, game_config_data.settings[GAME_SAVE_SETTINGS_ID_MUSIC_VOLUME])) return 1;
 
-	game_config_data.settings->values["music_volume"] = new_volume;
+	int ret = game_utils_string_copy(game_config_data.settings[GAME_SAVE_SETTINGS_ID_MUSIC_VOLUME], c_buff);
+	if (ret != 0) { LOG_ERROR_CONSOLE("Error: game_save_set_config_music_volume() copy music_volume\n"); return 1; }
+
 	return 0;
 }
 
 void game_save_get_config_sfx_volume(int* volume)
 {
-	if (game_config_data.settings->values["sfx_volume"] == "")
+	if (game_config_data.settings[GAME_SAVE_SETTINGS_ID_SFX_VOLUME][0] == '\0')
 	{
 		*volume = GAME_SAVE_CONFIG_SFX_VOLUME_DEFAULT;
 		return;
 	}
 
-	*volume = atoi(game_config_data.settings->values["sfx_volume"].c_str());
+	*volume = atoi(game_config_data.settings[GAME_SAVE_SETTINGS_ID_SFX_VOLUME]);
 }
 int game_save_set_config_sfx_volume(int volume)
 {
 	if (volume < 0) {
-		game_config_data.settings->values["sfx_volume"] = "";
+		game_config_data.settings[GAME_SAVE_SETTINGS_ID_SFX_VOLUME][0] = '\0';
 		return 0;
 	}
 
 	char c_buff[4] = { '\0' };
-	_itoa_s((volume), c_buff, 10);
-	std::string new_volume = c_buff;
-	if (new_volume == game_config_data.settings->values["sfx_volume"]) return 1;
+	game_utils_string_itoa(volume, c_buff, (4 - 1), 10);
+	if (STRCMP_EQ(c_buff, game_config_data.settings[GAME_SAVE_SETTINGS_ID_SFX_VOLUME])) return 1;
 
-	game_config_data.settings->values["sfx_volume"] = new_volume;
+	int ret = game_utils_string_copy(game_config_data.settings[GAME_SAVE_SETTINGS_ID_SFX_VOLUME], c_buff);
+	if (ret != 0) { LOG_ERROR_CONSOLE("Error: game_save_set_config_sfx_volume() copy sfx_volume\n"); return 1; }
+
 	return 0;
 }
 
 void game_save_get_config_player(int slot_index, unit_player_data_t* player)
 {
 	if (player->obj != NULL) {
-		const char* c_path = game_config_data.player[slot_index]->values["path"].c_str();
+		const char* c_path = game_config_data.player[slot_index][GAME_SAVE_PLAYER_ID_PATH];
 		game_utils_string_copy((char *)player->obj, c_path);
 	}
-	player->hp = atoi(game_config_data.player[slot_index]->values["hp"].c_str());
-	player->exp = atoi(game_config_data.player[slot_index]->values["exp"].c_str());
-	player->attack_wait_timer = atoi(game_config_data.player[slot_index]->values["attack_wait_timer"].c_str());
-	player->bullet_life_timer = atoi(game_config_data.player[slot_index]->values["bullet_life_timer"].c_str());
-	player->bullet_spec = atoi(game_config_data.player[slot_index]->values["bullet_spec"].c_str());
+	player->hp                = atoi(game_config_data.player[slot_index][GAME_SAVE_PLAYER_ID_HP]);
+	player->exp               = atoi(game_config_data.player[slot_index][GAME_SAVE_PLAYER_ID_EXP]);
+	player->attack_wait_timer = atoi(game_config_data.player[slot_index][GAME_SAVE_PLAYER_ID_ATTACK_WAIT_TIMER]);
+	player->bullet_life_timer = atoi(game_config_data.player[slot_index][GAME_SAVE_PLAYER_ID_BULLET_LIFE_TIMER]);
+	player->bullet_spec       = atoi(game_config_data.player[slot_index][GAME_SAVE_PLAYER_ID_BULLET_SPEC]);
 
-	player->speed = atoi(game_config_data.player[slot_index]->values["speed"].c_str());
-	player->weapon = atoi(game_config_data.player[slot_index]->values["weapon"].c_str());
-	player->armor = atoi(game_config_data.player[slot_index]->values["armor"].c_str());
-	player->spec = atoi(game_config_data.player[slot_index]->values["spec"].c_str());
+	player->speed             = atoi(game_config_data.player[slot_index][GAME_SAVE_PLAYER_ID_SPEED]);
+	player->weapon            = atoi(game_config_data.player[slot_index][GAME_SAVE_PLAYER_ID_WEAPON]);
+	player->armor             = atoi(game_config_data.player[slot_index][GAME_SAVE_PLAYER_ID_ARMOR]);
+	player->spec              = atoi(game_config_data.player[slot_index][GAME_SAVE_PLAYER_ID_SPEC]);
 
-	player->hp_max = atoi(game_config_data.player[slot_index]->values["hp_max"].c_str());
-	player->exp_max = atoi(game_config_data.player[slot_index]->values["exp_max"].c_str());
-	player->level = atoi(game_config_data.player[slot_index]->values["level"].c_str());
+	player->hp_max            = atoi(game_config_data.player[slot_index][GAME_SAVE_PLAYER_ID_HP_MAX]);
+	player->exp_max           = atoi(game_config_data.player[slot_index][GAME_SAVE_PLAYER_ID_EXP_MAX]);
+	player->level             = atoi(game_config_data.player[slot_index][GAME_SAVE_PLAYER_ID_LEVEL]);
+}
+
+static int set_config_player_int(int slot_index, int player_id, int value)
+{
+	int ret = 0;
+
+	char c_buff[MEMORY_MANAGER_NAME_BUF_SIZE] = { '\0' };
+	int c_buff_size = MEMORY_MANAGER_NAME_BUF_SIZE;
+
+	game_utils_string_itoa(value, c_buff, (c_buff_size - 1), 10);
+	ret = game_utils_string_copy(game_config_data.player[slot_index][player_id], c_buff);
+	if (ret != 0) { LOG_ERROR_CONSOLE("Error: set_config_player_int() copy %d %d\n", slot_index, player_id); return 1; }
+
+	return 0;
 }
 
 int game_save_set_config_player(int slot_index, unit_player_data_t* player)
 {
-	char c_buff[12] = { '\0' };
-	std::string new_str;
-
 	if (player->obj != NULL) {
-		std::string player_path = (char *)player->obj;
-		game_config_data.player[slot_index]->values["path"] = player_path;
+		int ret = game_utils_string_copy(game_config_data.player[slot_index][GAME_SAVE_PLAYER_ID_PATH], (char*)player->obj);
+		if (ret != 0) { LOG_ERROR_CONSOLE("Error: game_save_set_config_player() copy path\n"); return 1; }
 	}
 
-	_itoa_s((player->hp), c_buff, 10); new_str = c_buff;
-	game_config_data.player[slot_index]->values["hp"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->exp), c_buff, 10); new_str = c_buff;
-	game_config_data.player[slot_index]->values["exp"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->attack_wait_timer), c_buff, 10); new_str = c_buff;
-	game_config_data.player[slot_index]->values["attack_wait_timer"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->bullet_life_timer), c_buff, 10); new_str = c_buff;
-	game_config_data.player[slot_index]->values["bullet_life_timer"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->bullet_spec), c_buff, 10); new_str = c_buff;
-	game_config_data.player[slot_index]->values["bullet_spec"] = new_str;
-
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->speed), c_buff, 10); new_str = c_buff;
-	game_config_data.player[slot_index]->values["speed"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->weapon), c_buff, 10); new_str = c_buff;
-	game_config_data.player[slot_index]->values["weapon"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->armor), c_buff, 10); new_str = c_buff;
-	game_config_data.player[slot_index]->values["armor"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->spec), c_buff, 10); new_str = c_buff;
-	game_config_data.player[slot_index]->values["spec"] = new_str;
-
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->hp_max), c_buff, 10); new_str = c_buff;
-	game_config_data.player[slot_index]->values["hp_max"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->exp_max), c_buff, 10); new_str = c_buff;
-	game_config_data.player[slot_index]->values["exp_max"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((player->level), c_buff, 10); new_str = c_buff;
-	game_config_data.player[slot_index]->values["level"] = new_str;
+	if (set_config_player_int(slot_index, GAME_SAVE_PLAYER_ID_HP, player->hp) != 0) return 1;
+	if (set_config_player_int(slot_index, GAME_SAVE_PLAYER_ID_EXP, player->exp) != 0) return 1;
+	if (set_config_player_int(slot_index, GAME_SAVE_PLAYER_ID_ATTACK_WAIT_TIMER, player->attack_wait_timer) != 0) return 1;
+	if (set_config_player_int(slot_index, GAME_SAVE_PLAYER_ID_BULLET_LIFE_TIMER, player->bullet_life_timer) != 0) return 1;
+	if (set_config_player_int(slot_index, GAME_SAVE_PLAYER_ID_BULLET_SPEC, player->bullet_spec) != 0) return 1;
+	if (set_config_player_int(slot_index, GAME_SAVE_PLAYER_ID_SPEED, player->speed) != 0) return 1;
+	if (set_config_player_int(slot_index, GAME_SAVE_PLAYER_ID_WEAPON, player->weapon) != 0) return 1;
+	if (set_config_player_int(slot_index, GAME_SAVE_PLAYER_ID_ARMOR, player->armor) != 0) return 1;
+	if (set_config_player_int(slot_index, GAME_SAVE_PLAYER_ID_SPEC, player->spec) != 0) return 1;
+	if (set_config_player_int(slot_index, GAME_SAVE_PLAYER_ID_HP_MAX, player->hp_max) != 0) return 1;
+	if (set_config_player_int(slot_index, GAME_SAVE_PLAYER_ID_EXP_MAX, player->exp_max) != 0) return 1;
+	if (set_config_player_int(slot_index, GAME_SAVE_PLAYER_ID_LEVEL, player->level) != 0) return 1;
 
 	return 0;
 }
 
 void game_save_get_config_stocker(int slot_index, inventory_stocker_data_t* stocker)
 {
-	stocker->weapon_item->item_list_idx  = atoi(game_config_data.stocker[slot_index]->values["weapon_item_list_idx"].c_str());
-	stocker->weapon_item->item_count     = atoi(game_config_data.stocker[slot_index]->values["weapon_item_count"].c_str());
+	stocker->weapon_item->item_list_idx  = atoi(game_config_data.stocker[slot_index][GAME_SAVE_STOCKER_ID_WEAPON_ITEM_LIST_IDX]);
+	stocker->weapon_item->item_count     = atoi(game_config_data.stocker[slot_index][GAME_SAVE_STOCKER_ID_WEAPON_ITEM_COUNT]);
 
-	stocker->charge_item->item_list_idx  = atoi(game_config_data.stocker[slot_index]->values["charge_item_list_idx"].c_str());
-	stocker->charge_item->item_count     = atoi(game_config_data.stocker[slot_index]->values["charge_item_count"].c_str());
-	stocker->charge_item->charge_val     = atoi(game_config_data.stocker[slot_index]->values["charge_charge_val"].c_str());
-	stocker->charge_item->charge_timer   = atoi(game_config_data.stocker[slot_index]->values["charge_charge_timer"].c_str());
+	stocker->charge_item->item_list_idx  = atoi(game_config_data.stocker[slot_index][GAME_SAVE_STOCKER_ID_CHARGE_ITEM_LIST_IDX]);
+	stocker->charge_item->item_count     = atoi(game_config_data.stocker[slot_index][GAME_SAVE_STOCKER_ID_CHARGE_ITEM_COUNT]);
+	stocker->charge_item->charge_val     = atoi(game_config_data.stocker[slot_index][GAME_SAVE_STOCKER_ID_CHARGE_CHARGE_VAL]);
+	stocker->charge_item->charge_timer   = atoi(game_config_data.stocker[slot_index][GAME_SAVE_STOCKER_ID_CHARGE_CHARGE_TIMER]);
 
-	stocker->special_item->item_list_idx = atoi(game_config_data.stocker[slot_index]->values["special_item_list_idx"].c_str());
-	stocker->special_item->item_count    = atoi(game_config_data.stocker[slot_index]->values["special_item_count"].c_str());
+	stocker->special_item->item_list_idx = atoi(game_config_data.stocker[slot_index][GAME_SAVE_STOCKER_ID_SPECIAL_ITEM_LIST_IDX]);
+	stocker->special_item->item_count    = atoi(game_config_data.stocker[slot_index][GAME_SAVE_STOCKER_ID_SPECIAL_ITEM_COUNT]);
+}
+
+static int set_config_stocker_int(int slot_index, int stocker_id, int value)
+{
+	int ret = 0;
+
+	char c_buff[MEMORY_MANAGER_NAME_BUF_SIZE] = { '\0' };
+	int c_buff_size = MEMORY_MANAGER_NAME_BUF_SIZE;
+
+	game_utils_string_itoa(value, c_buff, (c_buff_size - 1), 10);
+	ret = game_utils_string_copy(game_config_data.stocker[slot_index][stocker_id], c_buff);
+	if (ret != 0) { LOG_ERROR_CONSOLE("Error: set_config_stocker_int() copy %d %d\n", slot_index, stocker_id); return 1; }
+
+	return 0;
 }
 
 int game_save_set_config_stocker(int slot_index, inventory_stocker_data_t* stocker)
 {
-	char c_buff[12] = { '\0' };
-	std::string new_str;
+	if (set_config_stocker_int(slot_index, GAME_SAVE_STOCKER_ID_WEAPON_ITEM_LIST_IDX, stocker->weapon_item->item_list_idx) != 0) return 1;
+	if (set_config_stocker_int(slot_index, GAME_SAVE_STOCKER_ID_WEAPON_ITEM_COUNT, stocker->weapon_item->item_count) != 0) return 1;
 
-	_itoa_s((stocker->weapon_item->item_list_idx), c_buff, 10); new_str = c_buff;
-	game_config_data.stocker[slot_index]->values["weapon_item_list_idx"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((stocker->weapon_item->item_count), c_buff, 10); new_str = c_buff;
-	game_config_data.stocker[slot_index]->values["weapon_item_count"] = new_str;
+	if (set_config_stocker_int(slot_index, GAME_SAVE_STOCKER_ID_CHARGE_ITEM_LIST_IDX, stocker->charge_item->item_list_idx) != 0) return 1;
+	if (set_config_stocker_int(slot_index, GAME_SAVE_STOCKER_ID_CHARGE_ITEM_COUNT, stocker->charge_item->item_count) != 0) return 1;
+	if (set_config_stocker_int(slot_index, GAME_SAVE_STOCKER_ID_CHARGE_CHARGE_VAL, stocker->charge_item->charge_val) != 0) return 1;
+	if (set_config_stocker_int(slot_index, GAME_SAVE_STOCKER_ID_CHARGE_CHARGE_TIMER, stocker->charge_item->charge_timer) != 0) return 1;
 
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((stocker->charge_item->item_list_idx), c_buff, 10); new_str = c_buff;
-	game_config_data.stocker[slot_index]->values["charge_item_list_idx"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((stocker->charge_item->item_count), c_buff, 10); new_str = c_buff;
-	game_config_data.stocker[slot_index]->values["charge_item_count"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((stocker->charge_item->charge_val), c_buff, 10); new_str = c_buff;
-	game_config_data.stocker[slot_index]->values["charge_charge_val"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((stocker->charge_item->charge_timer), c_buff, 10); new_str = c_buff;
-	game_config_data.stocker[slot_index]->values["charge_charge_timer"] = new_str;
-
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((stocker->special_item->item_list_idx), c_buff, 10); new_str = c_buff;
-	game_config_data.stocker[slot_index]->values["special_item_list_idx"] = new_str;
-	memset(c_buff, '\0', sizeof(c_buff)); _itoa_s((stocker->special_item->item_count), c_buff, 10); new_str = c_buff;
-	game_config_data.stocker[slot_index]->values["special_item_count"] = new_str;
+	if (set_config_stocker_int(slot_index, GAME_SAVE_STOCKER_ID_SPECIAL_ITEM_LIST_IDX, stocker->special_item->item_list_idx) != 0) return 1;
+	if (set_config_stocker_int(slot_index, GAME_SAVE_STOCKER_ID_SPECIAL_ITEM_COUNT, stocker->special_item->item_count) != 0) return 1;
 
 	return 0;
 }
@@ -559,15 +741,36 @@ void game_save_get_config_player_backup(int slot_index)
 	game_save_get_config_stocker(slot_index, &g_stocker_backup);
 }
 
-void game_save_get_config_slot(int slot_index, std::string& player, std::string& stage, std::string& timestamp)
+void game_save_get_config_slot(int slot_index, char* player, char* stage, char* timestamp)
 {
+	int ret = 0;
+
 	// return values for save menu display
-	player = game_config_data.slot[slot_index]->values["player"];
-	stage = game_config_data.slot[slot_index]->values["stage"];
-	timestamp = game_config_data.slot[slot_index]->values["timestamp"];
+	if (player) {
+		ret = game_utils_string_copy(player, game_config_data.slot[slot_index][GAME_SAVE_SLOT_ID_PLAYER]);
+		if (ret != 0) { LOG_ERROR("Error: game_save_get_config_slot() copy player\n"); }
+	}
+	if (stage) {
+		ret = game_utils_string_copy(stage, game_config_data.slot[slot_index][GAME_SAVE_SLOT_ID_STAGE]);
+		if (ret != 0) { LOG_ERROR("Error: game_save_get_config_slot() copy stage\n"); }
+	}
+	if (timestamp) {
+		ret = game_utils_string_copy(timestamp, game_config_data.slot[slot_index][GAME_SAVE_SLOT_ID_TIMESTAMP]);
+		if (ret != 0) { LOG_ERROR("Error: game_save_get_config_slot() copy timestamp\n"); }
+	}
 }
 
-int game_save_set_config_slot(int slot_index, std::string player, std::string stage, bool init_flag)
+static int set_config_slot_str(int slot_index, int slot_id, char* value)
+{
+	int ret = 0;
+
+	ret = game_utils_string_copy(game_config_data.slot[slot_index][slot_id], value);
+	if (ret != 0) { LOG_ERROR_CONSOLE("Error: set_config_slot_str() copy %d %d\n", slot_index, slot_id); return 1; }
+
+	return 0;
+}
+
+int game_save_set_config_slot(int slot_index, char* player, char* stage, bool init_flag)
 {
 	// clear default slot
 	if (init_flag) {
@@ -579,12 +782,13 @@ int game_save_set_config_slot(int slot_index, std::string player, std::string st
 	}
 
 	// set current timestamp
+	char tmp_char_buf[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 	game_utils_get_localtime(tmp_char_buf, sizeof(tmp_char_buf));
 
 	// save values for save menu display
-	game_config_data.slot[slot_index]->values["player"] = player;
-	game_config_data.slot[slot_index]->values["stage"] = stage;
-	game_config_data.slot[slot_index]->values["timestamp"] = tmp_char_buf;
+	if (set_config_slot_str(slot_index, GAME_SAVE_SLOT_ID_PLAYER, player) != 0) return 1;
+	if (set_config_slot_str(slot_index, GAME_SAVE_SLOT_ID_STAGE, stage) != 0) return 1;
+	if (set_config_slot_str(slot_index, GAME_SAVE_SLOT_ID_TIMESTAMP, tmp_char_buf) != 0) return 1;
 
 	if (init_flag) {
 		// don't need to clear player & stacker

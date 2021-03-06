@@ -233,23 +233,22 @@ static void menu_continue() {
 	game_save_get_config_default_slot(&load_slot_index);
 	if (load_slot_index >= 0) {
 		// set loading data (set bin data)
-		std::string slot_player;
-		std::string slot_stage;
-		std::string slot_timestamp;
-		game_save_get_config_slot(load_slot_index, slot_player, slot_stage, slot_timestamp);
+		char slot_player[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		char slot_stage[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		game_save_get_config_slot(load_slot_index, slot_player, slot_stage, NULL);
 		game_save_get_config_player_backup(load_slot_index);
 
 		//std::string player_path = "units/player/" + slot_player + "/" + slot_player + ".unit";
 		char player_dir_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 		char player_file_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-		int player_path_size = game_utils_string_cat(player_dir_path, (char*)"units/player/", (char*)slot_player.c_str(), (char*)"/");
+		int player_path_size = game_utils_string_cat(player_dir_path, (char*)"units/player/", slot_player, (char*)"/");
 		if (player_path_size <= 0) { LOG_ERROR("Error: scene_top_menu menu_continue() get player_dir_path\n"); return; }
-		player_path_size = game_utils_string_cat(player_file_path, player_dir_path, (char*)slot_player.c_str(), (char*)".unit");
+		player_path_size = game_utils_string_cat(player_file_path, player_dir_path, slot_player, (char*)".unit");
 		if (player_path_size <= 0) { LOG_ERROR("Error: scene_top_menu menu_continue() get player_file_path\n"); return; }
 
 		scene_play_stage_set_player(player_file_path, true);
-		scene_loading_set_stage(slot_stage.c_str());
-		scene_play_stage_set_stage_id(slot_stage.c_str());
+		scene_loading_set_stage(slot_stage);
+		scene_play_stage_set_stage_id(slot_stage);
 
 		set_stat_event(SCENE_STAT_IDLE);
 		scene_manager_load(SCENE_ID_PLAY_STAGE, true);

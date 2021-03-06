@@ -28,7 +28,7 @@
 
 #define CHAR_INFO_LINE_SIZE_DEFAULT    16
 #define CHAR_INFO_STRING_SIZE_DEFAULT  96
-#define CHAR_INFO_NAME_SIZE_DEFAULT     8
+#define CHAR_INFO_NAME_SIZE_DEFAULT    10
 
 typedef int memory_manager_new_block_func(int index);
 

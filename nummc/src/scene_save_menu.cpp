@@ -374,9 +374,9 @@ static void load_event() {
 	SDL_Rect* tmp_rect;
 	int ret;
 	int w, h;
-	std::string slot_player;
-	std::string slot_stage;
-	std::string slot_timestamp;
+	char slot_player[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char slot_stage[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char slot_timestamp[GAME_UTILS_STRING_NAME_BUF_SIZE];
 	slot_index = 0;
 	cursor_index = 0;
 	bool set_slot_index_flg = false;
@@ -387,7 +387,7 @@ static void load_event() {
 		int tmp_string_size = 0;
 		if (display_title_type == SCENE_SAVE_MENU_DISP_TYPE_LOAD) {
 			// select data slot
-			if ((!set_slot_index_flg) && (slot_stage != "")) {
+			if ((!set_slot_index_flg) && (slot_stage[0] != '\0')) {
 				set_slot_index_flg = true;
 				slot_index = i;
 				cursor_index = i;
@@ -396,7 +396,7 @@ static void load_event() {
 		}
 		else {
 			// select empty slot
-			if ((!set_slot_index_flg) && (slot_stage == "")) {
+			if ((!set_slot_index_flg) && (slot_stage[0] == '\0')) {
 				set_slot_index_flg = true;
 				slot_index = i;
 				cursor_index = i;
@@ -406,7 +406,7 @@ static void load_event() {
 
 		tex_info_slot_icon[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath(" ");
 		for (int prof_i = 0; prof_i < RESOURCE_MANAGER_PROFILE_LIST_SIZE; prof_i++) {
-			if (strcmp(slot_player.c_str(), g_resource_manager_profile[prof_i].name) == 0) {
+			if (STRCMP_EQ(slot_player, g_resource_manager_profile[prof_i].name)) {
 				//std::string icon_path = g_resource_manager_profile[prof_i].icon_img_path;
 				char icon_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 				int icon_path_size = game_utils_string_cat(icon_path, (char*)"{ scale_mode:linear }", (char*)g_resource_manager_profile[prof_i].icon_img_path);
@@ -422,11 +422,11 @@ static void load_event() {
 			GUI_tex_info_reset(&tex_info_slot_icon[SLOT_ITEM_1 + i]);
 		}
 
-		if (slot_stage == "") {
+		if (slot_stage[0] == '\0') {
 			tex_info_slot_stage[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath("(EMPTY)");
 		}
 		else {
-			tmp_string_size = game_utils_string_cat(tmp_string, (char*)"STAGE", (char*)slot_stage.c_str());
+			tmp_string_size = game_utils_string_cat(tmp_string, (char*)"STAGE", slot_stage);
 			if (tmp_string_size <= 0) LOG_ERROR("Error: scene_save_menu load_event() get slot_stage\n");
 			tex_info_slot_stage[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath(tmp_string);
 		}
@@ -438,11 +438,11 @@ static void load_event() {
 			GUI_tex_info_reset(&tex_info_slot_stage[SLOT_ITEM_1 + i]);
 		}
 
-		if (slot_stage == "") {
+		if (slot_stage[0] == '\0') {
 			tex_info_slot_timestamp[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath(" ");
 		}
 		else {
-			tmp_string_size = game_utils_string_cat(tmp_string, (char*)"{18}", (char*)slot_timestamp.c_str());
+			tmp_string_size = game_utils_string_cat(tmp_string, (char*)"{18}", (char*)slot_timestamp);
 			if (tmp_string_size <= 0) LOG_ERROR("Error: scene_save_menu load_event() get slot_timestamp\n");
 			tex_info_slot_timestamp[SLOT_ITEM_1 + i].res_img = resource_manager_getFontTextureFromPath(tmp_string);
 		}
@@ -532,11 +532,9 @@ static void save_and_load_scene()
 // button callback func
 static void button_delete() {
 	// confirm overwrite
-	std::string slot_player;
-	std::string slot_stage;
-	std::string slot_timestamp;
-	game_save_get_config_slot(cursor_index, slot_player, slot_stage, slot_timestamp);
-	if (slot_stage == "") {
+	char slot_stage[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	game_save_get_config_slot(cursor_index, NULL, slot_stage, NULL);
+	if (slot_stage[0] == '\0') {
 		// already empty
 		sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_SFX2);
 		dialog_message_reset("Empty Slot!", NULL, dialog_message_cancel, DIALOG_MSG_TYPE_OK_ONLY);
@@ -556,11 +554,11 @@ static void button_cancel() {
 }
 static void button_ok() {
 	if (display_title_type == SCENE_SAVE_MENU_DISP_TYPE_LOAD) {
-		std::string slot_player;
-		std::string slot_stage;
-		std::string slot_timestamp;
+		char slot_player[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		char slot_stage[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		char slot_timestamp[GAME_UTILS_STRING_NAME_BUF_SIZE];
 		game_save_get_config_slot(cursor_index, slot_player, slot_stage, slot_timestamp);
-		if (slot_stage == "") {
+		if (slot_stage[0] == '\0') {
 			sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_SFX2);
 			dialog_message_reset("Empty Slot!", NULL, dialog_message_cancel, DIALOG_MSG_TYPE_OK_ONLY);
 			dialog_message_set_enable(true);
@@ -578,14 +576,14 @@ static void button_ok() {
 		//std::string player_path = "units/player/" + slot_player + "/" + slot_player + ".unit";
 		char player_dir_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 		char player_file_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-		int player_path_size = game_utils_string_cat(player_dir_path, (char*)"units/player/", (char*)slot_player.c_str(), (char*)"/");
+		int player_path_size = game_utils_string_cat(player_dir_path, (char*)"units/player/", slot_player, (char*)"/");
 		if (player_path_size <= 0) { LOG_ERROR("Error: scene_save_menu button_ok() get player_dir_path\n"); return; }
-		player_path_size = game_utils_string_cat(player_file_path, player_dir_path, (char*)slot_player.c_str(), (char*)".unit");
+		player_path_size = game_utils_string_cat(player_file_path, player_dir_path, slot_player, (char*)".unit");
 		if (player_path_size <= 0) { LOG_ERROR("Error: scene_save_menu button_ok() get player_file_path\n"); return; }
 
 		scene_play_stage_set_player(player_file_path, true);
-		scene_loading_set_stage(slot_stage.c_str());
-		scene_play_stage_set_stage_id(slot_stage.c_str());
+		scene_loading_set_stage(slot_stage);
+		scene_play_stage_set_stage_id(slot_stage);
 
 		// save default slot for continue
 		if (game_save_set_config_default_slot(cursor_index) == 0) {
@@ -599,11 +597,9 @@ static void button_ok() {
 	// New Game
 	else {
 		// confirm overwrite
-		std::string slot_player;
-		std::string slot_stage;
-		std::string slot_timestamp;
-		game_save_get_config_slot(cursor_index, slot_player, slot_stage, slot_timestamp);
-		if (slot_stage != "") {
+		char slot_stage[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		game_save_get_config_slot(cursor_index, NULL, slot_stage, NULL);
+		if (slot_stage[0] != '\0') {
 			sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_warning1.ogg"), SOUND_MANAGER_CH_SFX2);
 			dialog_message_reset("Overwrite?", dialog_message_cancel, dialog_message_ok);
 			dialog_message_set_enable(true);
@@ -622,7 +618,7 @@ static void dialog_message_delete_ok() {
 	dialog_message_ret = DIALOG_MESSAGE_RET_OK;
 
 	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_click1.ogg"), SOUND_MANAGER_CH_SFX2);
-	if (game_save_set_config_slot(cursor_index, "", "", true) == 0) {
+	if (game_save_set_config_slot(cursor_index, (char*)"", (char*)"", true) == 0) {
 		game_save_config_save();
 
 		// reload delete slot

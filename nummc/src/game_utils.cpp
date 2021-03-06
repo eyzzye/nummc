@@ -935,6 +935,8 @@ void game_utils_get_localtime(char* dst_str, int dst_str_size)
 	if (strftime(dst_str, dst_str_size, "%Y/%m/%d_%H:%M:%S", &current_localtime) == 0) {
 		game_utils_string_copy(dst_str, GAME_UTILS_LOCALTIME_FORMAT);
 	}
+
+	dst_str[strlen(GAME_UTILS_LOCALTIME_FORMAT)] = '\0';
 	return;
 }
 

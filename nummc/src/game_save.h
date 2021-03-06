@@ -1,5 +1,4 @@
 #pragma once
-#include <string>
 #include "game_common.h"
 #include "unit_manager.h"
 #include "inventory_manager.h"
@@ -30,5 +29,5 @@ extern int  game_save_set_config_player(int slot_index, unit_player_data_t* play
 extern void game_save_get_config_stocker(int slot_index, inventory_stocker_data_t* stocker);
 extern int  game_save_set_config_stocker(int slot_index, inventory_stocker_data_t* stocker);
 extern void game_save_get_config_player_backup(int slot_index);
-extern void game_save_get_config_slot(int slot_index, std::string& player, std::string& stage, std::string& timestamp);
-extern int  game_save_set_config_slot(int slot_index, std::string player, std::string stage, bool init_flag = false);
+extern void game_save_get_config_slot(int slot_index, char* player, char* stage, char* timestamp);
+extern int  game_save_set_config_slot(int slot_index, char* player, char* stage, bool init_flag = false);
