@@ -675,19 +675,19 @@ static void load_event() {
 	game_key_event_init();
 	key_sync_attack_timer = 0;
 	key_sync_timer = 0;
-	g_key_event_enable.push_back(SDL_SCANCODE_ESCAPE);
-	g_key_event_enable.push_back(SDL_SCANCODE_RETURN);
-	g_key_event_enable.push_back(SDL_SCANCODE_W);
-	g_key_event_enable.push_back(SDL_SCANCODE_A);
-	g_key_event_enable.push_back(SDL_SCANCODE_S);
-	g_key_event_enable.push_back(SDL_SCANCODE_D);
-	g_key_event_enable.push_back(SDL_SCANCODE_UP);
-	g_key_event_enable.push_back(SDL_SCANCODE_DOWN);
-	g_key_event_enable.push_back(SDL_SCANCODE_LEFT);
-	g_key_event_enable.push_back(SDL_SCANCODE_RIGHT);
-	g_key_event_enable.push_back(SDL_SCANCODE_E);
-	g_key_event_enable.push_back(SDL_SCANCODE_Q);
-	g_key_event_enable.push_back(SDL_SCANCODE_SPACE);
+	game_key_event_set_key(SDL_SCANCODE_ESCAPE);
+	game_key_event_set_key(SDL_SCANCODE_RETURN);
+	game_key_event_set_key(SDL_SCANCODE_W);
+	game_key_event_set_key(SDL_SCANCODE_A);
+	game_key_event_set_key(SDL_SCANCODE_S);
+	game_key_event_set_key(SDL_SCANCODE_D);
+	game_key_event_set_key(SDL_SCANCODE_UP);
+	game_key_event_set_key(SDL_SCANCODE_DOWN);
+	game_key_event_set_key(SDL_SCANCODE_LEFT);
+	game_key_event_set_key(SDL_SCANCODE_RIGHT);
+	game_key_event_set_key(SDL_SCANCODE_E);
+	game_key_event_set_key(SDL_SCANCODE_Q);
+	game_key_event_set_key(SDL_SCANCODE_SPACE);
 
 	game_mouse_event_init(0, 400, 200, 150, 5);
 }

@@ -463,13 +463,13 @@ static void load_event() {
 
 	// key event switch
 	game_key_event_init();
-	g_key_event_enable.push_back(SDL_SCANCODE_ESCAPE);
-	g_key_event_enable.push_back(SDL_SCANCODE_TAB);
-	g_key_event_enable.push_back(SDL_SCANCODE_RETURN);
-	g_key_event_enable.push_back(SDL_SCANCODE_UP);
-	g_key_event_enable.push_back(SDL_SCANCODE_DOWN);
-	g_key_event_enable.push_back(SDL_SCANCODE_LEFT);
-	g_key_event_enable.push_back(SDL_SCANCODE_RIGHT);
+	game_key_event_set_key(SDL_SCANCODE_ESCAPE);
+	game_key_event_set_key(SDL_SCANCODE_TAB);
+	game_key_event_set_key(SDL_SCANCODE_RETURN);
+	game_key_event_set_key(SDL_SCANCODE_UP);
+	game_key_event_set_key(SDL_SCANCODE_DOWN);
+	game_key_event_set_key(SDL_SCANCODE_LEFT);
+	game_key_event_set_key(SDL_SCANCODE_RIGHT);
 
 	game_mouse_event_init(0, 400, 200, 150, 5);
 

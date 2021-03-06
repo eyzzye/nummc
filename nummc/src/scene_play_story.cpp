@@ -136,7 +136,7 @@ static void load_event() {
 
 	// key event switch
 	game_key_event_init();
-	g_key_event_enable.push_back(SDL_SCANCODE_RETURN);
+	game_key_event_set_key(SDL_SCANCODE_RETURN);
 
 	auto_text_timer = 0;
 	auto_text_wait_time = g_story_data->auto_text_time;
