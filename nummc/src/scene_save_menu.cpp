@@ -3,6 +3,7 @@
 #include "scene_manager.h"
 #include "scene_save_menu.h"
 
+#include "memory_manager.h"
 #include "resource_manager.h"
 #include "sound_manager.h"
 #include "game_key_event.h"
@@ -374,16 +375,16 @@ static void load_event() {
 	SDL_Rect* tmp_rect;
 	int ret;
 	int w, h;
-	char slot_player[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char slot_stage[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char slot_timestamp[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char slot_player[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char slot_stage[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char slot_timestamp[MEMORY_MANAGER_NAME_BUF_SIZE];
 	slot_index = 0;
 	cursor_index = 0;
 	bool set_slot_index_flg = false;
 	for (int i = 0; i < SLOT_ITEM_END; i++) {
 		game_save_get_config_slot(i, slot_player, slot_stage, slot_timestamp);
 
-		char tmp_string[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		char tmp_string[MEMORY_MANAGER_STRING_BUF_SIZE];
 		int tmp_string_size = 0;
 		if (display_title_type == SCENE_SAVE_MENU_DISP_TYPE_LOAD) {
 			// select data slot
@@ -408,7 +409,7 @@ static void load_event() {
 		for (int prof_i = 0; prof_i < RESOURCE_MANAGER_PROFILE_LIST_SIZE; prof_i++) {
 			if (STRCMP_EQ(slot_player, g_resource_manager_profile[prof_i].name)) {
 				//std::string icon_path = g_resource_manager_profile[prof_i].icon_img_path;
-				char icon_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+				char icon_path[MEMORY_MANAGER_STRING_BUF_SIZE];
 				int icon_path_size = game_utils_string_cat(icon_path, (char*)"{ scale_mode:linear }", (char*)g_resource_manager_profile[prof_i].icon_img_path);
 				tex_info_slot_icon[SLOT_ITEM_1 + i].res_img = resource_manager_getTextureFromPath(icon_path);
 				break;
@@ -532,7 +533,7 @@ static void save_and_load_scene()
 // button callback func
 static void button_delete() {
 	// confirm overwrite
-	char slot_stage[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char slot_stage[MEMORY_MANAGER_NAME_BUF_SIZE];
 	game_save_get_config_slot(cursor_index, NULL, slot_stage, NULL);
 	if (slot_stage[0] == '\0') {
 		// already empty
@@ -554,9 +555,9 @@ static void button_cancel() {
 }
 static void button_ok() {
 	if (display_title_type == SCENE_SAVE_MENU_DISP_TYPE_LOAD) {
-		char slot_player[GAME_UTILS_STRING_NAME_BUF_SIZE];
-		char slot_stage[GAME_UTILS_STRING_NAME_BUF_SIZE];
-		char slot_timestamp[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		char slot_player[MEMORY_MANAGER_NAME_BUF_SIZE];
+		char slot_stage[MEMORY_MANAGER_NAME_BUF_SIZE];
+		char slot_timestamp[MEMORY_MANAGER_NAME_BUF_SIZE];
 		game_save_get_config_slot(cursor_index, slot_player, slot_stage, slot_timestamp);
 		if (slot_stage[0] == '\0') {
 			sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_error1.ogg"), SOUND_MANAGER_CH_SFX2);
@@ -574,8 +575,8 @@ static void button_ok() {
 		game_save_get_config_player_backup(cursor_index);
 
 		//std::string player_path = "units/player/" + slot_player + "/" + slot_player + ".unit";
-		char player_dir_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-		char player_file_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		char player_dir_path[MEMORY_MANAGER_STRING_BUF_SIZE];
+		char player_file_path[MEMORY_MANAGER_STRING_BUF_SIZE];
 		int player_path_size = game_utils_string_cat(player_dir_path, (char*)"units/player/", slot_player, (char*)"/");
 		if (player_path_size <= 0) { LOG_ERROR("Error: scene_save_menu button_ok() get player_dir_path\n"); return; }
 		player_path_size = game_utils_string_cat(player_file_path, player_dir_path, slot_player, (char*)".unit");
@@ -597,7 +598,7 @@ static void button_ok() {
 	// New Game
 	else {
 		// confirm overwrite
-		char slot_stage[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		char slot_stage[MEMORY_MANAGER_NAME_BUF_SIZE];
 		game_save_get_config_slot(cursor_index, NULL, slot_stage, NULL);
 		if (slot_stage[0] != '\0') {
 			sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_warning1.ogg"), SOUND_MANAGER_CH_SFX2);

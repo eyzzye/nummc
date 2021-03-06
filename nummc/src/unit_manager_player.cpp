@@ -18,7 +18,7 @@
 
 unit_player_data_t g_player;
 unit_player_data_t g_player_backup;
-static char player_backup_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+static char player_backup_path[MEMORY_MANAGER_STRING_BUF_SIZE];
 
 static unit_player_data_t* player_base[UNIT_PLAYER_BASE_LIST_SIZE];
 static node_buffer_info_t player_base_info;
@@ -317,8 +317,8 @@ int unit_manager_load_player(char* path)
 
 static void load_unit(char* line)
 {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_STRING_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"hp")) {
@@ -377,13 +377,13 @@ static void load_unit(char* line)
 	}
 
 	if (STRCMP_EQ(key,"resistance")) {
-		char stat_list[GAME_UTILS_STRING_NAME_BUF_SIZE * UNIT_EFFECT_FLAG_P_NUM_MAX];
+		char stat_list[MEMORY_MANAGER_NAME_BUF_SIZE * UNIT_EFFECT_FLAG_P_NUM_MAX];
 		int stat_list_size;
 
-		stat_list_size = game_utils_split_conmma(value, stat_list, UNIT_EFFECT_FLAG_P_NUM_MAX, GAME_UTILS_STRING_NAME_BUF_SIZE);
+		stat_list_size = game_utils_split_conmma(value, stat_list, UNIT_EFFECT_FLAG_P_NUM_MAX, MEMORY_MANAGER_NAME_BUF_SIZE);
 		int resistance_val = UNIT_EFFECT_FLAG_P_NONE;
 		for (int i = 0; i < stat_list_size; i++) {
-			char* stat_str = &stat_list[i * GAME_UTILS_STRING_NAME_BUF_SIZE];
+			char* stat_str = &stat_list[i * MEMORY_MANAGER_NAME_BUF_SIZE];
 			if (STRCMP_EQ(stat_str,"FIRE_UP")) {
 				resistance_val |= UNIT_EFFECT_FLAG_P_FIRE_UP;
 			}

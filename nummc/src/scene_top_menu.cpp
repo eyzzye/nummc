@@ -4,6 +4,7 @@
 #include "scene_top_menu.h"
 
 #include "scene_save_menu.h"
+#include "memory_manager.h"
 #include "resource_manager.h"
 #include "sound_manager.h"
 #include "game_key_event.h"
@@ -229,14 +230,14 @@ static void menu_continue() {
 	game_save_get_config_default_slot(&load_slot_index);
 	if (load_slot_index >= 0) {
 		// set loading data (set bin data)
-		char slot_player[GAME_UTILS_STRING_NAME_BUF_SIZE];
-		char slot_stage[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		char slot_player[MEMORY_MANAGER_NAME_BUF_SIZE];
+		char slot_stage[MEMORY_MANAGER_NAME_BUF_SIZE];
 		game_save_get_config_slot(load_slot_index, slot_player, slot_stage, NULL);
 		game_save_get_config_player_backup(load_slot_index);
 
 		//std::string player_path = "units/player/" + slot_player + "/" + slot_player + ".unit";
-		char player_dir_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-		char player_file_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		char player_dir_path[MEMORY_MANAGER_STRING_BUF_SIZE];
+		char player_file_path[MEMORY_MANAGER_STRING_BUF_SIZE];
 		int player_path_size = game_utils_string_cat(player_dir_path, (char*)"units/player/", slot_player, (char*)"/");
 		if (player_path_size <= 0) { LOG_ERROR("Error: scene_top_menu menu_continue() get player_dir_path\n"); return; }
 		player_path_size = game_utils_string_cat(player_file_path, player_dir_path, slot_player, (char*)".unit");

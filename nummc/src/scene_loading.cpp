@@ -3,6 +3,7 @@
 #include "scene_manager.h"
 #include "scene_loading.h"
 
+#include "memory_manager.h"
 #include "resource_manager.h"
 #include "sound_manager.h"
 #include "game_key_event.h"
@@ -26,7 +27,7 @@ static int title_wait_timer;
 static int progress_timer;
 static int progress_index;
 static bool progress_dirt;
-static char next_stage_id[GAME_UTILS_STRING_NAME_BUF_SIZE];
+static char next_stage_id[MEMORY_MANAGER_NAME_BUF_SIZE];
 
 static SceneManagerFunc scene_func;
 static int scene_stat;
@@ -129,7 +130,7 @@ static void tex_info_init()
 	const char* progress_str = "{-,204:204:204:204,-,-}Loading ...";
 	int progress_str_size = (int)strlen(progress_str);
 	for (int i = 0; i < SCENE_LOADING_ID_PROGRESS_END; i++) {
-		char progress_substr[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		char progress_substr[MEMORY_MANAGER_STRING_BUF_SIZE];
 		int progress_substr_size = progress_str_size - (SCENE_LOADING_ID_PROGRESS_END - 1 - i);
 		int ret = game_utils_string_copy_n(progress_substr, progress_str, progress_substr_size);
 		if (ret != 0) {
@@ -158,7 +159,7 @@ void scene_loading_set_stage(const char* id)
 
 	// title
 	//std::string title_str = "{48,204:204:204:204,-,-}STAGE " + next_stage_id;
-	char title_str[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char title_str[MEMORY_MANAGER_STRING_BUF_SIZE];
 	int title_str_size = game_utils_string_cat(title_str, (char*)"{48,204:204:204:204,-,-}STAGE ", (char*)id);
 	if (title_str_size <= 0) { LOG_ERROR("Error: scene_loading_set_stage get title_str\n");	}
 

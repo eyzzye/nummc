@@ -240,9 +240,9 @@ static void load_ini_file_callback(char* line, int line_size, int line_num, void
 	int ret = 0;
 
 	load_ini_file_callback_data_t* data = (load_ini_file_callback_data_t*)argv;
-	char tag_name[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char tag_name[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_STRING_BUF_SIZE];
 
 	if (line[0] == '\0') { return; }
 	if (line[0] == '#') return;
@@ -817,7 +817,7 @@ int game_save_set_config_slot(int slot_index, char* player, char* stage, bool in
 	}
 
 	// set current timestamp
-	char tmp_char_buf[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char tmp_char_buf[MEMORY_MANAGER_STRING_BUF_SIZE];
 	game_utils_get_localtime(tmp_char_buf, sizeof(tmp_char_buf));
 
 	// save values for save menu display

@@ -10,7 +10,7 @@
 #include "game_log.h"
 
 int g_base_path_size;
-char g_base_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+char g_base_path[MEMORY_MANAGER_STRING_BUF_SIZE];
 
 static int init_sdl2()
 {

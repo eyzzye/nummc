@@ -196,21 +196,21 @@ ResourceImg* resource_manager_load_img(const char* path, int type)
 			read_index++;
 		}
 
-		char header_str[GAME_UTILS_STRING_CHAR_BUF_SIZE];
-		char str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * RESOURCE_MANAGER_IMG_OPT_END];
-		char effect_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * 9];
+		char header_str[MEMORY_MANAGER_STRING_BUF_SIZE];
+		char str_list[MEMORY_MANAGER_STRING_BUF_SIZE * RESOURCE_MANAGER_IMG_OPT_END];
+		char effect_list[MEMORY_MANAGER_STRING_BUF_SIZE * 9];
 
 		//std::string header_str = path.substr(1, read_index - 1);
 		game_utils_string_copy_n(header_str, &path[1], read_index - 1);
 		int str_list_size = game_utils_split_conmma(header_str, str_list, RESOURCE_MANAGER_IMG_OPT_END);
 
 		for (int i = 0; i < str_list_size; i++) {
-			char* option_str = &str_list[i * GAME_UTILS_STRING_CHAR_BUF_SIZE];
+			char* option_str = &str_list[i * MEMORY_MANAGER_STRING_BUF_SIZE];
 			int effect_list_size = game_utils_split_colon(option_str, effect_list, 9);
 
 			// scale_mode:linear ... SDL_SetTextureScaleMode(tex, SDL_ScaleModeLinear)
 			if (STRCMP_EQ(&effect_list[0],"scale_mode")) {
-				char* mode_str = &effect_list[1 * GAME_UTILS_STRING_CHAR_BUF_SIZE];
+				char* mode_str = &effect_list[1 * MEMORY_MANAGER_STRING_BUF_SIZE];
 				if (STRCMP_EQ(mode_str,"linear")) {
 					scale_mode = (int)SDL_ScaleModeLinear;
 				}
@@ -225,14 +225,14 @@ ResourceImg* resource_manager_load_img(const char* path, int type)
 				}
 
 				// effect_list[1] == "S"
-				src_col.r = atoi(&effect_list[2 * GAME_UTILS_STRING_CHAR_BUF_SIZE]);
-				src_col.g = atoi(&effect_list[3 * GAME_UTILS_STRING_CHAR_BUF_SIZE]);
-				src_col.b = atoi(&effect_list[4 * GAME_UTILS_STRING_CHAR_BUF_SIZE]);
+				src_col.r = atoi(&effect_list[2 * MEMORY_MANAGER_STRING_BUF_SIZE]);
+				src_col.g = atoi(&effect_list[3 * MEMORY_MANAGER_STRING_BUF_SIZE]);
+				src_col.b = atoi(&effect_list[4 * MEMORY_MANAGER_STRING_BUF_SIZE]);
 
 				// effect_list[1] == "D"
-				dst_col.r = atoi(&effect_list[6 * GAME_UTILS_STRING_CHAR_BUF_SIZE]);
-				dst_col.g = atoi(&effect_list[7 * GAME_UTILS_STRING_CHAR_BUF_SIZE]);
-				dst_col.b = atoi(&effect_list[8 * GAME_UTILS_STRING_CHAR_BUF_SIZE]);
+				dst_col.r = atoi(&effect_list[6 * MEMORY_MANAGER_STRING_BUF_SIZE]);
+				dst_col.g = atoi(&effect_list[7 * MEMORY_MANAGER_STRING_BUF_SIZE]);
+				dst_col.b = atoi(&effect_list[8 * MEMORY_MANAGER_STRING_BUF_SIZE]);
 
 				effect_color = true;
 				continue;
@@ -241,7 +241,7 @@ ResourceImg* resource_manager_load_img(const char* path, int type)
 	}
 
 	char* raw_path = NULL;
-	char new_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char new_path[MEMORY_MANAGER_STRING_BUF_SIZE];
 	if (header_found) {
 		//new_path = path.substr((size_t)read_index + 1, path.size() - read_index);
 		int ret = game_utils_string_copy_n(new_path, &path[read_index + 1], path_size - read_index);
@@ -305,7 +305,7 @@ ResourceImg* resource_manager_load_font(const char* message, int type)
 	int message_size = (int)strlen(message);
 	int font_size = 0;
 	int font_color[4] = { 0 };
-	char font_file_name[GAME_UTILS_STRING_CHAR_BUF_SIZE]; font_file_name[0] = '\0';
+	char font_file_name[MEMORY_MANAGER_STRING_BUF_SIZE]; font_file_name[0] = '\0';
 
 	// read effect header {size,color,font_name,effect}
 	bool header_found = false;
@@ -382,7 +382,7 @@ ResourceImg* resource_manager_load_font(const char* message, int type)
 
 	// set message
 	char* disp_msg = NULL;
-	char new_message[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char new_message[MEMORY_MANAGER_STRING_BUF_SIZE];
 	if (header_found) {
 		//new_message = message.substr((size_t)read_index + 1, message.size() - read_index);
 		int new_message_size = game_utils_string_copy_n(new_message, &message[read_index + 1], message_size - read_index);
@@ -419,7 +419,7 @@ ResourceImg* resource_manager_load_font(const char* message, int type)
 ResourceImg* resource_manager_getFontTextureFromPath(const char* message, int type)
 {
 	node_data_t* node = resource_img_buffer_info.start_node;
-	char font_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char font_path[MEMORY_MANAGER_STRING_BUF_SIZE];
 	game_utils_string_cat(font_path, (char*)"font:", (char*)message);
 
 	while (node != NULL) {

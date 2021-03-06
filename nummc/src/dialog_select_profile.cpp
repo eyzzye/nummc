@@ -5,6 +5,7 @@
 #include "game_key_event.h"
 #include "game_mouse_event.h"
 #include "game_window.h"
+#include "memory_manager.h"
 #include "resource_manager.h"
 #include "sound_manager.h"
 #include "game_utils.h"
@@ -126,7 +127,7 @@ static void tex_info_init()
 	int profile_stat_flag = 0x00000001 << 1;
 	for (int prof_i = 0; prof_i < PROFILE_ITEM_SIZE; prof_i++) {
 		//std::string profile_img = g_resource_manager_profile[0].portrait_img_path; // "unlock"
-		char profile_img[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		char profile_img[MEMORY_MANAGER_STRING_BUF_SIZE];
 		int profile_img_size = game_utils_string_cat(profile_img, (char*)"{scale_mode:linear}", (char*)g_resource_manager_profile[0].portrait_img_path);
 		if (profile_img_size <= 0) {
 			LOG_ERROR("Error: dilog_select_profile tex_info_init() get profile_img");

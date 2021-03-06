@@ -1,5 +1,6 @@
 #pragma once
 #include "game_common.h"
+#include "memory_manager.h"
 #include "resource_manager.h"
 
 #define GAME_UTILS_BACKUP_FILE_SIZE 2*1024*1024  // 2MB
@@ -69,8 +70,8 @@ extern int game_utils_split_key_value(char* str, char* key, char* val);
 extern int game_utils_expand_value(char* str, char* expand_str);
 extern int game_utils_split_conmma_int(char* str, int* int_list, int int_list_size);
 extern int game_utils_split_keyword(char* str, char* str_list, int str_list_size, char c_key, int str_list_buf_size);
-extern int game_utils_split_conmma(char* str, char* str_list, int str_list_size, int str_list_buf_size = GAME_UTILS_STRING_CHAR_BUF_SIZE);
-extern int game_utils_split_colon(char* str, char* str_list, int str_list_size, int str_list_buf_size = GAME_UTILS_STRING_CHAR_BUF_SIZE);
+extern int game_utils_split_conmma(char* str, char* str_list, int str_list_size, int str_list_buf_size = MEMORY_MANAGER_STRING_BUF_SIZE);
+extern int game_utils_split_colon(char* str, char* str_list, int str_list_size, int str_list_buf_size = MEMORY_MANAGER_STRING_BUF_SIZE);
 #endif
 
 // gui

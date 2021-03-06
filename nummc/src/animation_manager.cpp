@@ -42,7 +42,7 @@ static void load_anim_snd(char* line, anim_data_t* anim_data, int stat);
 
 static char dir_path[GAME_FULL_PATH_MAX];
 static int dir_path_size;
-static char tmp_str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * ANIM_FRAME_NUM_MAX];
+static char tmp_str_list[MEMORY_MANAGER_STRING_BUF_SIZE * ANIM_FRAME_NUM_MAX];
 static int tmp_str_list_size;
 
 int animation_manager_init()
@@ -270,8 +270,8 @@ int animation_manager_load_file(char* path, anim_data_t* anim_data, int stat)
 
 static void load_anim_frame(char* line, anim_data_t* anim_data, int stat)
 {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_STRING_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"duration")) {
@@ -365,11 +365,11 @@ static void load_anim_frame(char* line, anim_data_t* anim_data, int stat)
 
 static void load_anim_img(char* line, anim_data_t* anim_data, int stat)
 {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_LINE_BUF_SIZE];
-	char expand_str[GAME_UTILS_STRING_LINE_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_LINE_BUF_SIZE];
+	char expand_str[MEMORY_MANAGER_LINE_BUF_SIZE];
 	char image_filename[GAME_FULL_PATH_MAX];
-	char str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * ANIM_FRAME_NUM_MAX];
+	char str_list[MEMORY_MANAGER_STRING_BUF_SIZE * ANIM_FRAME_NUM_MAX];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"layer")) {
@@ -398,7 +398,7 @@ static void load_anim_img(char* line, anim_data_t* anim_data, int stat)
 
 		for (int i = 0; i < tmp_str_list_size; i++) {
 			anim_frame_data_t* anim_frame_data = anim_data->anim_stat_base_list[stat]->frame_list[i];
-			game_utils_string_cat(image_filename, dir_path, &tmp_str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * i]);
+			game_utils_string_cat(image_filename, dir_path, &tmp_str_list[MEMORY_MANAGER_STRING_BUF_SIZE * i]);
 			anim_frame_data->res_img = resource_manager_getTextureFromPath(image_filename);
 
 			int w, h;
@@ -414,11 +414,11 @@ static void load_anim_img(char* line, anim_data_t* anim_data, int stat)
 			// do nothing
 		}
 		else {
-			char keyword_str[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+			char keyword_str[MEMORY_MANAGER_STRING_BUF_SIZE];
 
 			for (int fi = 0; fi < str_list_size; fi++) {
-				char* frame_effect_str = &str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * fi];
-				int element_size = (int)strlen(&str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * fi]);
+				char* frame_effect_str = &str_list[MEMORY_MANAGER_STRING_BUF_SIZE * fi];
+				int element_size = (int)strlen(&str_list[MEMORY_MANAGER_STRING_BUF_SIZE * fi]);
 
 				int keyword_size = 10;
 				game_utils_string_copy_n(keyword_str, frame_effect_str, keyword_size);
@@ -470,7 +470,7 @@ static void load_anim_img(char* line, anim_data_t* anim_data, int stat)
 					for (int i = 0; i < tmp_str_list_size; i++) {
 						anim_frame_data_t* anim_frame_data = anim_data->anim_stat_base_list[stat]->frame_list[i];
 						//image_filename = {color:S:255:255:255:D:255:255:255} + dir_path + filename
-						game_utils_string_cat(image_filename, keyword_str, dir_path, &tmp_str_list[i * GAME_UTILS_STRING_CHAR_BUF_SIZE]);
+						game_utils_string_cat(image_filename, keyword_str, dir_path, &tmp_str_list[i * MEMORY_MANAGER_STRING_BUF_SIZE]);
 						anim_frame_data->res_img = resource_manager_getTextureFromPath(image_filename);
 					}
 				}
@@ -483,11 +483,11 @@ static void load_anim_img(char* line, anim_data_t* anim_data, int stat)
 
 static void load_anim_snd(char* line, anim_data_t* anim_data, int stat)
 {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_LINE_BUF_SIZE];
-	char expand_str[GAME_UTILS_STRING_LINE_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_LINE_BUF_SIZE];
+	char expand_str[MEMORY_MANAGER_LINE_BUF_SIZE];
 	char snd_filename[GAME_FULL_PATH_MAX];
-	char str_list[GAME_UTILS_STRING_NAME_BUF_SIZE * ANIM_FRAME_NUM_MAX];
+	char str_list[MEMORY_MANAGER_NAME_BUF_SIZE * ANIM_FRAME_NUM_MAX];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"channel")) {
@@ -508,27 +508,27 @@ static void load_anim_snd(char* line, anim_data_t* anim_data, int stat)
 
 		int str_list_size = 0;
 		if (expand_str_size > 0) {
-			str_list_size = game_utils_split_conmma(expand_str, str_list, ANIM_FRAME_NUM_MAX, GAME_UTILS_STRING_NAME_BUF_SIZE);
+			str_list_size = game_utils_split_conmma(expand_str, str_list, ANIM_FRAME_NUM_MAX, MEMORY_MANAGER_NAME_BUF_SIZE);
 		}
 		else {
-			str_list_size = game_utils_split_conmma(value, str_list, ANIM_FRAME_NUM_MAX, GAME_UTILS_STRING_NAME_BUF_SIZE);
+			str_list_size = game_utils_split_conmma(value, str_list, ANIM_FRAME_NUM_MAX, MEMORY_MANAGER_NAME_BUF_SIZE);
 		}
 
 		//std::string snd_filename = dir_path;
 		for (int i = 0; i < str_list_size; i++) {
-			if (str_list[GAME_UTILS_STRING_NAME_BUF_SIZE * i] == '*') {
+			if (str_list[MEMORY_MANAGER_NAME_BUF_SIZE * i] == '*') {
 				anim_data->anim_stat_base_list[stat]->frame_list[i]->res_chunk = NULL;
 			}
 			else {
 				anim_frame_data_t* anim_frame_data = anim_data->anim_stat_base_list[stat]->frame_list[i];
-				game_utils_string_cat(snd_filename, dir_path, &str_list[GAME_UTILS_STRING_NAME_BUF_SIZE * i]);
+				game_utils_string_cat(snd_filename, dir_path, &str_list[MEMORY_MANAGER_NAME_BUF_SIZE * i]);
 				anim_frame_data->res_chunk = resource_manager_getChunkFromPath(snd_filename);
 			}
 		}
 
 		// set NULL
 		if (anim_data->anim_stat_base_list[stat]->frame_size > str_list_size) {
-			if (str_list[GAME_UTILS_STRING_NAME_BUF_SIZE * (str_list_size - 1)] == '*') {
+			if (str_list[MEMORY_MANAGER_NAME_BUF_SIZE * (str_list_size - 1)] == '*') {
 				for (int i = str_list_size; i < anim_data->anim_stat_base_list[stat]->frame_size; i++) {
 					anim_data->anim_stat_base_list[stat]->frame_list[i]->res_chunk = NULL;
 				}
@@ -538,7 +538,7 @@ static void load_anim_snd(char* line, anim_data_t* anim_data, int stat)
 	}
 
 	if (STRCMP_EQ(key,"volume")) {
-		int str_list_size = game_utils_split_conmma(value, str_list, ANIM_FRAME_NUM_MAX, GAME_UTILS_STRING_NAME_BUF_SIZE);
+		int str_list_size = game_utils_split_conmma(value, str_list, ANIM_FRAME_NUM_MAX, MEMORY_MANAGER_NAME_BUF_SIZE);
 		if ((str_list_size == 1) && (str_list[0] == '*')) {
 			//
 			// set relative volume

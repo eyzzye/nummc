@@ -979,8 +979,8 @@ int game_utils_expand_value(char* str, char* expand_str)
 	if (str_size == 0) return 0;
 
 	// local char buf
-	char prefix[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char extention[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char prefix[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char extention[MEMORY_MANAGER_NAME_BUF_SIZE];
 	char expand_num_str[EXPAND_NUM_STR_SIZE];
 
 	// search ,.*[.+].*,
@@ -1026,7 +1026,7 @@ int game_utils_expand_value(char* str, char* expand_str)
 		int end_num = 0;
 		for (; hyphen_cursor < hyphen_list_size; hyphen_cursor++) {
 			if ((hyphen_list[hyphen_cursor] > head_list[i]) && (hyphen_list[hyphen_cursor] < end_list[i])) {
-				char tmp_char_buf[GAME_UTILS_STRING_NAME_BUF_SIZE];
+				char tmp_char_buf[MEMORY_MANAGER_NAME_BUF_SIZE];
 
 				// get first number
 				int length = (hyphen_list[hyphen_cursor] - 1) - (head_list[i] + 1) + 1;
@@ -1152,7 +1152,7 @@ int game_utils_split_conmma_int(char* str, int* int_list, int int_list_size)
 	int list_size = 0;
 	size_t pre_end = 0;
 	for (size_t i = 0; i < str_size; i++) {
-		char tmp_char_buf[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		char tmp_char_buf[MEMORY_MANAGER_NAME_BUF_SIZE];
 
 		if (str[i] == ',') {
 			game_utils_string_copy_n(tmp_char_buf, &str[pre_end], (int)(i - pre_end));

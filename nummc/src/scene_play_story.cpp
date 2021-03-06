@@ -31,7 +31,7 @@ static bool enter_text_disp;
 static int auto_text_timer;
 static int auto_text_wait_time;
 static int auto_text_index;
-static char story_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+static char story_path[MEMORY_MANAGER_STRING_BUF_SIZE];
 
 static void tex_info_reset();
 static void unload_event();
@@ -206,7 +206,7 @@ static void tex_info_reset()
 		if (auto_text_index > SCENE_PLAY_STORY_AUTO_TEXT_END) break;  // overflow tex_info
 
 		char* auto_text = ((auto_text_data_t*)current_node)->auto_text;
-		char auto_text_str[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		char auto_text_str[MEMORY_MANAGER_STRING_BUF_SIZE];
 		int auto_text_str_size = game_utils_string_cat(auto_text_str, (char*)"{-,204:204:204:204,-,-}", auto_text);
 		if (auto_text_str_size <= 0) { LOG_ERROR("Error: scene_play_story tex_info_reset() get auto_text_str\n"); continue; }
 

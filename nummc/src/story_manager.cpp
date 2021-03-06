@@ -114,8 +114,8 @@ int story_manager_load(char* path)
 }
 
 static void load_basic_info(char* line) {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_NAME_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "id")) {
@@ -140,8 +140,8 @@ static void load_bgm(char* line) {
 }
 
 static void load_auto_text(char* line) {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_NAME_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"time")) {

@@ -475,8 +475,8 @@ int stage_manager_load(char* path)
 }
 
 static void load_basic_info(char* line) {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_NAME_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "id")) {
@@ -498,8 +498,8 @@ static void load_basic_info(char* line) {
 }
 
 static void load_daytime(char* line) {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_NAME_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"stat")) {
@@ -531,8 +531,8 @@ static void load_daytime(char* line) {
 }
 
 static void load_player_start(char* line) {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_NAME_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "x")) {
@@ -546,8 +546,8 @@ static void load_player_start(char* line) {
 }
 
 static void load_goal(char* line) {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_NAME_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "x")) {
@@ -589,8 +589,8 @@ static void load_items_def(char* line) {
 
 static void load_section(char* line) {
 	int ret = 0;
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_STRING_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"section")) {
@@ -746,8 +746,8 @@ static int load_section_file(char* path)
 }
 
 static void load_items(char* line) {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_LINE_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_LINE_BUF_SIZE];
 	int val_list[GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX];
 	int val_list_size;
 	game_utils_split_key_value(line, key, value);
@@ -819,8 +819,8 @@ static void load_goal_items(char* line) {
 }
 
 static void load_trap(char* line) {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_LINE_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_LINE_BUF_SIZE];
 	int val_list[GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX];
 	int val_list_size;
 	game_utils_split_key_value(line, key, value);
@@ -875,9 +875,9 @@ static void clear_enemy(enemy_data_t* enemy_data) {
 }
 
 static void load_enemy(char* line) {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_LINE_BUF_SIZE];
-	char str_list[GAME_UTILS_STRING_NAME_BUF_SIZE * GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_LINE_BUF_SIZE];
+	char str_list[MEMORY_MANAGER_NAME_BUF_SIZE * GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX];
 	int str_list_size;
 	int val_list[GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX];
 	int val_list_size;
@@ -957,13 +957,13 @@ static void load_enemy(char* line) {
 		return;
 	}
 	if (STRCMP_EQ(key,"face")) {
-		str_list_size = game_utils_split_conmma(value, str_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX, GAME_UTILS_STRING_NAME_BUF_SIZE);
+		str_list_size = game_utils_split_conmma(value, str_list, GAME_UTILS_STRING_VALUE_LIST_SIZE_MAX, MEMORY_MANAGER_NAME_BUF_SIZE);
 
 		node_data_t* node = tmp_new_node;
 		for (int i = 0; i < str_list_size; i++) {
 			if (node == NULL) break;
 
-			char* face_str = &str_list[i * GAME_UTILS_STRING_NAME_BUF_SIZE];
+			char* face_str = &str_list[i * MEMORY_MANAGER_NAME_BUF_SIZE];
 			if (STRCMP_EQ(face_str,"N")) {
 				((enemy_data_t*)node)->face = UNIT_FACE_N;
 			}

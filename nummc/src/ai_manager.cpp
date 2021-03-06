@@ -5,6 +5,7 @@
 #include "game_timer.h"
 #include "game_log.h"
 #include "game_utils.h"
+#include "memory_manager.h"
 #include "map_manager.h"
 #include "unit_manager.h"
 #include "stage_manager.h"
@@ -167,8 +168,8 @@ int ai_manager_load_bullet_file(char* path, ai_bullet_t* bullet_base)
 
 static void load_basic(char* line, ai_bullet_t* bullet_data)
 {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_STRING_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "bullet_unit")) {

@@ -6,6 +6,7 @@
 #include "game_timer.h"
 #include "game_log.h"
 #include "game_utils.h"
+#include "memory_manager.h"
 #include "resource_manager.h"
 #include "unit_manager.h"
 #include "game_window.h"
@@ -351,7 +352,7 @@ void map_manager_create_stage_map()
 				if (tmp_path_size <= 0) { LOG_ERROR("Error: map_manager_create_stage_map get tile_files %s\n", find_file_data.cFileName); return; }
 
 				//index_str = filename.substr(0, filename.size() - 5);
-				char index_str[GAME_UTILS_STRING_NAME_BUF_SIZE];
+				char index_str[MEMORY_MANAGER_NAME_BUF_SIZE];
 				int tile_filename_size = (int)strlen(find_file_data.cFileName);
 				game_utils_string_copy_n(index_str, find_file_data.cFileName, tile_filename_size - 5 /* - strlen(".tile") */);
 				int index = atoi(index_str);
@@ -1168,8 +1169,8 @@ static int map_manager_load_tile(char* path, tile_data_t* tile)
 }
 
 static void load_tile_basic(char* line, tile_data_t* tile) {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_NAME_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "breakable")) {
@@ -1179,8 +1180,8 @@ static void load_tile_basic(char* line, tile_data_t* tile) {
 }
 
 static void load_tile_frame(char* line, tile_data_t* tile) {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_STRING_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	tile_base_data_t* tile_base = (tile_base_data_t*)tile;
@@ -1212,10 +1213,10 @@ static void load_tile_frame(char* line, tile_data_t* tile) {
 }
 
 static void load_tile_img(char* line, tile_data_t* tile) {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_STRING_BUF_SIZE];
 	char image_filename[GAME_FULL_PATH_MAX];
-	char str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * ANIM_FRAME_NUM_MAX];
+	char str_list[MEMORY_MANAGER_STRING_BUF_SIZE * ANIM_FRAME_NUM_MAX];
 	int str_list_size;
 	game_utils_split_key_value(line, key, value);
 
@@ -1239,7 +1240,7 @@ static void load_tile_img(char* line, tile_data_t* tile) {
 		//std::string image_filename = dir_path;
 		for (int i = 0; i < str_list_size; i++) {
 			anim_frame_data_t* anim_frame_data = tile_base->anim->anim_stat_base_list[ANIM_STAT_IDLE]->frame_list[i];
-			game_utils_string_cat(image_filename, dir_path, &str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * i]);
+			game_utils_string_cat(image_filename, dir_path, &str_list[MEMORY_MANAGER_STRING_BUF_SIZE * i]);
 			anim_frame_data->res_img = resource_manager_getTextureFromPath(image_filename);
 		}
 		return;
@@ -1247,10 +1248,10 @@ static void load_tile_img(char* line, tile_data_t* tile) {
 	if (STRCMP_EQ(key,"effect")) {
 		str_list_size = game_utils_split_conmma(value, str_list, ANIM_FRAME_NUM_MAX);
 
-		char keyword_str[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		char keyword_str[MEMORY_MANAGER_STRING_BUF_SIZE];
 		for (int fi = 0; fi < str_list_size; fi++) {
-			char* frame_effect_str = &str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * fi];
-			int element_size = (int)strlen(&str_list[GAME_UTILS_STRING_CHAR_BUF_SIZE * fi]);
+			char* frame_effect_str = &str_list[MEMORY_MANAGER_STRING_BUF_SIZE * fi];
+			int element_size = (int)strlen(&str_list[MEMORY_MANAGER_STRING_BUF_SIZE * fi]);
 
 			int keyword_size = 10;
 			game_utils_string_copy_n(keyword_str, frame_effect_str, keyword_size);
@@ -1302,7 +1303,7 @@ static void load_tile_img(char* line, tile_data_t* tile) {
 typedef struct _load_map_callback_data_t load_map_callback_data_t;
 struct _load_map_callback_data_t {
 	bool read_flg[MAP_TAG_END];
-	char layer_name[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char layer_name[MEMORY_MANAGER_NAME_BUF_SIZE];
 };
 static load_map_callback_data_t load_map_callback_data;
 static void load_map_callback(char* line, int line_size, int line_num, void* argv)
@@ -1319,7 +1320,7 @@ static void load_map_callback(char* line, int line_size, int line_num, void* arg
 	if (seek_index == line_size) return; // not found string
 
 	if (line[seek_index] == '<') {
-		char line_substr[GAME_UTILS_STRING_LINE_BUF_SIZE];
+		char line_substr[MEMORY_MANAGER_LINE_BUF_SIZE];
 		int ret = game_utils_string_copy_n(line_substr, &line[seek_index], 9);
 		if (ret != 0) { LOG_ERROR("Error: load_map_callback get line_substr of %s\n", line); return; }
 
@@ -1442,7 +1443,7 @@ typedef struct _load_data_element_callback_data_t load_data_element_callback_dat
 struct _load_data_element_callback_data_t {
 	bool read_flg[MAP_TAG_END];
 	int read_tile_type_;
-	char layer_name[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char layer_name[MEMORY_MANAGER_NAME_BUF_SIZE];
 };
 static load_data_element_callback_data_t load_data_element_callback_data;
 static void load_data_element_callback(char* line, int line_size, int line_num, void* argv)
@@ -1458,7 +1459,7 @@ static void load_data_element_callback(char* line, int line_size, int line_num, 
 	if (seek_index == line_size) return; // not found string
 
 	if (line[seek_index] == '<') {
-		char line_substr[GAME_UTILS_STRING_LINE_BUF_SIZE];
+		char line_substr[MEMORY_MANAGER_LINE_BUF_SIZE];
 		int ret = game_utils_string_copy_n(line_substr, &line[seek_index], 7);
 		if (ret != 0) { LOG_ERROR("Error: load_data_element_callback get line_substr of %s\n", line); return; }
 
@@ -1533,7 +1534,7 @@ static void load_tileset(char* line, int* tile_width, int* tile_height)
 		if (line[seek_index] == ' ') continue;
 		if (seek_index == line_size) break; // not found string
 
-		char line_substr[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		char line_substr[MEMORY_MANAGER_NAME_BUF_SIZE];
 		int ret = game_utils_string_copy_n(line_substr, &line[seek_index], 12);
 		if (ret != 0) { LOG_ERROR("Error: load_tileset get line_substr from %s\n", line); continue; }
 
@@ -1593,7 +1594,7 @@ static void load_image(char* line, char* filename, int* width, int* height) {
 		if (line[seek_index] == ' ') continue;
 		if (seek_index == line_size) break; // not found string
 
-		char line_substr[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		char line_substr[MEMORY_MANAGER_NAME_BUF_SIZE];
 		int ret = game_utils_string_copy_n(line_substr, &line[seek_index], 8);
 		if (ret != 0) { LOG_ERROR("Error: load_image get line_substr from %s\n", line); continue; }
 
@@ -1669,7 +1670,7 @@ static void load_layer(char* line, char* name, int* width, int* height) {
 		if (line[seek_index] == ' ') continue;
 		if (seek_index == line_size) break; // not found string
 
-		char line_substr[GAME_UTILS_STRING_NAME_BUF_SIZE];
+		char line_substr[MEMORY_MANAGER_NAME_BUF_SIZE];
 		int ret = game_utils_string_copy_n(line_substr, &line[seek_index], 8);
 		if (ret != 0) { LOG_ERROR("Error: load_layer get line_substr from %s\n", line); continue; }
 

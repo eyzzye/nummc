@@ -222,8 +222,8 @@ int unit_manager_load_enemy_bullet(char* path)
 
 static void load_bullet_unit(char* line)
 {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_NAME_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key, "hp")) {

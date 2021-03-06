@@ -70,9 +70,6 @@
         + UNIT_EFFECT_LIST_SIZE) + 64) / 64) * 64)
 
 // node data
-#define GAME_UTILS_NODE_TYPE_NONE  0
-#define GAME_UTILS_NODE_TYPE_USED  1
-
 typedef struct _node_data_t node_data_t;
 struct _node_data_t {
 	int type;        // NONE:0
@@ -89,11 +86,6 @@ struct _node_buffer_info_t {
 	node_data_t* end_node;    // next=NULL data
 };
 
-// char buffer
-#define GAME_UTILS_STRING_LINE_BUF_SIZE  256
-#define GAME_UTILS_STRING_CHAR_BUF_SIZE  128
-#define GAME_UTILS_STRING_NAME_BUF_SIZE   32
-
 // function pointers
 typedef void void_func();
 typedef void void_p_func(void*);
@@ -102,4 +94,4 @@ typedef void int_func(int);
 typedef int ret_int_func();
 
 extern int g_base_path_size;
-extern char g_base_path[];  // [GAME_UTILS_STRING_CHAR_BUF_SIZE]
+extern char g_base_path[];  // [MEMORY_MANAGER_STRING_BUF_SIZE]

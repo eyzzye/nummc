@@ -4,6 +4,7 @@
 #include "scene_manager.h"
 #include "scene_play_stage.h"
 
+#include "memory_manager.h"
 #include "resource_manager.h"
 #include "game_key_event.h"
 #include "game_mouse_event.h"
@@ -51,7 +52,7 @@ static void event_msg_handler();
 static SceneManagerFunc scene_func;
 static int scene_stat;
 static int return_scene_id;
-static char stage_id[GAME_UTILS_STRING_NAME_BUF_SIZE];
+static char stage_id[MEMORY_MANAGER_NAME_BUF_SIZE];
 
 // draw variables
 static rect_region_t tex_veil_region;
@@ -66,7 +67,7 @@ static int game_start_wait_timer;
 static int game_next_stage_wait_timer;
 
 // player info
-static char player_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+static char player_path[MEMORY_MANAGER_STRING_BUF_SIZE];
 static bool reload_player;
 
 // goal info
@@ -76,7 +77,7 @@ static const char* smoke_effect_path = "units/effect/smoke/smoke.unit";
 static int game_next_stage_dark_alpha;
 
 // tmp region
-static char tmp_char_buf[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+static char tmp_char_buf[MEMORY_MANAGER_STRING_BUF_SIZE];
 
 // event func
 static void pre_event() {
@@ -578,7 +579,7 @@ static void pre_load_event(void* null) {
 		stage_manager_init();
 		//std::string stage_path = (stage_id == "final") ? ("scenes/stages/final.dat") : ("scenes/stages/stage" + stage_id + ".dat");
 		const char* stage_path = NULL;
-		char stage_name_str[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+		char stage_name_str[MEMORY_MANAGER_STRING_BUF_SIZE];
 		if (STRCMP_EQ(stage_id, "final")) {
 			stage_path = "scenes/stages/final.dat";
 		}

@@ -1,5 +1,6 @@
 #pragma once
 #include "game_common.h"
+#include "memory_manager.h"
 #include "resource_manager.h"
 
 #define STORY_STAT_NONE       0
@@ -16,7 +17,7 @@ struct _auto_text_data_t {
 	node_data_t* prev;
 	node_data_t* next;
 
-	char auto_text[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char auto_text[MEMORY_MANAGER_STRING_BUF_SIZE];
 };
 
 struct _story_data_t {

@@ -16,7 +16,7 @@
 #include "ai_manager.h"
 #include "scene_play_stage.h"
 
-static char tmp_char_buf[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+static char tmp_char_buf[MEMORY_MANAGER_STRING_BUF_SIZE];
 
 int unit_manager_init()
 {
@@ -44,8 +44,8 @@ void unit_manager_unload()
 
 void load_collision(char* line, shape_data** col_shape)
 {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_NAME_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_NAME_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"type")) {
@@ -156,8 +156,8 @@ void load_collision(char* line, shape_data** col_shape)
 
 void load_anim(char* line, anim_data_t* anim)
 {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_STRING_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"base_w")) {
@@ -228,8 +228,8 @@ void load_anim(char* line, anim_data_t* anim)
 
 void load_ai(char* line, ai_data_t* ai_data)
 {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_STRING_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"type")) {
@@ -257,8 +257,8 @@ void load_ai(char* line, ai_data_t* ai_data)
 
 void load_bullet(char* line, ai_data_t** bullet_data)
 {
-	char key[GAME_UTILS_STRING_NAME_BUF_SIZE];
-	char value[GAME_UTILS_STRING_CHAR_BUF_SIZE];
+	char key[MEMORY_MANAGER_NAME_BUF_SIZE];
+	char value[MEMORY_MANAGER_STRING_BUF_SIZE];
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"bullet1_ai")) {
