@@ -99,8 +99,8 @@ static int memory_manager_new_char_block_name(int index);
 //static unit_effect_data_t effect_base[UNIT_EFFECT_BASE_LIST_SIZE];
 //static unit_effect_data_t effect[UNIT_EFFECT_LIST_SIZE];
 
-#define NODE_INFO_SMALL_SIZE_MAX      (ANIM_DATA_LIST_SIZE / 8)
-#define NODE_INFO_SMALL_SIZE_DEFAULT  (128)
+#define NODE_INFO_SMALL_SIZE_MAX      (ANIM_DATA_LIST_SIZE)
+#define NODE_INFO_SMALL_SIZE_DEFAULT  (256)
 static memory_buffer_info_t node_info_small_inst[NODE_INFO_SMALL_SIZE_MAX];
 static int node_info_small_size;
 

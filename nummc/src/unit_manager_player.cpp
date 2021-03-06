@@ -20,7 +20,8 @@ unit_player_data_t g_player;
 unit_player_data_t g_player_backup;
 static char player_backup_path[GAME_UTILS_STRING_CHAR_BUF_SIZE];
 
-static unit_player_data_t player_base[UNIT_PLAYER_BASE_LIST_SIZE];
+static unit_player_data_t* player_base[UNIT_PLAYER_BASE_LIST_SIZE];
+static node_buffer_info_t player_base_info;
 static int player_base_index_end;
 static int player_stat_timer[UNIT_STAT_END];
 
@@ -147,20 +148,27 @@ int unit_manager_init_player()
 	memset(&g_player, 0, sizeof(g_player));
 	player_base_index_end = 0;
 
+	game_utils_node_init(&player_base_info, sizeof(unit_player_data_t));
+	for (int i = 0; i < UNIT_PLAYER_BASE_LIST_SIZE; i++) {
+		player_base[i] = (unit_player_data_t*)game_utils_node_new(&player_base_info);
+	}
+
 	return 0;
 }
 
 void unit_manager_unload_player()
 {
 	for (int i = 0; i < UNIT_PLAYER_BASE_LIST_SIZE; i++) {
-		if (player_base[i].obj) {
-			memory_manager_delete_char_buff((char*)player_base[i].obj);
-			player_base[i].obj = NULL;
+		if (player_base[i]->obj) {
+			memory_manager_delete_char_buff((char*)player_base[i]->obj);
+			player_base[i]->obj = NULL;
 		}
-		if (player_base[i].next_level) {
-			memory_manager_delete_char_buff((char*)player_base[i].next_level);
-			player_base[i].next_level = NULL;
+		if (player_base[i]->next_level) {
+			memory_manager_delete_char_buff((char*)player_base[i]->next_level);
+			player_base[i]->next_level = NULL;
 		}
+		game_utils_node_delete((node_data_t*)player_base[i], &player_base_info);
+		player_base[i] = NULL;
 	}
 }
 
@@ -245,11 +253,11 @@ static void load_player_callback(char* line, int line_size, int line_num, void* 
 			// set base unit data
 			char* path_c_str = memory_manager_new_char_buff((int)strlen(data->path));
 			game_utils_string_copy(path_c_str, data->path);
-			player_base[player_base_index_end].obj          = (void*)path_c_str;
-			player_base[player_base_index_end].type         = UNIT_TYPE_PLAYER;
-			player_base[player_base_index_end].id           = player_base_index_end;
-			player_base[player_base_index_end].effect_stat  = UNIT_EFFECT_FLAG_P_NONE;
-			player_base[player_base_index_end].effect_param = player_base_effect;
+			player_base[player_base_index_end]->obj          = (void*)path_c_str;
+			player_base[player_base_index_end]->type         = UNIT_TYPE_PLAYER;
+			player_base[player_base_index_end]->id           = player_base_index_end;
+			player_base[player_base_index_end]->effect_stat  = UNIT_EFFECT_FLAG_P_NONE;
+			player_base[player_base_index_end]->effect_param = player_base_effect;
 			return;
 		}
 		if (STRCMP_EQ(line, "[/unit]"))      { data->read_flg[UNIT_TAG_UNIT]      = false; return; }
@@ -257,8 +265,8 @@ static void load_player_callback(char* line, int line_size, int line_num, void* 
 		if (STRCMP_EQ(line, "[/collision]")) { data->read_flg[UNIT_TAG_COLLISION] = false; return; }
 		if (STRCMP_EQ(line, "[anim]")) {
 			data->read_flg[UNIT_TAG_ANIM] = true;
-			player_base[player_base_index_end].anim = animation_manager_new_anim_data();
-			animation_manager_new_anim_stat_base_data(player_base[player_base_index_end].anim);
+			player_base[player_base_index_end]->anim = animation_manager_new_anim_data();
+			animation_manager_new_anim_stat_base_data(player_base[player_base_index_end]->anim);
 			return;
 		}
 		if (STRCMP_EQ(line, "[/anim]")) { data->read_flg[UNIT_TAG_ANIM] = false; return; }
@@ -268,10 +276,10 @@ static void load_player_callback(char* line, int line_size, int line_num, void* 
 		load_unit(line);
 	}
 	if (data->read_flg[UNIT_TAG_COLLISION]) {
-		load_collision(line, &player_base[player_base_index_end].col_shape);
+		load_collision(line, &player_base[player_base_index_end]->col_shape);
 	}
 	if (data->read_flg[UNIT_TAG_ANIM]) {
-		load_anim(line, player_base[player_base_index_end].anim);
+		load_anim(line, player_base[player_base_index_end]->anim);
 	}
 }
 
@@ -289,11 +297,11 @@ int unit_manager_load_player(char* path)
 	if (ret != 0) { LOG_ERROR("unit_manager_load_player %s error\n", path); return 1; }
 
 	// load anim files
-	if (player_base[player_base_index_end].anim) {
+	if (player_base[player_base_index_end]->anim) {
 		for (int i = 0; i < ANIM_STAT_END; i++) {
-			char* anim_path = (char*)player_base[player_base_index_end].anim->anim_stat_base_list[i]->obj;
+			char* anim_path = (char*)player_base[player_base_index_end]->anim->anim_stat_base_list[i]->obj;
 			if (anim_path) {
-				animation_manager_load_file(anim_path, player_base[player_base_index_end].anim, i);
+				animation_manager_load_file(anim_path, player_base[player_base_index_end]->anim, i);
 			}
 		}
 	}
@@ -314,57 +322,57 @@ static void load_unit(char* line)
 	game_utils_split_key_value(line, key, value);
 
 	if (STRCMP_EQ(key,"hp")) {
-		player_base[player_base_index_end].hp = atoi(value);
+		player_base[player_base_index_end]->hp = atoi(value);
 		return;
 	}
 	if (STRCMP_EQ(key,"attack_wait_timer")) {
-		player_base[player_base_index_end].attack_wait_timer = atoi(value);
+		player_base[player_base_index_end]->attack_wait_timer = atoi(value);
 		return;
 	}
 	if (STRCMP_EQ(key,"bullet_life_timer")) {
-		player_base[player_base_index_end].bullet_life_timer = atoi(value);
+		player_base[player_base_index_end]->bullet_life_timer = atoi(value);
 		return;
 	}
 	if (STRCMP_EQ(key,"bullet_num")) {
-		UNIT_BULLET_SPEC_SET_NUM(&player_base[player_base_index_end], atoi(value));
+		UNIT_BULLET_SPEC_SET_NUM(player_base[player_base_index_end], atoi(value));
 		return;
 	}
 	if (STRCMP_EQ(key,"bullet_curving")) {
-		UNIT_BULLET_SPEC_SET_CURVING(&player_base[player_base_index_end], atoi(value));
+		UNIT_BULLET_SPEC_SET_CURVING(player_base[player_base_index_end], atoi(value));
 		return;
 	}
 	if (STRCMP_EQ(key,"bullet_strength")) {
-		UNIT_BULLET_SPEC_SET_STRENGTH(&player_base[player_base_index_end], atoi(value));
+		UNIT_BULLET_SPEC_SET_STRENGTH(player_base[player_base_index_end], atoi(value));
 		return;
 	}
 	if (STRCMP_EQ(key,"speed")) {
-		player_base[player_base_index_end].speed = atoi(value);
+		player_base[player_base_index_end]->speed = atoi(value);
 		return;
 	}
 	if (STRCMP_EQ(key,"weapon")) {
-		player_base[player_base_index_end].weapon = atoi(value);
+		player_base[player_base_index_end]->weapon = atoi(value);
 		return;
 	}
 	if (STRCMP_EQ(key,"armor")) {
-		player_base[player_base_index_end].armor = atoi(value);
+		player_base[player_base_index_end]->armor = atoi(value);
 		return;
 	}
 	if (STRCMP_EQ(key,"luck")) {
-		UNIT_SPEC_SET_LUCK(&player_base[player_base_index_end], atoi(value));
+		UNIT_SPEC_SET_LUCK(player_base[player_base_index_end], atoi(value));
 		return;
 	}
 	if (STRCMP_EQ(key,"hp_max")) {
-		player_base[player_base_index_end].hp_max = atoi(value);
+		player_base[player_base_index_end]->hp_max = atoi(value);
 		return;
 	}
 	if (STRCMP_EQ(key,"exp_max")) {
-		player_base[player_base_index_end].exp_max = atoi(value);
+		player_base[player_base_index_end]->exp_max = atoi(value);
 		return;
 	}
 	if (STRCMP_EQ(key,"next_level")) {
 		char* next_level_c_str = memory_manager_new_char_buff((int)strlen(value));
 		game_utils_string_copy(next_level_c_str, value);
-		player_base[player_base_index_end].next_level = next_level_c_str;
+		player_base[player_base_index_end]->next_level = next_level_c_str;
 		return;
 	}
 
@@ -383,7 +391,7 @@ static void load_unit(char* line)
 				resistance_val |= UNIT_EFFECT_FLAG_P_FREEZE_UP;
 			}
 		}
-		player_base[player_base_index_end].resistance_stat = resistance_val;
+		player_base[player_base_index_end]->resistance_stat = resistance_val;
 		return;
 	}
 }
@@ -391,8 +399,8 @@ static void load_unit(char* line)
 void unit_manager_create_player(int x, int y)
 {
 	// set unit data
-	memcpy(&g_player, &player_base[player_base_index_end - 1], sizeof(unit_player_data_t));
-	g_player.base = &player_base[player_base_index_end - 1];
+	memcpy(&g_player, player_base[player_base_index_end - 1], sizeof(unit_player_data_t));
+	g_player.base = player_base[player_base_index_end - 1];
 	g_player.id = 0;
 	g_player.exp = 0;
 	g_player.type = UNIT_TYPE_PLAYER;
@@ -401,8 +409,8 @@ void unit_manager_create_player(int x, int y)
 
 	// collision
 	g_player.col_shape =
-		collision_manager_create_dynamic_shape(player_base[player_base_index_end - 1].col_shape,
-			(void*)&g_player, player_base[player_base_index_end - 1].anim->base_w, player_base[player_base_index_end - 1].anim->base_h,
+		collision_manager_create_dynamic_shape(player_base[player_base_index_end - 1]->col_shape,
+			(void*)&g_player, player_base[player_base_index_end - 1]->anim->base_w, player_base[player_base_index_end - 1]->anim->base_h,
 			&x, &y);
 
 	// anim

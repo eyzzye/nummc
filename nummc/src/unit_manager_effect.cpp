@@ -10,8 +10,10 @@
 #include "resource_manager.h"
 #include "memory_manager.h"
 
-static unit_effect_data_t effect_base[UNIT_EFFECT_BASE_LIST_SIZE];
-static unit_effect_data_t effect[UNIT_EFFECT_LIST_SIZE];
+static unit_effect_data_t* effect_base[UNIT_EFFECT_BASE_LIST_SIZE];
+static unit_effect_data_t* effect[UNIT_EFFECT_LIST_SIZE];
+static node_buffer_info_t effect_base_info;
+static node_buffer_info_t effect_info;
 static int effect_base_index_end;
 static int effect_index_end;
 
@@ -27,16 +29,37 @@ int unit_manager_init_effect()
 	effect_base_index_end = 0;
 	effect_index_end = 0;
 
+	game_utils_node_init(&effect_base_info, sizeof(unit_effect_data_t));
+	for (int i = 0; i < UNIT_EFFECT_BASE_LIST_SIZE; i++) {
+		effect_base[i] = (unit_effect_data_t*)game_utils_node_new(&effect_base_info);
+	}
+
+	game_utils_node_init(&effect_info, sizeof(unit_effect_data_t));
+	for (int i = 0; i < UNIT_EFFECT_LIST_SIZE; i++) {
+		effect[i] = (unit_effect_data_t*)game_utils_node_new(&effect_info);
+	}
+
 	return 0;
 }
 
 void unit_manager_unload_effect()
 {
 	for (int i = 0; i < UNIT_EFFECT_BASE_LIST_SIZE; i++) {
-		if (effect_base[i].obj) {
-			memory_manager_delete_char_buff((char*)effect_base[i].obj);
-			effect_base[i].obj = NULL;
+		if (effect_base[i]->obj) {
+			memory_manager_delete_char_buff((char*)effect_base[i]->obj);
+			effect_base[i]->obj = NULL;
 		}
+		game_utils_node_delete((node_data_t*)effect_base[i], &effect_base_info);
+		effect_base[i] = NULL;
+	}
+
+	for (int i = 0; i < UNIT_EFFECT_LIST_SIZE; i++) {
+		if (effect[i]->obj) {
+			memory_manager_delete_char_buff((char*)effect[i]->obj);
+			effect[i]->obj = NULL;
+		}
+		game_utils_node_delete((node_data_t*)effect[i], &effect_info);
+		effect[i] = NULL;
 	}
 }
 
@@ -44,8 +67,8 @@ int unit_manager_search_effect(char* path)
 {
 	int ii = 0;
 	bool effect_found = false;
-	while (effect_base[ii].type == UNIT_TYPE_EFFECT) {
-		char* regist_path = (char*)effect_base[ii].obj;
+	while (effect_base[ii]->type == UNIT_TYPE_EFFECT) {
+		char* regist_path = (char*)effect_base[ii]->obj;
 		if ((regist_path != NULL) && STRCMP_EQ(regist_path,path)) {
 			effect_found = true;
 			break;
@@ -59,32 +82,32 @@ int unit_manager_search_effect(char* path)
 
 void unit_manager_effect_set_trace_unit(int unit_id, unit_data_t* unit_data)
 {
-	effect[unit_id].trace_unit = unit_data;
+	effect[unit_id]->trace_unit = unit_data;
 }
 
 void unit_manager_effect_set_anim_stat(int unit_id, int stat)
 {
-	unit_manager_unit_set_anim_stat((unit_data_t*)&effect[unit_id], stat);
+	unit_manager_unit_set_anim_stat((unit_data_t*)effect[unit_id], stat);
 
 	// DIE
-	if ((effect[unit_id].anim->stat == ANIM_STAT_FLAG_DIE) && effect[unit_id].col_shape->b2body) {
+	if ((effect[unit_id]->anim->stat == ANIM_STAT_FLAG_DIE) && effect[unit_id]->col_shape->b2body) {
 		// disable collision body
-		g_stage_world->DestroyBody(effect[unit_id].col_shape->b2body);
-		effect[unit_id].col_shape->b2body = NULL;
+		g_stage_world->DestroyBody(effect[unit_id]->col_shape->b2body);
+		effect[unit_id]->col_shape->b2body = NULL;
 	}
 }
 
 void unit_manager_effect_set_b2position(int unit_id, float x, float y)
 {
 	b2Vec2 b2_effect_pos = { x, y };
-	effect[unit_id].col_shape->b2body->SetTransform(b2_effect_pos, 0.0f);
-	effect[unit_id].col_shape->x = (int)MET2PIX(effect[unit_id].col_shape->b2body->GetPosition().x);
-	effect[unit_id].col_shape->y = (int)MET2PIX(effect[unit_id].col_shape->b2body->GetPosition().y);
+	effect[unit_id]->col_shape->b2body->SetTransform(b2_effect_pos, 0.0f);
+	effect[unit_id]->col_shape->x = (int)MET2PIX(effect[unit_id]->col_shape->b2body->GetPosition().x);
+	effect[unit_id]->col_shape->y = (int)MET2PIX(effect[unit_id]->col_shape->b2body->GetPosition().y);
 }
 
 unit_effect_data_t* unit_manager_get_effect(int index)
 {
-	return &effect[index];
+	return effect[index];
 }
 
 typedef struct _load_effect_callback_data_t load_effect_callback_data_t;
@@ -107,10 +130,10 @@ static void load_effect_callback(char* line, int line_size, int line_num, void* 
 			// set base unit data
 			char* path_c_str = memory_manager_new_char_buff((int)strlen(data->path));
 			game_utils_string_copy(path_c_str, data->path);
-			effect_base[effect_base_index_end].obj = (void*)path_c_str;
-			effect_base[effect_base_index_end].type = UNIT_TYPE_EFFECT;
-			effect_base[effect_base_index_end].id = effect_base_index_end;
-			effect_base[effect_base_index_end].clear_type = UNIT_EFFECT_CLEAR_TYPE_NONE;
+			effect_base[effect_base_index_end]->obj = (void*)path_c_str;
+			effect_base[effect_base_index_end]->type = UNIT_TYPE_EFFECT;
+			effect_base[effect_base_index_end]->id = effect_base_index_end;
+			effect_base[effect_base_index_end]->clear_type = UNIT_EFFECT_CLEAR_TYPE_NONE;
 			return;
 		}
 		if (STRCMP_EQ(line, "[/unit]"))      { data->read_flg[UNIT_TAG_UNIT]      = false; return; }
@@ -118,8 +141,8 @@ static void load_effect_callback(char* line, int line_size, int line_num, void* 
 		if (STRCMP_EQ(line, "[/collision]")) { data->read_flg[UNIT_TAG_COLLISION] = false; return; }
 		if (STRCMP_EQ(line, "[anim]")) {
 			data->read_flg[UNIT_TAG_ANIM] = true;
-			effect_base[effect_base_index_end].anim = animation_manager_new_anim_data();
-			animation_manager_new_anim_stat_base_data(effect_base[effect_base_index_end].anim);
+			effect_base[effect_base_index_end]->anim = animation_manager_new_anim_data();
+			animation_manager_new_anim_stat_base_data(effect_base[effect_base_index_end]->anim);
 			return;
 		}
 		if (STRCMP_EQ(line, "[/anim]")) { data->read_flg[UNIT_TAG_ANIM] = false; return; }
@@ -129,10 +152,10 @@ static void load_effect_callback(char* line, int line_size, int line_num, void* 
 		load_effect_unit(line);
 	}
 	if (data->read_flg[UNIT_TAG_COLLISION]) {
-		load_collision(line, &effect_base[effect_base_index_end].col_shape);
+		load_collision(line, &effect_base[effect_base_index_end]->col_shape);
 	}
 	if (data->read_flg[UNIT_TAG_ANIM]) {
-		load_anim(line, effect_base[effect_base_index_end].anim);
+		load_anim(line, effect_base[effect_base_index_end]->anim);
 	}
 }
 
@@ -152,11 +175,11 @@ int unit_manager_load_effect(char* path)
 	if (ret != 0) { LOG_ERROR("unit_manager_load_effect %s error\n", path); return 1; }
 
 	// load anim files
-	if (effect_base[effect_base_index_end].anim) {
+	if (effect_base[effect_base_index_end]->anim) {
 		for (int i = 0; i < ANIM_STAT_END; i++) {
-			char* anim_path = (char*)effect_base[effect_base_index_end].anim->anim_stat_base_list[i]->obj;
+			char* anim_path = (char*)effect_base[effect_base_index_end]->anim->anim_stat_base_list[i]->obj;
 			if (anim_path) {
-				animation_manager_load_file(anim_path, effect_base[effect_base_index_end].anim, i);
+				animation_manager_load_file(anim_path, effect_base[effect_base_index_end]->anim, i);
 			}
 		}
 	}
@@ -179,21 +202,21 @@ static void load_effect_unit(char* line)
 
 	if (STRCMP_EQ(key,"group")) {
 		if (STRCMP_EQ(value,"NONE")) {
-			effect_base[effect_base_index_end].group = UNIT_EFFECT_GROUP_NONE;
+			effect_base[effect_base_index_end]->group = UNIT_EFFECT_GROUP_NONE;
 		}
 		else if (STRCMP_EQ(value,"STATIC")) {
-			effect_base[effect_base_index_end].group = UNIT_EFFECT_GROUP_STATIC;
+			effect_base[effect_base_index_end]->group = UNIT_EFFECT_GROUP_STATIC;
 		}
 		else if (STRCMP_EQ(value,"DYNAMIC")) {
-			effect_base[effect_base_index_end].group = UNIT_EFFECT_GROUP_DYNAMIC;
+			effect_base[effect_base_index_end]->group = UNIT_EFFECT_GROUP_DYNAMIC;
 		}
 		else if (STRCMP_EQ(value,"DIE_AUTO")) {
-			effect_base[effect_base_index_end].group = UNIT_EFFECT_GROUP_DIE_AUTO;
+			effect_base[effect_base_index_end]->group = UNIT_EFFECT_GROUP_DIE_AUTO;
 		}
 		return;
 	}
 	if (STRCMP_EQ(key, "life_timer")) {
-		effect_base[effect_base_index_end].life_timer = atoi(value);
+		effect_base[effect_base_index_end]->life_timer = atoi(value);
 		return;
 	}
 }
@@ -203,14 +226,14 @@ int unit_manager_create_effect(int x, int y, int base_index)
 	int ret = -1;
 
 	for (int i = effect_index_end; i < UNIT_EFFECT_LIST_SIZE; i++) {
-		if (effect[i].type != UNIT_TYPE_EFFECT) {
+		if (effect[i]->type != UNIT_TYPE_EFFECT) {
 			ret = effect_index_end = i;
 			break;
 		}
 	}
 	if ((ret == -1) && (effect_index_end > 0)) {
 		for (int i = 0; i < effect_index_end; i++) {
-			if (effect[i].type != UNIT_TYPE_EFFECT) {
+			if (effect[i]->type != UNIT_TYPE_EFFECT) {
 				ret = effect_index_end = i;
 				break;
 			}
@@ -224,39 +247,39 @@ int unit_manager_create_effect(int x, int y, int base_index)
 	if (base_index == -1) base_index = effect_base_index_end - 1;
 
 	// set unit data
-	memcpy(&effect[effect_index_end], &effect_base[base_index], sizeof(unit_effect_data_t));
-	effect[effect_index_end].base = &effect_base[base_index];
-	effect[effect_index_end].id = effect_index_end;
-	effect[effect_index_end].type = UNIT_TYPE_EFFECT;
-	effect[effect_index_end].group = effect_base[base_index].group;
-	effect[effect_index_end].trace_unit = NULL;
-	effect[effect_index_end].clear_type = effect_base[base_index].clear_type;
+	memcpy(effect[effect_index_end], effect_base[base_index], sizeof(unit_effect_data_t));
+	effect[effect_index_end]->base = effect_base[base_index];
+	effect[effect_index_end]->id = effect_index_end;
+	effect[effect_index_end]->type = UNIT_TYPE_EFFECT;
+	effect[effect_index_end]->group = effect_base[base_index]->group;
+	effect[effect_index_end]->trace_unit = NULL;
+	effect[effect_index_end]->clear_type = effect_base[base_index]->clear_type;
 
 	// collision
-	if (effect_base[base_index].col_shape->type & COLLISION_ID_STATIC_SHAPE) {
-		effect[effect_index_end].col_shape =
-			collision_manager_create_static_shape(effect_base[base_index].col_shape,
-				(void*)&effect[effect_index_end], effect_base[base_index].anim->base_w, effect_base[base_index].anim->base_h,
+	if (effect_base[base_index]->col_shape->type & COLLISION_ID_STATIC_SHAPE) {
+		effect[effect_index_end]->col_shape =
+			collision_manager_create_static_shape(effect_base[base_index]->col_shape,
+				(void*)effect[effect_index_end], effect_base[base_index]->anim->base_w, effect_base[base_index]->anim->base_h,
 				&x, &y);
 	}
 	else {
-		effect[effect_index_end].col_shape =
-			collision_manager_create_dynamic_shape(effect_base[base_index].col_shape,
-				(void*)&effect[effect_index_end], effect_base[base_index].anim->base_w, effect_base[base_index].anim->base_h,
+		effect[effect_index_end]->col_shape =
+			collision_manager_create_dynamic_shape(effect_base[base_index]->col_shape,
+				(void*)effect[effect_index_end], effect_base[base_index]->anim->base_w, effect_base[base_index]->anim->base_h,
 				&x, &y);
 	}
 
 	// anim
-	effect[effect_index_end].anim = animation_manager_new_anim_data();
-	effect[effect_index_end].anim->stat = ANIM_STAT_FLAG_IDLE;
-	effect[effect_index_end].anim->type = effect[effect_index_end].base->anim->type;
-	effect[effect_index_end].anim->obj = effect[effect_index_end].base->anim->obj;
+	effect[effect_index_end]->anim = animation_manager_new_anim_data();
+	effect[effect_index_end]->anim->stat = ANIM_STAT_FLAG_IDLE;
+	effect[effect_index_end]->anim->type = effect[effect_index_end]->base->anim->type;
+	effect[effect_index_end]->anim->obj = effect[effect_index_end]->base->anim->obj;
 	for (int i = 0; i < ANIM_STAT_END; i++) {
-		effect[effect_index_end].anim->anim_stat_base_list[i] = effect[effect_index_end].base->anim->anim_stat_base_list[i];
+		effect[effect_index_end]->anim->anim_stat_base_list[i] = effect[effect_index_end]->base->anim->anim_stat_base_list[i];
 	}
 
 	// set stat SPAWN
-	if (effect[effect_index_end].anim->anim_stat_base_list[ANIM_STAT_SPAWN]->obj) {
+	if (effect[effect_index_end]->anim->anim_stat_base_list[ANIM_STAT_SPAWN]->obj) {
 		unit_manager_effect_set_anim_stat(effect_index_end, ANIM_STAT_FLAG_SPAWN);
 	}
 
@@ -271,9 +294,9 @@ int unit_manager_create_effect(int x, int y, int base_index)
 void unit_manager_clear_all_effect(int clear_type)
 {
 	for (int i = 0; i < UNIT_EFFECT_LIST_SIZE; i++) {
-		if (effect[i].type != UNIT_TYPE_EFFECT) continue;
-		if (effect[i].clear_type == clear_type) {
-			unit_manager_clear_effect(&effect[i]);
+		if (effect[i]->type != UNIT_TYPE_EFFECT) continue;
+		if (effect[i]->clear_type == clear_type) {
+			unit_manager_clear_effect(effect[i]);
 		}
 	}
 	//effect_index_end = 0;
@@ -293,15 +316,15 @@ void unit_manager_clear_effect(unit_effect_data_t* effect_data)
 void unit_manager_effect_update()
 {
 	for (int i = 0; i < UNIT_EFFECT_LIST_SIZE; i++) {
-		if (effect[i].type != UNIT_TYPE_EFFECT) continue;
+		if (effect[i]->type != UNIT_TYPE_EFFECT) continue;
 
-		if (effect[i].col_shape->stat == COLLISION_STAT_ENABLE) {
+		if (effect[i]->col_shape->stat == COLLISION_STAT_ENABLE) {
 			bool set_stat_die = false;
 #ifdef _COLLISION_ENABLE_BOX_2D_
-			if (effect[i].trace_unit) {
-				if (effect[i].trace_unit->col_shape && effect[i].trace_unit->col_shape->b2body) {
+			if (effect[i]->trace_unit) {
+				if (effect[i]->trace_unit->col_shape && effect[i]->trace_unit->col_shape->b2body) {
 					int pos_x, pos_y;
-					unit_manager_get_position(effect[i].trace_unit, &pos_x, &pos_y);
+					unit_manager_get_position(effect[i]->trace_unit, &pos_x, &pos_y);
 					unit_manager_effect_set_b2position(i, PIX2MET(pos_x), PIX2MET(pos_y));
 				}
 				else { // parent die?
@@ -309,12 +332,12 @@ void unit_manager_effect_update()
 				}
 			}
 
-			effect[i].col_shape->x = (int)MET2PIX(effect[i].col_shape->b2body->GetPosition().x);
-			effect[i].col_shape->y = (int)MET2PIX(effect[i].col_shape->b2body->GetPosition().y);
+			effect[i]->col_shape->x = (int)MET2PIX(effect[i]->col_shape->b2body->GetPosition().x);
+			effect[i]->col_shape->y = (int)MET2PIX(effect[i]->col_shape->b2body->GetPosition().y);
 #endif
-			if (effect[i].group == UNIT_EFFECT_GROUP_DIE_AUTO) {
-				if (effect[i].life_timer > 0) {
-					effect[i].life_timer -= g_delta_time;
+			if (effect[i]->group == UNIT_EFFECT_GROUP_DIE_AUTO) {
+				if (effect[i]->life_timer > 0) {
+					effect[i]->life_timer -= g_delta_time;
 				}
 				else {
 					set_stat_die = true;
@@ -328,31 +351,31 @@ void unit_manager_effect_update()
 		}
 
 		// anim update
-		int stat = unit_manager_unit_get_anim_stat((unit_data_t*)&effect[i]);
-		if ((stat != -1) && (effect[i].anim->anim_stat_base_list[stat]->type == ANIM_TYPE_STATIC)) {
-			if (effect[i].anim->stat == ANIM_STAT_FLAG_DIE) {
-				unit_manager_clear_effect(&effect[i]);
+		int stat = unit_manager_unit_get_anim_stat((unit_data_t*)effect[i]);
+		if ((stat != -1) && (effect[i]->anim->anim_stat_base_list[stat]->type == ANIM_TYPE_STATIC)) {
+			if (effect[i]->anim->stat == ANIM_STAT_FLAG_DIE) {
+				unit_manager_clear_effect(effect[i]);
 				continue;
 			}
 		}
 
 		if ((stat != -1)
-			&& ((effect[i].anim->anim_stat_base_list[stat]->type == ANIM_TYPE_DYNAMIC) || (effect[i].anim->anim_stat_base_list[stat]->type & ANIM_TYPE_DRAW))) {
+			&& ((effect[i]->anim->anim_stat_base_list[stat]->type == ANIM_TYPE_DYNAMIC) || (effect[i]->anim->anim_stat_base_list[stat]->type & ANIM_TYPE_DRAW))) {
 			// set current_time
-			effect[i].anim->anim_stat_list[stat]->current_time += g_delta_time;
+			effect[i]->anim->anim_stat_list[stat]->current_time += g_delta_time;
 
-			int new_time = effect[i].anim->anim_stat_list[stat]->current_time;
-			int total_time = effect[i].anim->anim_stat_base_list[stat]->total_time;
+			int new_time = effect[i]->anim->anim_stat_list[stat]->current_time;
+			int total_time = effect[i]->anim->anim_stat_base_list[stat]->total_time;
 			if (new_time > total_time) {
 				new_time = new_time % total_time;
-				effect[i].anim->anim_stat_list[stat]->current_time = new_time;
+				effect[i]->anim->anim_stat_list[stat]->current_time = new_time;
 
 				// end frame event
-				if (effect[i].anim->stat == ANIM_STAT_FLAG_DIE) {
-					unit_manager_clear_effect(&effect[i]);
+				if (effect[i]->anim->stat == ANIM_STAT_FLAG_DIE) {
+					unit_manager_clear_effect(effect[i]);
 					continue;
 				}
-				if (effect[i].anim->stat == ANIM_STAT_FLAG_SPAWN) {
+				if (effect[i]->anim->stat == ANIM_STAT_FLAG_SPAWN) {
 					unit_manager_effect_set_anim_stat(i, ANIM_STAT_FLAG_IDLE);
 					continue;
 				}
@@ -360,19 +383,19 @@ void unit_manager_effect_update()
 
 			// set current_frame
 			int sum_frame_time = 0;
-			int frame_size = effect[i].anim->anim_stat_base_list[stat]->frame_size;
+			int frame_size = effect[i]->anim->anim_stat_base_list[stat]->frame_size;
 			for (int fi = 0; fi < frame_size; fi++) {
-				sum_frame_time += effect[i].anim->anim_stat_base_list[stat]->frame_list[fi]->frame_time;
+				sum_frame_time += effect[i]->anim->anim_stat_base_list[stat]->frame_list[fi]->frame_time;
 				if (new_time < sum_frame_time) {
-					if (effect[i].anim->anim_stat_list[stat]->current_frame != fi) {
+					if (effect[i]->anim->anim_stat_list[stat]->current_frame != fi) {
 						// send command
-						if (effect[i].anim->anim_stat_base_list[stat]->frame_list[fi]->command == ANIM_FRAME_COMMAND_ON) {
+						if (effect[i]->anim->anim_stat_base_list[stat]->frame_list[fi]->command == ANIM_FRAME_COMMAND_ON) {
 							game_event_t msg = { (EVENT_MSG_UNIT_EFFECT | (0x00000001 << stat)), NULL };
 							game_event_push(&msg);
-							effect[i].anim->anim_stat_list[stat]->command_frame = fi;
+							effect[i]->anim->anim_stat_list[stat]->command_frame = fi;
 						}
 						// set frame
-						effect[i].anim->anim_stat_list[stat]->current_frame = fi;
+						effect[i]->anim->anim_stat_list[stat]->current_frame = fi;
 					}
 					break;
 				}
@@ -384,8 +407,8 @@ void unit_manager_effect_update()
 void unit_manager_effect_display(int layer)
 {
 	for (int i = 0; i < UNIT_EFFECT_LIST_SIZE; i++) {
-		if (effect[i].type != UNIT_TYPE_EFFECT || (effect[i].col_shape->stat & ANIM_STAT_FLAG_HIDE)) continue;
+		if (effect[i]->type != UNIT_TYPE_EFFECT || (effect[i]->col_shape->stat & ANIM_STAT_FLAG_HIDE)) continue;
 
-		unit_display((unit_data_t*)&effect[i], layer);
+		unit_display((unit_data_t*)effect[i], layer);
 	}
 }

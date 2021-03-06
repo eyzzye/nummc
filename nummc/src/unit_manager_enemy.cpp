@@ -15,8 +15,10 @@
 #include "scene_play_stage.h"
 #include "quest_log_manager.h"
 
-static unit_enemy_data_t enemy_base[UNIT_ENEMY_BASE_LIST_SIZE];
-static unit_enemy_data_t enemy[UNIT_ENEMY_LIST_SIZE];
+static unit_enemy_data_t* enemy_base[UNIT_ENEMY_BASE_LIST_SIZE];
+static unit_enemy_data_t* enemy[UNIT_ENEMY_LIST_SIZE];
+static node_buffer_info_t enemy_base_info;
+static node_buffer_info_t enemy_info;
 static int enemy_base_index_end;
 static int enemy_index_end;
 static int enemy_count;
@@ -121,29 +123,65 @@ int unit_manager_init_enemy()
 	enemy_index_end = 0;
 	enemy_count = 0;
 
+	game_utils_node_init(&enemy_base_info, sizeof(unit_enemy_data_t));
+	for (int i = 0; i < UNIT_ENEMY_BASE_LIST_SIZE; i++) {
+		enemy_base[i] = (unit_enemy_data_t*)game_utils_node_new(&enemy_base_info);
+	}
+
+	game_utils_node_init(&enemy_info, sizeof(unit_enemy_data_t));
+	for (int i = 0; i < UNIT_ENEMY_LIST_SIZE; i++) {
+		enemy[i] = (unit_enemy_data_t*)game_utils_node_new(&enemy_info);
+	}
+
 	return 0;
 }
 
 void unit_manager_unload_enemy()
 {
 	for (int i = 0; i < UNIT_ENEMY_BASE_LIST_SIZE; i++) {
-		if (enemy_base[i].obj) {
-			memory_manager_delete_char_buff((char*)enemy_base[i].obj);
-			enemy_base[i].obj = NULL;
+		if (enemy_base[i]->obj) {
+			memory_manager_delete_char_buff((char*)enemy_base[i]->obj);
+			enemy_base[i]->obj = NULL;
 		}
-		if (enemy_base[i].next_level) {
-			memory_manager_delete_char_buff((char*)enemy_base[i].next_level);
-			enemy_base[i].next_level = NULL;
+		if (enemy_base[i]->next_level) {
+			memory_manager_delete_char_buff((char*)enemy_base[i]->next_level);
+			enemy_base[i]->next_level = NULL;
 		}
 
 		for (int bi = 0; bi < UNIT_ENEMY_BULLET_NUM; bi++) {
-			if (enemy_base[i].bullet[bi]) {
-				if (enemy_base[i].bullet[bi]->obj) {
-					memory_manager_delete_char_buff((char*)enemy_base[i].bullet[bi]->obj); // g_enemy_bullet_path
-					enemy_base[i].bullet[bi]->obj = NULL;
+			if (enemy_base[i]->bullet[bi]) {
+				if (enemy_base[i]->bullet[bi]->obj) {
+					memory_manager_delete_char_buff((char*)enemy_base[i]->bullet[bi]->obj); // g_enemy_bullet_path
+					enemy_base[i]->bullet[bi]->obj = NULL;
 				}
 			}
 		}
+
+		game_utils_node_delete((node_data_t*)enemy_base[i], &enemy_base_info);
+		enemy_base[i] = NULL;
+	}
+
+	for (int i = 0; i < UNIT_ENEMY_LIST_SIZE; i++) {
+		if (enemy[i]->obj) {
+			memory_manager_delete_char_buff((char*)enemy[i]->obj);
+			enemy[i]->obj = NULL;
+		}
+		if (enemy[i]->next_level) {
+			memory_manager_delete_char_buff((char*)enemy[i]->next_level);
+			enemy[i]->next_level = NULL;
+		}
+
+		for (int bi = 0; bi < UNIT_ENEMY_BULLET_NUM; bi++) {
+			if (enemy[i]->bullet[bi]) {
+				if (enemy[i]->bullet[bi]->obj) {
+					memory_manager_delete_char_buff((char*)enemy[i]->bullet[bi]->obj); // g_enemy_bullet_path
+					enemy[i]->bullet[bi]->obj = NULL;
+				}
+			}
+		}
+
+		game_utils_node_delete((node_data_t*)enemy[i], &enemy_info);
+		enemy[i] = NULL;
 	}
 }
 
@@ -151,8 +189,8 @@ int unit_manager_search_enemy(char* path)
 {
 	int ei = 0;
 	bool enemy_found = false;
-	while (enemy_base[ei].type == UNIT_TYPE_ENEMY) {
-		char* regist_path = (char*)enemy_base[ei].obj;
+	while (enemy_base[ei]->type == UNIT_TYPE_ENEMY) {
+		char* regist_path = (char*)enemy_base[ei]->obj;
 		if ((regist_path != NULL) && STRCMP_EQ(regist_path,path)) {
 			enemy_found = true;
 			break;
@@ -165,119 +203,119 @@ int unit_manager_search_enemy(char* path)
 
 void unit_manager_enemy_set_anim_stat(int unit_id, int stat)
 {
-	unit_manager_unit_set_anim_stat((unit_data_t*)&enemy[unit_id], stat);
+	unit_manager_unit_set_anim_stat((unit_data_t*)enemy[unit_id], stat);
 
 	// DIE
-	if (enemy[unit_id].anim->stat == ANIM_STAT_FLAG_DIE) {
-		if (enemy[unit_id].col_shape->b2body) {
+	if (enemy[unit_id]->anim->stat == ANIM_STAT_FLAG_DIE) {
+		if (enemy[unit_id]->col_shape->b2body) {
 			// reset face
-			if ((enemy[unit_id].col_shape->joint_type != COLLISION_JOINT_TYPE_PIN) && (enemy[unit_id].col_shape->joint_type != COLLISION_JOINT_TYPE_PIN_ROUND)) {
-				if (enemy[unit_id].col_shape->face != UNIT_FACE_W) {
-					int backup_face = enemy[unit_id].col_shape->face;
-					collision_manager_set_face(enemy[unit_id].col_shape, enemy[unit_id].base->col_shape, enemy[unit_id].base->anim->base_w, enemy[unit_id].base->anim->base_h, UNIT_FACE_W);
-					collision_manager_set_angle(enemy[unit_id].col_shape, 0);
+			if ((enemy[unit_id]->col_shape->joint_type != COLLISION_JOINT_TYPE_PIN) && (enemy[unit_id]->col_shape->joint_type != COLLISION_JOINT_TYPE_PIN_ROUND)) {
+				if (enemy[unit_id]->col_shape->face != UNIT_FACE_W) {
+					int backup_face = enemy[unit_id]->col_shape->face;
+					collision_manager_set_face(enemy[unit_id]->col_shape, enemy[unit_id]->base->col_shape, enemy[unit_id]->base->anim->base_w, enemy[unit_id]->base->anim->base_h, UNIT_FACE_W);
+					collision_manager_set_angle(enemy[unit_id]->col_shape, 0);
 
 					// set face for DIE
-					collision_manager_set_face(enemy[unit_id].col_shape, enemy[unit_id].base->col_shape, enemy[unit_id].base->anim->base_w, enemy[unit_id].base->anim->base_h, backup_face);
+					collision_manager_set_face(enemy[unit_id]->col_shape, enemy[unit_id]->base->col_shape, enemy[unit_id]->base->anim->base_w, enemy[unit_id]->base->anim->base_h, backup_face);
 				}
 			}
 
 			// delete b2body
-			g_stage_world->DestroyBody(enemy[unit_id].col_shape->b2body);
-			enemy[unit_id].col_shape->b2body = NULL;
+			g_stage_world->DestroyBody(enemy[unit_id]->col_shape->b2body);
+			enemy[unit_id]->col_shape->b2body = NULL;
 		}
 
-		if (enemy[unit_id].ai) {
-			ai_manager_stop(enemy[unit_id].ai);
+		if (enemy[unit_id]->ai) {
+			ai_manager_stop(enemy[unit_id]->ai);
 		}
 	}
 }
 
 void unit_manager_enemy_set_effect_stat(int unit_id, int stat, bool off_on)
 {
-	if (enemy[unit_id].resistance_stat != UNIT_EFFECT_FLAG_E_NONE) {
-		stat &= (~enemy[unit_id].resistance_stat);
+	if (enemy[unit_id]->resistance_stat != UNIT_EFFECT_FLAG_E_NONE) {
+		stat &= (~enemy[unit_id]->resistance_stat);
 	}
 	if (stat == 0) return;
 
-	if (enemy[unit_id].effect_stat & stat) { // on
+	if (enemy[unit_id]->effect_stat & stat) { // on
 		if (off_on == false) {
-			enemy[unit_id].effect_stat &= (~stat);
+			enemy[unit_id]->effect_stat &= (~stat);
 
 			int i = 0; int flg = 0x00000001;
 			while (stat != flg) { i++; flg <<= 1; }
 
 			// unset slow move
 			if (!(g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) && (stat & UNIT_EFFECT_FLAG_E_FREEZE_UP)) {
-				if (enemy[unit_id].col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) {
+				if (enemy[unit_id]->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) {
 					// reset moter speed
-					collision_manager_set_moter_speed(enemy[unit_id].col_shape, ((float)enemy[unit_id].col_shape->joint_val1 / 1000.0f) * b2_pi);
+					collision_manager_set_moter_speed(enemy[unit_id]->col_shape, ((float)enemy[unit_id]->col_shape->joint_val1 / 1000.0f) * b2_pi);
 				}
 			}
 
-			unit_manager_effect_set_anim_stat(enemy[unit_id].effect_param[i].id, ANIM_STAT_FLAG_HIDE);
-			enemy[unit_id].effect_param[i].counter = 0;
+			unit_manager_effect_set_anim_stat(enemy[unit_id]->effect_param[i].id, ANIM_STAT_FLAG_HIDE);
+			enemy[unit_id]->effect_param[i].counter = 0;
 		}
 		else {
 			int i = 0; int flg = 0x00000001;
 			while (stat != flg) { i++; flg <<= 1; }
 
 			// update timer
-			enemy[unit_id].effect_param[i].timer = enemy_effect_default[i].timer;
-			enemy[unit_id].effect_param[i].counter = enemy_effect_default[i].counter;
+			enemy[unit_id]->effect_param[i].timer = enemy_effect_default[i].timer;
+			enemy[unit_id]->effect_param[i].counter = enemy_effect_default[i].counter;
 		}
 	}
 	else { // off
 		if (off_on == true) {
-			enemy[unit_id].effect_stat |= stat;
+			enemy[unit_id]->effect_stat |= stat;
 
 			int i = 0; int flg = 0x00000001;
 			while (stat != flg) { i++; flg <<= 1; }
 
 			int pos_x, pos_y;
-			unit_manager_get_position((unit_data_t*)&enemy[unit_id], &pos_x, &pos_y);
+			unit_manager_get_position((unit_data_t*)enemy[unit_id], &pos_x, &pos_y);
 
 			// set slow move
 			if (!(g_stage_data->section_circumstance & SECTION_CIRCUMSTANCE_FLAG_SLOWED_ENEMY) && (stat & UNIT_EFFECT_FLAG_E_FREEZE_UP)) {
 				unit_manager_set_enemy_slowed(unit_id);
 			}
 
-			unit_manager_effect_set_b2position(enemy[unit_id].effect_param[i].id, PIX2MET(pos_x), PIX2MET(pos_y));
-			unit_manager_effect_set_anim_stat(enemy[unit_id].effect_param[i].id, ANIM_STAT_FLAG_IDLE);
-			enemy[unit_id].effect_param[i].timer = enemy_effect_default[i].timer;
-			enemy[unit_id].effect_param[i].counter = enemy_effect_default[i].counter;
+			unit_manager_effect_set_b2position(enemy[unit_id]->effect_param[i].id, PIX2MET(pos_x), PIX2MET(pos_y));
+			unit_manager_effect_set_anim_stat(enemy[unit_id]->effect_param[i].id, ANIM_STAT_FLAG_IDLE);
+			enemy[unit_id]->effect_param[i].timer = enemy_effect_default[i].timer;
+			enemy[unit_id]->effect_param[i].counter = enemy_effect_default[i].counter;
 		}
 	}
 }
 
 void unit_manager_set_enemy_slowed(int index)
 {
-	if ((enemy[index].col_shape == NULL) || (enemy[index].col_shape->stat != COLLISION_STAT_ENABLE)) {
+	if ((enemy[index]->col_shape == NULL) || (enemy[index]->col_shape->stat != COLLISION_STAT_ENABLE)) {
 		return;
 	}
 
-	if (enemy[index].col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) {
+	if (enemy[index]->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND) {
 		// set moter speed (1/3)
-		collision_manager_set_moter_speed(enemy[index].col_shape, ((float)enemy[index].col_shape->joint_val1 / (3 * 1000.0f)) * b2_pi);
+		collision_manager_set_moter_speed(enemy[index]->col_shape, ((float)enemy[index]->col_shape->joint_val1 / (3 * 1000.0f)) * b2_pi);
 	}
 	else {
-		b2Vec2 new_vec = enemy[index].col_shape->b2body->GetLinearVelocity();
+		b2Vec2 new_vec = enemy[index]->col_shape->b2body->GetLinearVelocity();
 		new_vec *= 0.5f;
-		enemy[index].col_shape->b2body->SetLinearVelocity(new_vec);
+		enemy[index]->col_shape->b2body->SetLinearVelocity(new_vec);
 	}
 }
 
 void unit_manager_set_all_enemy_slowed()
 {
 	for (int ei = 0; ei < UNIT_ENEMY_LIST_SIZE; ei++) {
-		if (enemy[ei].type != UNIT_TYPE_ENEMY) continue;
+		if (enemy[ei]->type != UNIT_TYPE_ENEMY) continue;
 
 		unit_manager_set_enemy_slowed(ei);
 	}
 }
 
 unit_enemy_data_t* unit_manager_get_enemy(int index) {
-	return &enemy[index];
+	return enemy[index];
 }
 
 void unit_manager_enemy_get_face_velocity(unit_enemy_data_t* enemy_data, float* vec_x, float* vec_y, int face, float abs_velocity, int bullet_track_type, int bullet_num)
@@ -321,23 +359,23 @@ void unit_manager_enemy_get_target_velocity(unit_enemy_data_t* enemy_data, float
 
 int unit_manager_enemy_get_bullet_strength(int base_id)
 {
-	int rank = enemy_base[base_id].strength;
+	int rank = enemy_base[base_id]->strength;
 	return enemy_strength_rank[rank];
 }
 
 int unit_manager_enemy_get_bullet_life_timer(int base_id)
 {
-	return enemy_base[base_id].bullet_life_timer;
+	return enemy_base[base_id]->bullet_life_timer;
 }
 
 float unit_manager_enemy_get_bullet_curving(int base_id)
 {
-	int rank = enemy_base[base_id].bullet_curving;
+	int rank = enemy_base[base_id]->bullet_curving;
 	return enemy_bullet_curving_rank[rank];
 }
 
 void unit_manager_set_ai_step(int index, int step) {
-	((ai_stat_data_t*)enemy[index].ai)->step[AI_STAT_STEP_W] = step;
+	((ai_stat_data_t*)enemy[index]->ai)->step[AI_STAT_STEP_W] = step;
 }
 
 typedef struct _load_enemy_callback_data_t load_enemy_callback_data_t;
@@ -360,13 +398,13 @@ static void load_enemy_callback(char* line, int line_size, int line_num, void* a
 			// set base unit data
 			char* path_c_str = memory_manager_new_char_buff((int)strlen(data->path));
 			game_utils_string_copy(path_c_str, data->path);
-			enemy_base[enemy_base_index_end].obj             = (void*)path_c_str;
-			enemy_base[enemy_base_index_end].type            = UNIT_TYPE_ENEMY;
-			enemy_base[enemy_base_index_end].id              = enemy_base_index_end;
-			enemy_base[enemy_base_index_end].effect_stat     = UNIT_EFFECT_FLAG_E_NONE;
-			enemy_base[enemy_base_index_end].effect_param    = NULL;
-			enemy_base[enemy_base_index_end].resistance_stat = UNIT_EFFECT_FLAG_E_NONE;
-			enemy_base[enemy_base_index_end].drop_item       = UNIT_ITEM_ID_IGNORE; // disable
+			enemy_base[enemy_base_index_end]->obj             = (void*)path_c_str;
+			enemy_base[enemy_base_index_end]->type            = UNIT_TYPE_ENEMY;
+			enemy_base[enemy_base_index_end]->id              = enemy_base_index_end;
+			enemy_base[enemy_base_index_end]->effect_stat     = UNIT_EFFECT_FLAG_E_NONE;
+			enemy_base[enemy_base_index_end]->effect_param    = NULL;
+			enemy_base[enemy_base_index_end]->resistance_stat = UNIT_EFFECT_FLAG_E_NONE;
+			enemy_base[enemy_base_index_end]->drop_item       = UNIT_ITEM_ID_IGNORE; // disable
 			return;
 		}
 		if (STRCMP_EQ(line, "[/unit]"))      { data->read_flg[UNIT_TAG_UNIT]      = false; return; }
@@ -374,15 +412,15 @@ static void load_enemy_callback(char* line, int line_size, int line_num, void* a
 		if (STRCMP_EQ(line, "[/collision]")) { data->read_flg[UNIT_TAG_COLLISION] = false; return; }
 		if (STRCMP_EQ(line, "[anim]")) {
 			data->read_flg[UNIT_TAG_ANIM] = true;
-			enemy_base[enemy_base_index_end].anim = animation_manager_new_anim_data();
-			animation_manager_new_anim_stat_base_data(enemy_base[enemy_base_index_end].anim);
+			enemy_base[enemy_base_index_end]->anim = animation_manager_new_anim_data();
+			animation_manager_new_anim_stat_base_data(enemy_base[enemy_base_index_end]->anim);
 			return;
 		}
 		if (STRCMP_EQ(line, "[/anim]")) { data->read_flg[UNIT_TAG_ANIM] = false; return; }
 		if (STRCMP_EQ(line, "[ai]")) {
 			data->read_flg[UNIT_TAG_AI] = true;
-			enemy_base[enemy_base_index_end].ai = ai_manager_new_ai_base_data();
-			enemy_base[enemy_base_index_end].ai->obj = NULL;
+			enemy_base[enemy_base_index_end]->ai = ai_manager_new_ai_base_data();
+			enemy_base[enemy_base_index_end]->ai->obj = NULL;
 			return;
 		}
 		if (STRCMP_EQ(line, "[/ai]"))     { data->read_flg[UNIT_TAG_AI]     = false; return; }
@@ -391,19 +429,19 @@ static void load_enemy_callback(char* line, int line_size, int line_num, void* a
 	}
 
 	if (data->read_flg[UNIT_TAG_UNIT]) {
-		load_unit_enemy(line, &enemy_base[enemy_base_index_end]);
+		load_unit_enemy(line, enemy_base[enemy_base_index_end]);
 	}
 	if (data->read_flg[UNIT_TAG_COLLISION]) {
-		load_collision(line, &enemy_base[enemy_base_index_end].col_shape);
+		load_collision(line, &enemy_base[enemy_base_index_end]->col_shape);
 	}
 	if (data->read_flg[UNIT_TAG_ANIM]) {
-		load_anim(line, enemy_base[enemy_base_index_end].anim);
+		load_anim(line, enemy_base[enemy_base_index_end]->anim);
 	}
 	if (data->read_flg[UNIT_TAG_AI]) {
-		load_ai(line, enemy_base[enemy_base_index_end].ai);
+		load_ai(line, enemy_base[enemy_base_index_end]->ai);
 	}
 	if (data->read_flg[UNIT_TAG_BULLET]) {
-		load_bullet(line, enemy_base[enemy_base_index_end].bullet);
+		load_bullet(line, enemy_base[enemy_base_index_end]->bullet);
 	}
 }
 
@@ -423,21 +461,21 @@ int unit_manager_load_enemy(char* path)
 	if (ret != 0) { LOG_ERROR("unit_manager_load_enemy %s error\n", path); return 1; }
 
 	// load anim files
-	if (enemy_base[enemy_base_index_end].anim) {
+	if (enemy_base[enemy_base_index_end]->anim) {
 		for (int i = 0; i < ANIM_STAT_END; i++) {
-			char* anim_path = (char*)enemy_base[enemy_base_index_end].anim->anim_stat_base_list[i]->obj;
+			char* anim_path = (char*)enemy_base[enemy_base_index_end]->anim->anim_stat_base_list[i]->obj;
 			if (anim_path) {
-				animation_manager_load_file(anim_path, enemy_base[enemy_base_index_end].anim, i);
+				animation_manager_load_file(anim_path, enemy_base[enemy_base_index_end]->anim, i);
 			}
 		}
 	}
 
 	// load ai_bullet files
 	for (int i = 0; i < UNIT_ENEMY_BULLET_NUM; i++) {
-		if (enemy_base[enemy_base_index_end].bullet[i]) {
-			char* bullet_path = (char*)enemy_base[enemy_base_index_end].bullet[i]->obj;
+		if (enemy_base[enemy_base_index_end]->bullet[i]) {
+			char* bullet_path = (char*)enemy_base[enemy_base_index_end]->bullet[i]->obj;
 			if (bullet_path) {
-				ai_manager_load_bullet_file(bullet_path, (ai_bullet_t*)enemy_base[enemy_base_index_end].bullet[i]);
+				ai_manager_load_bullet_file(bullet_path, (ai_bullet_t*)enemy_base[enemy_base_index_end]->bullet[i]);
 			}
 		}
 	}
@@ -535,14 +573,14 @@ int unit_manager_create_enemy(int x, int y, int face, int base_index)
 	int ret = -1;
 
 	for (int i = enemy_index_end; i < UNIT_ENEMY_LIST_SIZE; i++) {
-		if (enemy[i].type != UNIT_TYPE_ENEMY) {
+		if (enemy[i]->type != UNIT_TYPE_ENEMY) {
 			ret = enemy_index_end = i;
 			break;
 		}
 	}
 	if ((ret == -1) && (enemy_index_end > 0)) {
 		for (int i = 0; i < enemy_index_end; i++) {
-			if (enemy[i].type != UNIT_TYPE_ENEMY) {
+			if (enemy[i]->type != UNIT_TYPE_ENEMY) {
 				ret = enemy_index_end = i;
 				break;
 			}
@@ -556,25 +594,25 @@ int unit_manager_create_enemy(int x, int y, int face, int base_index)
 	if (base_index == -1) base_index = enemy_base_index_end - 1;
   
 	// set unit data
-	memcpy(&enemy[enemy_index_end], &enemy_base[base_index], sizeof(unit_enemy_data_t));
-	enemy[enemy_index_end].base = &enemy_base[base_index];
-	enemy[enemy_index_end].id = enemy_index_end;
-	enemy[enemy_index_end].type = UNIT_TYPE_ENEMY;
+	memcpy(enemy[enemy_index_end], enemy_base[base_index], sizeof(unit_enemy_data_t));
+	enemy[enemy_index_end]->base = enemy_base[base_index];
+	enemy[enemy_index_end]->id = enemy_index_end;
+	enemy[enemy_index_end]->type = UNIT_TYPE_ENEMY;
 
 	// set effect
-	if (unit_manager_load_enemy_effects(enemy_index_end, enemy[enemy_index_end].base->anim->base_w) == 0) {
-		enemy[enemy_index_end].effect_stat  = UNIT_EFFECT_FLAG_P_NONE;
-		enemy[enemy_index_end].effect_param = &enemy_effect[enemy_index_end][0];
+	if (unit_manager_load_enemy_effects(enemy_index_end, enemy[enemy_index_end]->base->anim->base_w) == 0) {
+		enemy[enemy_index_end]->effect_stat  = UNIT_EFFECT_FLAG_P_NONE;
+		enemy[enemy_index_end]->effect_param = &enemy_effect[enemy_index_end][0];
 	}
 
 	// collision
-	if ((enemy[enemy_index_end].base->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN)
-		|| (enemy[enemy_index_end].base->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND)) {
+	if ((enemy[enemy_index_end]->base->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN)
+		|| (enemy[enemy_index_end]->base->col_shape->joint_type == COLLISION_JOINT_TYPE_PIN_ROUND)) {
 
 		// fix rotation
-		enemy[enemy_index_end].col_shape =
-			collision_manager_create_dynamic_shape(enemy_base[base_index].col_shape,
-				(void*)&enemy[enemy_index_end], enemy_base[base_index].anim->base_w, enemy_base[base_index].anim->base_h,
+		enemy[enemy_index_end]->col_shape =
+			collision_manager_create_dynamic_shape(enemy_base[base_index]->col_shape,
+				(void*)enemy[enemy_index_end], enemy_base[base_index]->anim->base_w, enemy_base[base_index]->anim->base_h,
 				&x, &y, NULL, NULL, &face);
 
 		// already slowed
@@ -584,51 +622,51 @@ int unit_manager_create_enemy(int x, int y, int face, int base_index)
 	}
 	else {
 		// create at FACE_W
-		enemy[enemy_index_end].col_shape =
-			collision_manager_create_dynamic_shape(enemy_base[base_index].col_shape,
-				(void*)&enemy[enemy_index_end], enemy_base[base_index].anim->base_w, enemy_base[base_index].anim->base_h,
+		enemy[enemy_index_end]->col_shape =
+			collision_manager_create_dynamic_shape(enemy_base[base_index]->col_shape,
+				(void*)enemy[enemy_index_end], enemy_base[base_index]->anim->base_w, enemy_base[base_index]->anim->base_h,
 				&x, &y, NULL, NULL);
 
 		// face rotation
-		if ((enemy[enemy_index_end].base->col_shape->face_type != UNIT_FACE_TYPE_NONE) && (face != UNIT_FACE_W)) {
+		if ((enemy[enemy_index_end]->base->col_shape->face_type != UNIT_FACE_TYPE_NONE) && (face != UNIT_FACE_W)) {
 			float angle = 0.0f;
 			if (face == UNIT_FACE_E) angle = b2_pi;
 			else if (face == UNIT_FACE_N) angle = b2_pi / 2.0f;
 			else if (face == UNIT_FACE_S) angle = b2_pi * 3.0f / 2.0f;
 
 			if (angle != 0.0f) {
-				collision_manager_set_face(enemy[enemy_index_end].col_shape, enemy[enemy_index_end].base->col_shape,
-					enemy[enemy_index_end].base->anim->base_w, enemy[enemy_index_end].base->anim->base_h, face);
-				collision_manager_set_angle(enemy[enemy_index_end].col_shape, angle);
+				collision_manager_set_face(enemy[enemy_index_end]->col_shape, enemy[enemy_index_end]->base->col_shape,
+					enemy[enemy_index_end]->base->anim->base_w, enemy[enemy_index_end]->base->anim->base_h, face);
+				collision_manager_set_angle(enemy[enemy_index_end]->col_shape, angle);
 			}
 		}
 	}
 
 	// anim
-	enemy[enemy_index_end].anim = animation_manager_new_anim_data();
-	enemy[enemy_index_end].anim->stat = ANIM_STAT_FLAG_IDLE;
-	enemy[enemy_index_end].anim->type = enemy[enemy_index_end].base->anim->type;
-	enemy[enemy_index_end].anim->obj = enemy[enemy_index_end].base->anim->obj;
+	enemy[enemy_index_end]->anim = animation_manager_new_anim_data();
+	enemy[enemy_index_end]->anim->stat = ANIM_STAT_FLAG_IDLE;
+	enemy[enemy_index_end]->anim->type = enemy[enemy_index_end]->base->anim->type;
+	enemy[enemy_index_end]->anim->obj = enemy[enemy_index_end]->base->anim->obj;
 	for (int i = 0; i < ANIM_STAT_END; i++) {
-		enemy[enemy_index_end].anim->anim_stat_base_list[i] = enemy[enemy_index_end].base->anim->anim_stat_base_list[i];
+		enemy[enemy_index_end]->anim->anim_stat_base_list[i] = enemy[enemy_index_end]->base->anim->anim_stat_base_list[i];
 	}
 
 	// set stat SPAWN
-	if (enemy[enemy_index_end].anim->anim_stat_base_list[ANIM_STAT_SPAWN]->obj) {
+	if (enemy[enemy_index_end]->anim->anim_stat_base_list[ANIM_STAT_SPAWN]->obj) {
 		unit_manager_enemy_set_anim_stat(enemy_index_end, ANIM_STAT_FLAG_SPAWN);
 	}
 
 	// ai
-	enemy[enemy_index_end].ai = ai_manager_new_ai_data();
-	enemy[enemy_index_end].ai->obj = (void*)&enemy[enemy_index_end];
-	ai_manager_copy(enemy[enemy_index_end].ai, enemy[enemy_index_end].base->ai);
-	((ai_stat_data_t*)enemy[enemy_index_end].ai)->ghost_id = UNIT_TRAP_ID_IGNORE;
+	enemy[enemy_index_end]->ai = ai_manager_new_ai_data();
+	enemy[enemy_index_end]->ai->obj = (void*)enemy[enemy_index_end];
+	ai_manager_copy(enemy[enemy_index_end]->ai, enemy[enemy_index_end]->base->ai);
+	((ai_stat_data_t*)enemy[enemy_index_end]->ai)->ghost_id = UNIT_TRAP_ID_IGNORE;
 
 	for (int i = 0; i < UNIT_ENEMY_BULLET_NUM; i++) {
-		ai_bullet_t* ai_bullet_base_data = (ai_bullet_t*)enemy[enemy_index_end].base->bullet[i];
+		ai_bullet_t* ai_bullet_base_data = (ai_bullet_t*)enemy[enemy_index_end]->base->bullet[i];
 		if (ai_bullet_base_data != NULL) {
 			ai_stat_bullet_t* ai_stat_bullet_data = (ai_stat_bullet_t*)ai_manager_new_ai_data();
-			enemy[enemy_index_end].bullet[i] = (ai_data_t*)ai_stat_bullet_data;
+			enemy[enemy_index_end]->bullet[i] = (ai_data_t*)ai_stat_bullet_data;
 
 			if (ai_stat_bullet_data != NULL) {
 				ai_manager_bullet_copy((ai_bullet_t*)ai_stat_bullet_data, ai_bullet_base_data);
@@ -684,8 +722,8 @@ void unit_manager_create_hell()
 void unit_manager_clear_all_enemy()
 {
 	for (int i = 0; i < UNIT_ENEMY_LIST_SIZE; i++) {
-		if (enemy[i].type != UNIT_TYPE_ENEMY) continue;
-		unit_manager_clear_enemy(&enemy[i]);
+		if (enemy[i]->type != UNIT_TYPE_ENEMY) continue;
+		unit_manager_clear_enemy(enemy[i]);
 	}
 	enemy_index_end = 0;
 }
@@ -1034,44 +1072,44 @@ void unit_manager_enemy_move(unit_enemy_data_t* enemy_data, float vec_x, float v
 void unit_manager_enemy_update()
 {
 	for (int ei = 0; ei < UNIT_ENEMY_LIST_SIZE; ei++) {
-		if (enemy[ei].type != UNIT_TYPE_ENEMY) continue;
+		if (enemy[ei]->type != UNIT_TYPE_ENEMY) continue;
 
-		int enemy_delta_time = unit_manager_enemy_get_delta_time(&enemy[ei]);
-		if (enemy[ei].col_shape->stat == COLLISION_STAT_ENABLE) {
+		int enemy_delta_time = unit_manager_enemy_get_delta_time(enemy[ei]);
+		if (enemy[ei]->col_shape->stat == COLLISION_STAT_ENABLE) {
 #ifdef _COLLISION_ENABLE_BOX_2D_
-			enemy[ei].col_shape->x = (int)MET2PIX(enemy[ei].col_shape->b2body->GetPosition().x);
-			enemy[ei].col_shape->y = (int)MET2PIX(enemy[ei].col_shape->b2body->GetPosition().y);
-			if (!(enemy[ei].resistance_stat & UNIT_EFFECT_FLAG_E_NO_FRICTION)) {
-				unit_manager_update_unit_friction((unit_data_t*)&enemy[ei]);
+			enemy[ei]->col_shape->x = (int)MET2PIX(enemy[ei]->col_shape->b2body->GetPosition().x);
+			enemy[ei]->col_shape->y = (int)MET2PIX(enemy[ei]->col_shape->b2body->GetPosition().y);
+			if (!(enemy[ei]->resistance_stat & UNIT_EFFECT_FLAG_E_NO_FRICTION)) {
+				unit_manager_update_unit_friction((unit_data_t*)enemy[ei]);
 			}
 #endif
 
 			// update *base* effect position
 			for (int ef_i = UNIT_EFFECT_ID_E_FIRE_UP; ef_i <= UNIT_EFFECT_ID_E_FREEZE_UP; ef_i++) {
 				int effect_flg = 0x00000001 << ef_i;
-				if (enemy[ei].effect_stat & effect_flg) {
+				if (enemy[ei]->effect_stat & effect_flg) {
 					int pos_x, pos_y;
-					unit_manager_get_position((unit_data_t*)&enemy[ei], &pos_x, &pos_y);
-					unit_manager_effect_set_b2position(enemy[ei].effect_param[ef_i].id, PIX2MET(pos_x), PIX2MET(pos_y));
+					unit_manager_get_position((unit_data_t*)enemy[ei], &pos_x, &pos_y);
+					unit_manager_effect_set_b2position(enemy[ei]->effect_param[ef_i].id, PIX2MET(pos_x), PIX2MET(pos_y));
 
-					enemy[ei].effect_param[ef_i].timer -= enemy_delta_time;
-					if (enemy[ei].effect_param[ef_i].timer < 0) {
+					enemy[ei]->effect_param[ef_i].timer -= enemy_delta_time;
+					if (enemy[ei]->effect_param[ef_i].timer < 0) {
 						unit_manager_enemy_set_effect_stat(ei, effect_flg, false);
 					}
 
 					// timer damage (fire up)
-					else if (enemy[ei].effect_param[ef_i].counter > 0) {
-						int damage_count = enemy[ei].effect_param[ef_i].counter;
-						if (enemy[ei].effect_param[ef_i].timer < enemy[ei].effect_param[ef_i].delta_time * damage_count) {
+					else if (enemy[ei]->effect_param[ef_i].counter > 0) {
+						int damage_count = enemy[ei]->effect_param[ef_i].counter;
+						if (enemy[ei]->effect_param[ef_i].timer < enemy[ei]->effect_param[ef_i].delta_time * damage_count) {
 							// damage 5 hp
-							if (unit_manager_enemy_get_damage_force(&enemy[ei], -enemy[ei].effect_param[ef_i].damage) == 0) {
-								int base_size_index = animation_manager_get_base_size_index(enemy[ei].base->anim->base_w);
-								int effect_id = unit_manager_create_effect(enemy[ei].col_shape->x, enemy[ei].col_shape->y,
+							if (unit_manager_enemy_get_damage_force(enemy[ei], -enemy[ei]->effect_param[ef_i].damage) == 0) {
+								int base_size_index = animation_manager_get_base_size_index(enemy[ei]->base->anim->base_w);
+								int effect_id = unit_manager_create_effect(enemy[ei]->col_shape->x, enemy[ei]->col_shape->y,
 									unit_manager_search_effect((char*)enemy_damage_path[base_size_index]));
-								unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)&enemy[ei]);
+								unit_manager_effect_set_trace_unit(effect_id, (unit_data_t*)enemy[ei]);
 							}
 
-							enemy[ei].effect_param[ef_i].counter -= 1;
+							enemy[ei]->effect_param[ef_i].counter -= 1;
 						}
 					}
 				}
@@ -1079,27 +1117,27 @@ void unit_manager_enemy_update()
 		}
 
 		// anim update
-		int stat = unit_manager_unit_get_anim_stat((unit_data_t*)&enemy[ei]);
-		if ((stat != -1) && (enemy[ei].anim->anim_stat_base_list[stat]->type == ANIM_TYPE_DYNAMIC)) {
+		int stat = unit_manager_unit_get_anim_stat((unit_data_t*)enemy[ei]);
+		if ((stat != -1) && (enemy[ei]->anim->anim_stat_base_list[stat]->type == ANIM_TYPE_DYNAMIC)) {
 			// set current_time
-			enemy[ei].anim->anim_stat_list[stat]->current_time += enemy_delta_time;
+			enemy[ei]->anim->anim_stat_list[stat]->current_time += enemy_delta_time;
 
-			int new_time = enemy[ei].anim->anim_stat_list[stat]->current_time;
-			int total_time = enemy[ei].anim->anim_stat_base_list[stat]->total_time;
+			int new_time = enemy[ei]->anim->anim_stat_list[stat]->current_time;
+			int total_time = enemy[ei]->anim->anim_stat_base_list[stat]->total_time;
 			if (new_time > total_time) {
 				new_time = new_time % total_time;
-				enemy[ei].anim->anim_stat_list[stat]->current_time = new_time;
+				enemy[ei]->anim->anim_stat_list[stat]->current_time = new_time;
 
 				// end frame event
-				if ((enemy[ei].anim->stat == ANIM_STAT_FLAG_ATTACK1) || (enemy[ei].anim->stat == ANIM_STAT_FLAG_ATTACK2)) {
+				if ((enemy[ei]->anim->stat == ANIM_STAT_FLAG_ATTACK1) || (enemy[ei]->anim->stat == ANIM_STAT_FLAG_ATTACK2)) {
 					unit_manager_enemy_set_anim_stat(ei, ANIM_STAT_FLAG_IDLE);
 				}
-				else if (enemy[ei].anim->stat == ANIM_STAT_FLAG_DIE) {
-					unit_manager_enemy_drop_item(&enemy[ei]);
-					unit_manager_clear_enemy(&enemy[ei]);
+				else if (enemy[ei]->anim->stat == ANIM_STAT_FLAG_DIE) {
+					unit_manager_enemy_drop_item(enemy[ei]);
+					unit_manager_clear_enemy(enemy[ei]);
 					continue;
 				}
-				else if (enemy[ei].anim->stat == ANIM_STAT_FLAG_SPAWN) {
+				else if (enemy[ei]->anim->stat == ANIM_STAT_FLAG_SPAWN) {
 					unit_manager_enemy_set_anim_stat(ei, ANIM_STAT_FLAG_IDLE);
 					continue;
 				}
@@ -1107,21 +1145,21 @@ void unit_manager_enemy_update()
 
 			// set current_frame
 			int sum_frame_time = 0;
-			int frame_size = enemy[ei].anim->anim_stat_base_list[stat]->frame_size;
+			int frame_size = enemy[ei]->anim->anim_stat_base_list[stat]->frame_size;
 			for (int i = 0; i < frame_size; i++) {
-				sum_frame_time += enemy[ei].anim->anim_stat_base_list[stat]->frame_list[i]->frame_time;
+				sum_frame_time += enemy[ei]->anim->anim_stat_base_list[stat]->frame_list[i]->frame_time;
 				if (new_time < sum_frame_time) {
-					if (enemy[ei].anim->anim_stat_list[stat]->current_frame != i) {
+					if (enemy[ei]->anim->anim_stat_list[stat]->current_frame != i) {
 						// send command
-						if (enemy[ei].anim->anim_stat_base_list[stat]->frame_list[i]->command == ANIM_FRAME_COMMAND_ON) {
+						if (enemy[ei]->anim->anim_stat_base_list[stat]->frame_list[i]->command == ANIM_FRAME_COMMAND_ON) {
 							game_event_unit_t* msg_param = (game_event_unit_t*)game_event_get_new_param();
-							msg_param->obj1 = (unit_data_t*)&enemy[ei];
+							msg_param->obj1 = (unit_data_t*)enemy[ei];
 							game_event_t msg = { (EVENT_MSG_UNIT_ENEMY | (0x00000001 << stat)), msg_param };
 							game_event_push(&msg);
-							enemy[ei].anim->anim_stat_list[stat]->command_frame = i;
+							enemy[ei]->anim->anim_stat_list[stat]->command_frame = i;
 						}
 						// set frame
-						enemy[ei].anim->anim_stat_list[stat]->current_frame = i;
+						enemy[ei]->anim->anim_stat_list[stat]->current_frame = i;
 					}
 					break;
 				}
@@ -1133,18 +1171,18 @@ void unit_manager_enemy_update()
 void unit_manager_enemy_ai_update()
 {
 	for (int i = 0; i < UNIT_ENEMY_LIST_SIZE; i++) {
-		if (enemy[i].type != UNIT_TYPE_ENEMY) continue;
-		if (enemy[i].col_shape->stat == COLLISION_STAT_DISABLE) continue;
+		if (enemy[i]->type != UNIT_TYPE_ENEMY) continue;
+		if (enemy[i]->col_shape->stat == COLLISION_STAT_DISABLE) continue;
 
-		ai_manager_update(enemy[i].ai);
+		ai_manager_update(enemy[i]->ai);
 	}
 }
 
 void unit_manager_enemy_display(int layer)
 {
 	for (int i = 0; i < UNIT_ENEMY_LIST_SIZE; i++) {
-		if (enemy[i].type != UNIT_TYPE_ENEMY) continue;
+		if (enemy[i]->type != UNIT_TYPE_ENEMY) continue;
 
-		unit_display((unit_data_t*)&enemy[i], layer);
+		unit_display((unit_data_t*)enemy[i], layer);
 	}
 }
