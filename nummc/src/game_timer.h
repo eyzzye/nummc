@@ -9,8 +9,8 @@
 // update()         : g_elapsed_time = g_current_time - g_latest_time
 //
 // -- get delta time --
-// get_delta_time() : g_delta_time = (g_elapsed_time - ONE_FRAME_TIME) < 0 ? (g_elapsed_time - ONE_FRAME_TIME) : ONE_FRAME_TIME
-//                    g_elapsed_time -= g_delta_time
+// get_delta_time() : g_delta_time = (g_elapsed_time < DELTA_TIME_MIN) ? 0 : ONE_FRAME_TIME
+//                    g_elapsed_time -= DELTA_TIME_MIN
 //
 // -- pause timer --
 // update()         : g_delta_time = g_current_time - g_latest_time
@@ -19,14 +19,15 @@
 // update()         : g_delta_time = g_current_time - g_latest_time
 //
 
-#define DELTA_TIME_MIN 24	// 40fps
+//#define DELTA_TIME_MIN 24	// 40fps
+#define DELTA_TIME_MIN 16	// 60fps
 #define ONE_FRAME_TIME 16
 
 extern Uint32 g_start_time;
 extern Uint32 g_current_time;
 extern Uint32 g_latest_time;
 extern Uint32 g_elapsed_time;
-extern Uint32 g_delta_time;
+extern Uint32 g_delta_time;  // game time
 extern Uint32 g_pause_time;
 
 extern void   game_timer_init();

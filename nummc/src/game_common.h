@@ -7,6 +7,7 @@
 #define GAME_VERSION "nummc ver.1.03.000\n"
 
 #define _COLLISION_ENABLE_BOX_2D_
+//#define _GAME_TIMER_FPS_ENABLE
 //#define _MAP_OFFSET_ENABLE_
 
 #define LENGTH_OF(_X) (sizeof(_X)/sizeof(_X[0]))

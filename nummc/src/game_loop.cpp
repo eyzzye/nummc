@@ -30,7 +30,9 @@ void game_loop_main()
 {
 	SDL_Event e;
 	Uint32 dt;
+#ifdef _GAME_TIMER_FPS_ENABLE
 	Uint32 fps;
+#endif
 
 	// common functions
 	resource_manager_init();
@@ -48,9 +50,11 @@ void game_loop_main()
 
 	quit = false;
 	while (!quit) {
-		dt = game_timer_update();
+#ifdef _GAME_TIMER_FPS_ENABLE
 		fps = game_timer_fps();
-		//LOG_DEBUG("fps: %d\n", fps);
+		LOG_DEBUG("fps: %d\n", fps);
+#endif
+		dt = game_timer_update();
 		//LOG_DEBUG("dt:  %d\n", dt);
 
 		// key event
@@ -66,7 +70,7 @@ void game_loop_main()
 		}
 		if (quit) continue;
 
-		if (game_timer_get_delta_time() == ONE_FRAME_TIME) {
+		while(game_timer_get_delta_time() == ONE_FRAME_TIME) {
 			// main process
 			scene_manager_main_event();
 			if (quit) continue;  // called game_loop_exit() in main_event()
@@ -77,12 +81,12 @@ void game_loop_main()
 		scene_manager_draw();
 		scene_manager_after_draw();
 
+		//Sleep(25); // for low-spec testing
+
 		Uint32 next_dt = game_timer_test();
-		if (ONE_FRAME_TIME > next_dt) {
-			Sleep(ONE_FRAME_TIME - next_dt);
+		if (DELTA_TIME_MIN > next_dt) {
+			Sleep(DELTA_TIME_MIN - next_dt);
 			//LOG_DEBUG("next_dt:  %d\n", next_dt);
 		}
-
-		//Sleep(25); // for low-spec testing
 	}
 }
