@@ -25,8 +25,6 @@
 #include "scene_loading.h"
 #include "scene_play_story.h"
 
-#include "windows.h" // for Sleep()
-
 #define GAME_START_WAIT_TIMER         1500
 #define GAME_NEXT_STAGE_WAIT_TIMER    2000
 #define KEY_SYNC_ITEM_USE_WAIT_TIMER   300
@@ -560,7 +558,7 @@ static void pre_load_event(void* null) {
 	// set texture position
 	tex_info_init();
 
-	Sleep(3000);
+	game_utils_sleep(3000);
 
 	// collision init
 	collision_manager_init();

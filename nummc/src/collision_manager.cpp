@@ -2,10 +2,6 @@
 #include "game_common.h"
 #include "collision_manager.h"
 
-#ifdef _COLLISION_ENABLE_BOX_2D_
-#include "Box2D/Box2d.h"
-#endif
-
 #include "game_utils.h"
 #include "game_log.h"
 #include "game_window.h"

@@ -1,6 +1,11 @@
-#include <thread>
 #include "game_common.h"
 #include "scene_manager.h"
+
+#ifdef _WIN32
+#include <thread>
+#else
+
+#endif
 
 #include "scene_top_menu.h"
 #include "scene_save_menu.h"
@@ -13,7 +18,11 @@
 
 static bool loading_enable;
 static bool pre_load_stat;
+#ifdef _WIN32
 static std::thread* pre_load_th;
+#else
+
+#endif
 
 static int scene_id;
 static int next_scene_id;
@@ -69,7 +78,11 @@ void scene_manager_init()
 
 	loading_enable = false;
 	pre_load_stat = false;
+#ifdef _WIN32
 	pre_load_th = NULL;
+#else
+
+#endif
 
 	scene_id = SCENE_ID_NONE;
 	next_scene_id = SCENE_ID_NONE;
@@ -85,8 +98,9 @@ int scene_manager_load(int id, bool loading_on)
 		loading_enable = true;
 		SceneManagerFunc* func = get_scene_func(id);
 		func->set_stat_event(SCENE_STAT_LOADING);
+#ifdef _WIN32
 		pre_load_th = new std::thread(func->pre_load_event, (void*)NULL);
-
+#endif
 		next_scene_id = id;
 		id = SCENE_ID_LOADING;
 	}
@@ -131,13 +145,16 @@ void scene_manager_set_pre_load_stat(bool stat)
 int scene_manager_loading_finish()
 {
 	if (loading_enable) {
+#ifdef _WIN32
 		// terminate thread
 		if (pre_load_th->joinable()) {
 			pre_load_th->join();
 		}
 		delete pre_load_th;
 		pre_load_th = NULL;
+#else
 
+#endif
 		// load next scene
 		SceneManagerFunc* func = get_scene_func(next_scene_id);
 		if (func == NULL) { return 1; }

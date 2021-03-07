@@ -14,6 +14,9 @@ extern int game_utils_random_gen(int max, int min);
 extern float game_utils_sin(float angle);
 extern float game_utils_cos(float angle);
 
+// timer
+extern void game_utils_sleep(unsigned int milli_seconds);
+
 // file helper
 #if 0
 extern std::string game_utils_upper_folder(std::string path);

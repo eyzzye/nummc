@@ -1,11 +1,19 @@
 #pragma once
 #include "game_common.h"
+
+#ifdef _WIN32
 #include "windows.h"
 
 #define GAME_LOG_CONSOLE_ENABLE 1
 #define GAME_LOG_FILE_ENABLE    1
 #define GAME_LOG_ERROR_ENABLE   1
 #define GAME_LOG_DEBUG_ENABLE   1
+#else
+//#define GAME_LOG_CONSOLE_ENABLE 1
+//#define GAME_LOG_FILE_ENABLE    1
+//#define GAME_LOG_ERROR_ENABLE   1
+//#define GAME_LOG_DEBUG_ENABLE   1
+#endif
 
 #ifdef GAME_LOG_CONSOLE_ENABLE
 #include <stdio.h>

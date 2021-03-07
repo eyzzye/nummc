@@ -212,7 +212,9 @@ ResourceImg* resource_manager_load_img(const char* path, int type)
 			if (STRCMP_EQ(&effect_list[0],"scale_mode")) {
 				char* mode_str = &effect_list[1 * MEMORY_MANAGER_STRING_BUF_SIZE];
 				if (STRCMP_EQ(mode_str,"linear")) {
+#if SDL_VERSION_ATLEAST(2, 0, 12)
 					scale_mode = (int)SDL_ScaleModeLinear;
+#endif
 				}
 				continue;
 			}
@@ -272,9 +274,11 @@ ResourceImg* resource_manager_load_img(const char* path, int type)
 		return NULL;
 	}
 
+#if SDL_VERSION_ATLEAST(2, 0, 12)
 	if (scale_mode == (int)SDL_ScaleModeLinear) {
 		SDL_SetTextureScaleMode(tex, SDL_ScaleModeLinear);
 	}
+#endif
 	SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
 	ResourceImg* resImg = (ResourceImg*)game_utils_node_new(&resource_img_buffer_info);
 	resImg->path = memory_manager_new_char_buff((int)strlen(path));
@@ -405,7 +409,9 @@ ResourceImg* resource_manager_load_font(const char* message, int type)
 		LOG_ERROR("SDL_CreateTextureFromSurface Error: %s\n", SDL_GetError());
 		return NULL;
 	}
+#if SDL_VERSION_ATLEAST(2, 0, 12)
 	SDL_SetTextureScaleMode(tex, SDL_ScaleModeLinear);
+#endif
 	SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
 	ResourceImg* resFont = (ResourceImg*)game_utils_node_new(&resource_img_buffer_info);
 	game_utils_string_cat(font_path, (char*)"font:", (char*)message);

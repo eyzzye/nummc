@@ -11,12 +11,12 @@ inline void GUI_RenderCopy(ResourceImg* res_img, const SDL_Rect* srcrect, const 
 	if (res_img != NULL) SDL_RenderCopy(g_ren, res_img->tex, srcrect, dstrect);
 }
 
-inline void GUI_RenderCopyEx(ResourceImg* res_img, const SDL_Rect* srcrect, const SDL_Rect* dstrect, const double angle, const SDL_Point* center, int flip)
+void GUI_RenderCopyEx(ResourceImg* res_img, const SDL_Rect* srcrect, const SDL_Rect* dstrect, const double angle, const SDL_Point* center, int flip)
 {
 	if (res_img != NULL) SDL_RenderCopyEx(g_ren, res_img->tex, srcrect, dstrect, angle, center, (const SDL_RendererFlip)flip);
 }
 
-inline int GUI_QueryTexture(ResourceImg* res_img, Uint32* format, int* access, int* w, int* h)
+int GUI_QueryTexture(ResourceImg* res_img, Uint32* format, int* access, int* w, int* h)
 {
 	if (res_img != NULL) return SDL_QueryTexture(res_img->tex, format, access, w, h);
 	else return (-1);

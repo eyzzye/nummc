@@ -81,11 +81,11 @@ void game_loop_main()
 		scene_manager_draw();
 		scene_manager_after_draw();
 
-		//Sleep(25); // for low-spec testing
+		//game_utils_sleep(25); // for low-spec testing
 
 		Uint32 next_dt = game_timer_test();
 		if (DELTA_TIME_MIN > next_dt) {
-			Sleep(DELTA_TIME_MIN - next_dt);
+			game_utils_sleep(DELTA_TIME_MIN - next_dt);
 			//LOG_DEBUG("next_dt:  %d\n", next_dt);
 		}
 	}

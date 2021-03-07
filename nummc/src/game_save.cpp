@@ -3,6 +3,9 @@
 
 #ifdef _WIN32
 #include <io.h>
+#else
+#include <sys/io.h>
+#include <unistd.h>
 #endif
 
 #include "memory_manager.h"
@@ -481,6 +484,7 @@ int game_save_init()
 	char* tmp_path = NULL;
 	size_t tmp_path_len;
 
+#ifdef _WIN32
 	errno_t std_error = _dupenv_s(&tmp_path, &tmp_path_len, "USERPROFILE");
 	if ((!std_error) && (tmp_path_len > 0)) {
 		// g_save_folder = tmp_path + "/Documents/My Games/nummc/"
@@ -521,6 +525,43 @@ int game_save_init()
 			if (game_save_save_ini_file(g_save_path) != 0) return 1;
 		}
 	}
+#else
+	tmp_path = getenv("HOME");
+	if (!tmp_path) {
+		//g_save_folder = tmp_path;
+		//g_save_folder = g_save_folder + "/.config/nummc/";
+		if (game_utils_string_cat(g_save_folder, tmp_path, (char*)"/.config/nummc/") != 0) return 1;
+
+		//g_save_path = g_save_folder + "save_data.ini";
+		if (game_utils_string_cat(g_save_path, g_save_folder, (char*)"save_data.ini") != 0) return 1;
+
+		free(tmp_path);
+		tmp_path = NULL;
+
+		// check folder exist & create
+		if (game_utils_create_folder(g_save_folder)) {
+			return 1;
+		}
+
+		// check file exist & load
+		if (access(g_save_path, R_OK | W_OK) == -1) {
+			if (game_save_load_ini_file(g_save_path) != 0) return 1;
+
+			// save backup
+			char backup_save_path[GAME_FULL_PATH_MAX];
+			ret = game_utils_string_cat(backup_save_path, g_save_path, (char*)".backup");
+			if (ret <= 0) { LOG_ERROR_CONSOLE("Error: game_save_init() get backup_save_path\n"); return 1; }
+			if (game_save_save_ini_file(backup_save_path) != 0) return 1;
+		}
+		else {
+			//save_template_path = g_base_path + "data/_temp/save_data_template.ini";
+			if (game_utils_string_copy(save_template_path, g_base_path) != 0) return 1;
+			if (game_utils_string_copy(&save_template_path[g_base_path_size], "data/_temp/save_data_template.ini") != 0) return 1;
+			if (game_save_load_ini_file(save_template_path) != 0) return 1;
+			if (game_save_save_ini_file(g_save_path) != 0) return 1;
+		}
+	}
+#endif
 	else {
 		LOG_ERROR("Error: Can't get USERPROFILE\n");
 		return 1;

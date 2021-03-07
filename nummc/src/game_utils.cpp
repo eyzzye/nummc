@@ -5,7 +5,13 @@
 #include <random>
 #include <time.h>
 #ifdef _WIN32
+#include "windows.h" // for Sleep()
 #include <io.h>
+#else
+#include <errno.h>
+#include <sys/stat.h>
+#include <unistd.h> // for usleep()
+#include <dirent.h>
 #endif
 
 #include "game_window.h"
@@ -60,6 +66,18 @@ float game_utils_cos(float angle)
 		cos_val = -1.0f;
 	}
 	return cos_val;
+}
+
+//
+// timer utils
+//
+void game_utils_sleep(unsigned int milli_seconds)
+{
+#ifdef _WIN32
+	Sleep(milli_seconds);
+#else
+	usleep(milli_seconds * 1000);
+#endif
 }
 
 //
@@ -183,6 +201,8 @@ int game_utils_backup_file(char* path, int max_size)
 			return 0;
 		}
 	}
+#else
+	return 1;
 #endif
 }
 
@@ -192,7 +212,7 @@ int game_utils_files_get_file_list(char* path, char* filter, char* file_list, in
 
 #ifdef _WIN32
 	char full_filename[256];
-	int flie_size = game_utils_string_cat(full_filename, path, filter);
+	int flie_size = game_utils_string_cat(full_filename, path, (char*)"/", filter);
 	if (flie_size <= 0) { LOG_ERROR("Error: game_utils_files_get_file_list() failed string_cat\n"); return 0; }
 
 	WIN32_FIND_DATAA find_file_data;
@@ -204,11 +224,8 @@ int game_utils_files_get_file_list(char* path, char* filter, char* file_list, in
 
 	do {
 		if (!(find_file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-			int flie_size = game_utils_string_cat(full_filename, path, find_file_data.cFileName);
-			if (flie_size > 0) {
-				game_utils_string_copy(&file_list[list_size * file_list_line_size], full_filename);
-				list_size++;
-			}
+			game_utils_string_copy(&file_list[list_size * file_list_line_size], find_file_data.cFileName);
+			list_size++;
 		}
 	} while (FindNextFileA(h_find, &find_file_data) != 0);
 	FindClose(h_find);
@@ -247,11 +264,8 @@ int game_utils_files_get_file_list(char* path, char* filter, char* file_list, in
 				}
 
 				if (register_flag) {
-					int flie_size = game_utils_string_cat(full_filename, path, dir->d_name);
-					if (flie_size > 0) {
-						game_utils_string_copy(&file_list[list_size * file_list_line_size], full_filename);
-						list_size++;
-					}
+					game_utils_string_copy(&file_list[list_size * file_list_line_size], dir->d_name);
+					list_size++;
 				}
 			}
 		}

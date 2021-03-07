@@ -56,15 +56,15 @@
 #define UNIT_BULLET_NUM_QUADRUPLE  4
 #define UNIT_BULLET_NUM_MAX        5
 
-#define UNIT_BULLET_SPEC_SET_NUM(_X,_VAL)      (_X) ## ->bullet_spec = (((_X) ## ->bullet_spec & 0xFFFFFF00) | _VAL)
-#define UNIT_BULLET_SPEC_GET_NUM(_X)           ((_X) ## ->bullet_spec & 0x000000FF)
-#define UNIT_BULLET_SPEC_SET_CURVING(_X,_VAL)  (_X) ## ->bullet_spec = (((_X) ## ->bullet_spec & 0xFFFF00FF) | ((_VAL << 8) & 0x0000FF00))
-#define UNIT_BULLET_SPEC_GET_CURVING(_X)       (((_X) ## ->bullet_spec & 0x0000FF00) >> 8)
-#define UNIT_BULLET_SPEC_SET_STRENGTH(_X,_VAL) (_X) ## ->bullet_spec = (((_X) ## ->bullet_spec & 0xFF00FFFF) | ((_VAL << 16) & 0x00FF0000))
-#define UNIT_BULLET_SPEC_GET_STRENGTH(_X)      (((_X) ## ->bullet_spec & 0x00FF0000) >> 16)
+#define UNIT_BULLET_SPEC_SET_NUM(_X,_VAL)      (_X)->bullet_spec = (((_X)->bullet_spec & 0xFFFFFF00) | _VAL)
+#define UNIT_BULLET_SPEC_GET_NUM(_X)           ((_X)->bullet_spec & 0x000000FF)
+#define UNIT_BULLET_SPEC_SET_CURVING(_X,_VAL)  (_X)->bullet_spec = (((_X)->bullet_spec & 0xFFFF00FF) | ((_VAL << 8) & 0x0000FF00))
+#define UNIT_BULLET_SPEC_GET_CURVING(_X)       (((_X)->bullet_spec & 0x0000FF00) >> 8)
+#define UNIT_BULLET_SPEC_SET_STRENGTH(_X,_VAL) (_X)->bullet_spec = (((_X)->bullet_spec & 0xFF00FFFF) | ((_VAL << 16) & 0x00FF0000))
+#define UNIT_BULLET_SPEC_GET_STRENGTH(_X)      (((_X)->bullet_spec & 0x00FF0000) >> 16)
 
-#define UNIT_SPEC_SET_LUCK(_X,_VAL)            (_X) ## ->spec = (((_X) ## ->spec & 0xFFFFFF00) | _VAL)
-#define UNIT_SPEC_GET_LUCK(_X)                 ((_X) ## ->spec & 0x000000FF)
+#define UNIT_SPEC_SET_LUCK(_X,_VAL)            (_X)->spec = (((_X)->spec & 0xFFFFFF00) | _VAL)
+#define UNIT_SPEC_GET_LUCK(_X)                 ((_X)->spec & 0x000000FF)
 
 #include "unit_manager_player.h"
 #include "unit_manager_enemy.h"

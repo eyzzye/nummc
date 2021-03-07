@@ -117,7 +117,11 @@ void quest_log_manager_message(const char* message_fmt, ...)
 	char buff[32];
 	va_list args;
 	va_start(args, message_fmt);
+#ifdef _WIN32
 	vsnprintf_s(buff, 31, message_fmt, args);
+#else
+	vsnprintf(buff, 31, message_fmt, args);
+#endif
 	va_end(args);
 
 	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
@@ -138,7 +142,8 @@ void quest_log_manager_set_new_message(char* message, int message_length, int re
 	new_node = (quest_log_data_t*)game_utils_node_new(&quest_log_buffer_info);
 
 	if (new_node != NULL) {
-		strcpy_s(new_node->message, (QUEST_LOG_MESSAGE_SIZE - 1), message);
+		//strcpy_s(new_node->message, (QUEST_LOG_MESSAGE_SIZE - 1), message);
+		if (game_utils_string_copy(new_node->message, message) != 0) { LOG_ERROR("Error: quest_log_manager_message() copy message\n"); return; }
 		new_node->message_length = message_length;
 		new_node->regist_timer = regist_timer;
 		new_node->id = new_id;

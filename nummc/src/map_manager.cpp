@@ -1,4 +1,3 @@
-#include <windows.h>      // for FindFirstFileA()
 #include "game_common.h"
 #include "map_manager.h"
 
@@ -328,39 +327,28 @@ void map_manager_create_stage_map()
 
 		//full_path = g_base_path + "data/" + game_utils_upper_folder(path) + "/*.tile";
 		char full_path[GAME_FULL_PATH_MAX];
-		char tile_files[GAME_FULL_PATH_MAX];
-		int tmp_path_size = game_utils_upper_folder(path, full_path);
+		char sub_path[GAME_FULL_PATH_MAX];
+		int tmp_path_size = game_utils_upper_folder(path, sub_path);
 		if (tmp_path_size <= 0) { LOG_ERROR("Error: map_manager_create_stage_map get upper_folder %s\n", path); return; }
-		tmp_path_size = game_utils_string_cat(tile_files, full_path, (char*)"/*.tile");
-		if (tmp_path_size <= 0) { LOG_ERROR("Error: map_manager_create_stage_map get tile_files %s\n", path); return; }
-		tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", (char*)tile_files);
+		tmp_path_size = game_utils_string_cat(full_path, g_base_path, (char*)"data/", sub_path);
 		if (tmp_path_size <= 0) { LOG_ERROR("Error: map_manager_create_stage_map failed get %s\n", path); return; }
 
 		// load *.tile
-		WIN32_FIND_DATAA find_file_data;
-		HANDLE h_find = FindFirstFileA(full_path, &find_file_data);
-		if (h_find == INVALID_HANDLE_VALUE) {
-			LOG_ERROR("Error: map_manager_create_stage_map FindFirstFileA() error\n", path);
-			return;
+		char tile_files[TILE_TEX_NUM * MEMORY_MANAGER_NAME_BUF_SIZE];
+		int list_size = game_utils_files_get_file_list(full_path, (char*)"*.tile", tile_files, TILE_TEX_NUM, MEMORY_MANAGER_NAME_BUF_SIZE);
+		for (int i = 0; i < list_size; i++) {
+			char* tile_file_name = &tile_files[i * MEMORY_MANAGER_NAME_BUF_SIZE];
+			//LOG_DEBUG("tile_files: %s\n", tile_file_name);
+
+			char index_str[MEMORY_MANAGER_NAME_BUF_SIZE];
+			int tile_filename_size = (int)strlen(tile_file_name);
+			game_utils_string_copy_n(index_str, tile_file_name, tile_filename_size - 5 /* - strlen(".tile") */);
+			int index = atoi(index_str);
+
+			tmp_path_size = game_utils_string_cat(full_path, sub_path, (char*)"/", tile_file_name);
+			if (tmp_path_size <= 0) { LOG_ERROR("Error: map_manager_create_stage_map get tile_file %s\n", tile_file_name); return; }
+			map_manager_load_tile(full_path, &tile_tex[index]);
 		}
-
-		do {
-			if (!(find_file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-				game_utils_upper_folder(path, full_path);
-				//tile_files = full_path + "/" + find_file_data.cFileName;
-				tmp_path_size = game_utils_string_cat(tile_files, full_path, (char*)"/", find_file_data.cFileName);
-				if (tmp_path_size <= 0) { LOG_ERROR("Error: map_manager_create_stage_map get tile_files %s\n", find_file_data.cFileName); return; }
-
-				//index_str = filename.substr(0, filename.size() - 5);
-				char index_str[MEMORY_MANAGER_NAME_BUF_SIZE];
-				int tile_filename_size = (int)strlen(find_file_data.cFileName);
-				game_utils_string_copy_n(index_str, find_file_data.cFileName, tile_filename_size - 5 /* - strlen(".tile") */);
-				int index = atoi(index_str);
-
-				map_manager_load_tile(tile_files, &tile_tex[index]);
-			}
-		} while (FindNextFile(h_find, &find_file_data) != 0);
-		FindClose(h_find);
 	}
 	else {
 		LOG_ERROR("ERROR: map_manager_create_stage_map invalid g_stage_data->section_list.size \n");

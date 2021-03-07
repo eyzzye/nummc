@@ -612,7 +612,7 @@ static void tex_info_reset_music_volume()
 	int h_pos = tex_info_music_text.dst_rect_base.y;
 
 	char c_buf_vol[4] = { '\0' };
-	_itoa_s(music_volume_value, c_buf_vol, 10);
+	game_utils_string_itoa(music_volume_value, c_buf_vol, (4-1), 10);
 
 	tex_info_music_text.res_img = resource_manager_getFontTextureFromPath(c_buf_vol);
 	int ret = GUI_QueryTexture(tex_info_music_text.res_img, NULL, NULL, &w, &h);
@@ -633,7 +633,7 @@ static void tex_info_reset_sfx_volume()
 	int h_pos = tex_info_sfx_text.dst_rect_base.y;
 
 	char c_buf_vol[4] = { '\0' };
-	_itoa_s(sfx_volume_value, c_buf_vol, 10);
+	game_utils_string_itoa(sfx_volume_value, c_buf_vol, (4-1), 10);
 
 	tex_info_sfx_text.res_img = resource_manager_getFontTextureFromPath(c_buf_vol);
 	int ret = GUI_QueryTexture(tex_info_sfx_text.res_img, NULL, NULL, &w, &h);
