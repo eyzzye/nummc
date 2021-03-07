@@ -862,6 +862,24 @@ static void section_init()
 		unit_manager_load_effect((char*)"units/effect/shadow/shadow_drop.unit");
 		unit_manager_load_effect((char*)"units/effect/shadow/48x48/shadow_drop.unit");
 		unit_manager_load_effect((char*)"units/effect/shadow/64x64/shadow_drop.unit");
+
+		// pre-load enemy unit
+		for (int i = 0; i < STAGE_MAP_WIDTH_NUM * STAGE_MAP_HEIGHT_NUM; i++) {
+			if (g_stage_data->section_list[i] == NULL) break;
+
+			for (int e_i = 0; e_i < SECTION_ENEMY_PHASE_SIZE; e_i++) {
+				node_buffer_info_t* enemy_list = g_stage_data->section_list[i]->enemy_list[e_i];
+				if (enemy_list == NULL) break;
+
+				node_data_t* node = enemy_list->start_node;
+				while (node != NULL) {
+					enemy_data_t* load_enemy_data = (enemy_data_t*)node;
+					unit_manager_load_enemy(load_enemy_data->path);
+
+					node = node->next;
+				}
+			}
+		}
 	}
 
 	// load section map
