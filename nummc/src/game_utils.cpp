@@ -170,6 +170,11 @@ int game_utils_backup_file(char* path, int max_size)
 			}
 			else {
 				CloseHandle(logFile);
+
+				// new create
+				SDL_RWops* new_file_stream = SDL_RWFromFile(path, "w");
+				if (new_file_stream == NULL) { LOG_ERROR_CONSOLE("Error: game_utils_backup_file() can't open new_file_stream\n"); return 1; }
+				if (SDL_RWclose(new_file_stream) != 0) { LOG_ERROR_CONSOLE("Error: game_log_close() can't close new_file_stream\n"); return 1; }
 				return 0;
 			}
 		}
