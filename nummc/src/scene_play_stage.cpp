@@ -551,7 +551,7 @@ static void after_draw() {
 	game_event_clear();
 }
 
-static void pre_load_event(void* null) {
+static int pre_load_event(void* null) {
 	// load resource files
 	resource_manager_load_dat((char*)"scenes/scene_play_stage.dat");
 
@@ -583,7 +583,7 @@ static void pre_load_event(void* null) {
 		}
 		else {
 			int stage_name_str_size = game_utils_string_cat(stage_name_str, (char*)"scenes/stages/stage", stage_id, (char*)".dat");
-			if (stage_name_str_size <= 0) { LOG_ERROR("Error: scene_play_stage pre_load_event() get stage_name_str\n"); return; }
+			if (stage_name_str_size <= 0) { LOG_ERROR("Error: scene_play_stage pre_load_event() get stage_name_str\n"); return 1; }
 
 			stage_path = stage_name_str;
 		}
@@ -654,6 +654,8 @@ static void pre_load_event(void* null) {
 	section_init();
 
 	scene_manager_set_pre_load_stat(true);
+
+	return 0;
 }
 static void load_event() {
 	return_scene_id = scene_manager_get_scene_id();

@@ -89,7 +89,7 @@ struct _node_buffer_info_t {
 
 // function pointers
 typedef void void_func();
-typedef void void_p_func(void*);
+typedef int void_p_func(void*);
 typedef void event_func(SDL_Event*);
 typedef void int_func(int);
 typedef int ret_int_func();
