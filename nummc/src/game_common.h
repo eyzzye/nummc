@@ -4,7 +4,7 @@
 #include "SDL_mixer.h"
 #include "SDL_ttf.h"
 
-#define GAME_VERSION "nummc ver.1.03.000\n"
+#define GAME_VERSION "nummc ver.1.04.000\n"
 
 #define _COLLISION_ENABLE_BOX_2D_
 //#define _GAME_TIMER_FPS_ENABLE
