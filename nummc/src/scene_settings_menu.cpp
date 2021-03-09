@@ -507,8 +507,10 @@ static void button_ok() {
 	if (video_item_index == VIDEO_ITEM_ID_640x480) { w = 640;  h = 480; }
 	else if (video_item_index == VIDEO_ITEM_ID_1280x720)  { w = 1280; h = 720; }
 
-	int ret = game_save_set_config_resolution(w, h);
-	game_window_set_resolution(w, h);
+	int ret = 0;
+	if (game_window_set_resolution(w, h) == 0) {
+		ret = game_save_set_config_resolution(w, h);
+	}
 
 	// save music settings
 	ret &= game_save_set_config_music_volume(music_volume_value);
@@ -612,7 +614,7 @@ static void tex_info_reset_music_volume()
 	int h_pos = tex_info_music_text.dst_rect_base.y;
 
 	char c_buf_vol[4] = { '\0' };
-	game_utils_string_itoa(music_volume_value, c_buf_vol, (4-1), 10);
+	game_utils_string_itoa(music_volume_value, c_buf_vol, 4, 10);
 
 	tex_info_music_text.res_img = resource_manager_getFontTextureFromPath(c_buf_vol);
 	int ret = GUI_QueryTexture(tex_info_music_text.res_img, NULL, NULL, &w, &h);
@@ -633,7 +635,7 @@ static void tex_info_reset_sfx_volume()
 	int h_pos = tex_info_sfx_text.dst_rect_base.y;
 
 	char c_buf_vol[4] = { '\0' };
-	game_utils_string_itoa(sfx_volume_value, c_buf_vol, (4-1), 10);
+	game_utils_string_itoa(sfx_volume_value, c_buf_vol, 4, 10);
 
 	tex_info_sfx_text.res_img = resource_manager_getFontTextureFromPath(c_buf_vol);
 	int ret = GUI_QueryTexture(tex_info_sfx_text.res_img, NULL, NULL, &w, &h);

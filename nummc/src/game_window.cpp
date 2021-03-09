@@ -89,21 +89,23 @@ int game_window_get_resolution()
 	return 0;
 }
 
-int game_window_set_resolution(SDL_DisplayMode *mode)
+int game_window_set_resolution(SDL_DisplayMode *mode, int width, int height)
 {
 	int ret = 0;
 
 	// reset scale
-	reset_screen_size(mode->w, mode->h);
+	reset_screen_size(width, height);
 
 	SDL_DisplayMode current_mode;
 	SDL_GetWindowDisplayMode(g_win, &current_mode);
 	if ((current_mode.h == mode->h) && (current_mode.w == mode->w)) {
 		return 0;
 	}
+	else {
+		ret = SDL_SetWindowDisplayMode(g_win, mode);
+	}
 
-	ret = SDL_SetWindowDisplayMode(g_win, mode);
-	SDL_SetWindowSize(g_win, mode->w, mode->h);
+	SDL_SetWindowSize(g_win, width, height);
 
 	return ret;
 }
@@ -134,6 +136,6 @@ int game_window_set_resolution(int width, int height)
 		}
 	}
 
-	ret = game_window_set_resolution(&display_mode_list[mode_index]);
+	ret = game_window_set_resolution(&display_mode_list[mode_index], width, height);
 	return ret;
 }

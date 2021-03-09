@@ -44,5 +44,5 @@ extern SDL_Rect g_screen_size;
 extern int  game_window_create();
 extern void game_window_destory();
 extern int  game_window_get_resolution();
-extern int  game_window_set_resolution(SDL_DisplayMode* mode);
+extern int  game_window_set_resolution(SDL_DisplayMode* mode, int width, int height);
 extern int game_window_set_resolution(int width, int height);

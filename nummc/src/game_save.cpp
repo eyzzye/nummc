@@ -672,7 +672,7 @@ int game_save_set_config_music_volume(int volume)
 	}
 
 	char c_buff[4] = { '\0' };
-	game_utils_string_itoa(volume, c_buff, (4 - 1), 10);
+	game_utils_string_itoa(volume, c_buff, 4, 10);
 	if (STRCMP_EQ(c_buff, game_config_data.settings[GAME_SAVE_SETTINGS_ID_MUSIC_VOLUME])) return 1;
 
 	int ret = game_utils_string_copy(game_config_data.settings[GAME_SAVE_SETTINGS_ID_MUSIC_VOLUME], c_buff);
@@ -699,7 +699,7 @@ int game_save_set_config_sfx_volume(int volume)
 	}
 
 	char c_buff[4] = { '\0' };
-	game_utils_string_itoa(volume, c_buff, (4 - 1), 10);
+	game_utils_string_itoa(volume, c_buff, 4, 10);
 	if (STRCMP_EQ(c_buff, game_config_data.settings[GAME_SAVE_SETTINGS_ID_SFX_VOLUME])) return 1;
 
 	int ret = game_utils_string_copy(game_config_data.settings[GAME_SAVE_SETTINGS_ID_SFX_VOLUME], c_buff);

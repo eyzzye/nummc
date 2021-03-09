@@ -526,16 +526,16 @@ static void draw() {
 	// disable region
 	if (g_screen_size.y > 0) {
 		SDL_SetRenderDrawColor(g_ren, 0, 0, 0, 255);
-		SDL_Rect disabel_region = { 0, 0, g_screen_size.w, g_screen_size.y };
+		SDL_Rect disabel_region = { g_screen_size.x, 0, g_screen_size.w, g_screen_size.y };
 		SDL_RenderFillRect(g_ren, &disabel_region);
-		disabel_region = { 0, g_screen_size.y + g_screen_size.h, g_screen_size.w, g_screen_size.y };
+		disabel_region = { g_screen_size.x, g_screen_size.y + g_screen_size.h, g_screen_size.w, g_screen_size.y };
 		SDL_RenderFillRect(g_ren, &disabel_region);
 	}
-	else if (g_screen_size.x > 0) {
+	if (g_screen_size.x > 0) {
 		SDL_SetRenderDrawColor(g_ren, 0, 0, 0, 255);
-		SDL_Rect disabel_region = { 0, 0, g_screen_size.x, g_screen_size.h };
+		SDL_Rect disabel_region = { 0, g_screen_size.y, g_screen_size.x, g_screen_size.h };
 		SDL_RenderFillRect(g_ren, &disabel_region);
-		disabel_region = { g_screen_size.x + g_screen_size.w, 0, g_screen_size.x, g_screen_size.h };
+		disabel_region = { g_screen_size.x + g_screen_size.w, g_screen_size.y, g_screen_size.x, g_screen_size.h };
 		SDL_RenderFillRect(g_ren, &disabel_region);
 	}
 
