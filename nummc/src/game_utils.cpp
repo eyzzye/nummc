@@ -202,7 +202,40 @@ int game_utils_backup_file(char* path, int max_size)
 		}
 	}
 #else
-	return 1;
+	struct stat path_stat;
+
+	// exist path
+	if (stat(path, &path_stat) != 0) {
+		if (errno == ENOENT) {
+			return 0;
+		}
+		else {
+			LOG_ERROR_CONSOLE("Error: game_utils_backup_file() stat %s\n", path);
+			return 1;
+		}
+	}
+	else {
+		// check file size
+		if (path_stat.st_size > max_size) {
+			// std::string backup_file_name = path + ".1";
+			char backup_file_name[GAME_FULL_PATH_MAX];
+			int backup_file_name_size = game_utils_string_cat(backup_file_name, path, (char*)".1");
+			if ((backup_file_name_size <= 0) || (rename(path, backup_file_name) != 0))
+			{
+				LOG_ERROR_CONSOLE("Error: game_utils_backup_file() copy %s\n", path);
+				return 1;
+			}
+			else {
+				// new create
+				SDL_RWops* new_file_stream = SDL_RWFromFile(path, "w");
+				if (new_file_stream == NULL) { LOG_ERROR_CONSOLE("Error: game_utils_backup_file() can't open new_file_stream\n"); return 1; }
+				if (SDL_RWclose(new_file_stream) != 0) { LOG_ERROR_CONSOLE("Error: game_log_close() can't close new_file_stream\n"); return 1; }
+				return 0;
+			}
+		}
+	}
+
+	return 0;
 #endif
 }
 

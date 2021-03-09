@@ -92,7 +92,11 @@ void game_log_error(const char* format, ...)
 	va_list argptr;
 	va_start(argptr, format);
 	int format_str_max = (ERROR_STRING_SIZE - log_str_size - 1);
+#ifdef _WIN32
 	vsnprintf_s(&tmp_char_buf_error[log_str_size], format_str_max, format_str_max, format, argptr);
+#else
+	vsnprintf(&tmp_char_buf_error[log_str_size], format_str_max, format, argptr);
+#endif
 	va_end(argptr);
 
 	// console output
@@ -133,7 +137,11 @@ void game_log_debug(const char* format, ...)
 	va_list argptr;
 	va_start(argptr, format);
 	int format_str_max = (DEBUG_STRING_SIZE - log_str_size - 1);
+#ifdef _WIN32
 	vsnprintf_s(&tmp_char_buf_debug[log_str_size], format_str_max, format_str_max, format, argptr);
+#else
+	vsnprintf(&tmp_char_buf_debug[log_str_size], format_str_max, format, argptr);
+#endif
 	va_end(argptr);
 
 	// console output

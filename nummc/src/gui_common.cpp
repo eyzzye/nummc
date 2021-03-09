@@ -6,7 +6,7 @@
 //
 // SDL Wrapper
 //
-inline void GUI_RenderCopy(ResourceImg* res_img, const SDL_Rect* srcrect, const SDL_Rect* dstrect)
+void GUI_RenderCopy(ResourceImg* res_img, const SDL_Rect* srcrect, const SDL_Rect* dstrect)
 {
 	if (res_img != NULL) SDL_RenderCopy(g_ren, res_img->tex, srcrect, dstrect);
 }

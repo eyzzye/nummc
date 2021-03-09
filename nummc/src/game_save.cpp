@@ -527,15 +527,16 @@ int game_save_init()
 	}
 #else
 	tmp_path = getenv("HOME");
-	if (!tmp_path) {
+	if (tmp_path) {
 		//g_save_folder = tmp_path;
 		//g_save_folder = g_save_folder + "/.config/nummc/";
-		if (game_utils_string_cat(g_save_folder, tmp_path, (char*)"/.config/nummc/") != 0) return 1;
+		if (game_utils_string_cat(g_save_folder, tmp_path, (char*)"/.config/nummc/") <= 0) return 1;
+		g_save_folder_size = (int)strlen(g_save_folder);
 
 		//g_save_path = g_save_folder + "save_data.ini";
-		if (game_utils_string_cat(g_save_path, g_save_folder, (char*)"save_data.ini") != 0) return 1;
+		if (game_utils_string_cat(g_save_path, g_save_folder, (char*)"save_data.ini") <= 0) return 1;
 
-		free(tmp_path);
+		//free(tmp_path);
 		tmp_path = NULL;
 
 		// check folder exist & create
@@ -544,8 +545,9 @@ int game_save_init()
 		}
 
 		// check file exist & load
-		if (access(g_save_path, R_OK | W_OK) == -1) {
+		if (access(g_save_path, R_OK | W_OK) != -1) {
 			if (game_save_load_ini_file(g_save_path) != 0) return 1;
+			LOG_DEBUG_CONSOLE("g_save_path: %s\n", g_save_path);
 
 			// save backup
 			char backup_save_path[GAME_FULL_PATH_MAX];

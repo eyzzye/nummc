@@ -112,6 +112,7 @@ int game_window_set_resolution(int width, int height)
 {
 	int ret = 0;
 	int mode_index = -1;
+	int sub_mode_index = -1;
 
 	game_window_get_resolution();
 	for (int i = 0; i < display_mode_list_size; i++) {
@@ -120,8 +121,18 @@ int game_window_set_resolution(int width, int height)
 			mode_index = i;
 			break;
 		}
+		else if ((display_mode_list[i].w > width) && (display_mode_list[i].h > height)) {
+			sub_mode_index = i;
+		}
 	}
-	if (mode_index < 0) return 1;
+	if (mode_index < 0) {
+		if (sub_mode_index < 0) {
+			return 1;
+		}
+		else {
+			mode_index = sub_mode_index;
+		}
+	}
 
 	ret = game_window_set_resolution(&display_mode_list[mode_index]);
 	return ret;
