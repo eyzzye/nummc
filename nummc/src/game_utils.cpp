@@ -180,20 +180,40 @@ int game_utils_backup_file(char* path, int max_size)
 			//std::string backup_file_name = path + ".1";
 			char backup_file_name[GAME_FULL_PATH_MAX];
 			int backup_file_name_size = game_utils_string_cat(backup_file_name, path, (char*)".1");
-			if ((backup_file_name_size <= 0) || (!CopyFileExA(path, backup_file_name, NULL, NULL, NULL, COPY_FILE_NO_BUFFERING)))
+			if (backup_file_name_size <= 0)
 			{
 				LOG_ERROR_WINAPI_CONSOLE("CopyFileExA Error: %s\n");
 				CloseHandle(logFile);
 				return 1;
 			}
-			else {
-				CloseHandle(logFile);
 
+			// delete *.log.1
+			if (DeleteFileA(backup_file_name)) {
+				//success
+			}
+			else {
+				if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+					//success
+				}
+				else {
+					LOG_ERROR_WINAPI_CONSOLE("DeleteFileA Error: %s\n");
+					CloseHandle(logFile);
+					return 1;
+				}
+			}
+
+			// move *.log -> *.log.1
+			CloseHandle(logFile);
+			if (MoveFileA(path, backup_file_name)) {
 				// new create
 				SDL_RWops* new_file_stream = SDL_RWFromFile(path, "w");
 				if (new_file_stream == NULL) { LOG_ERROR_CONSOLE("Error: game_utils_backup_file() can't open new_file_stream\n"); return 1; }
 				if (SDL_RWclose(new_file_stream) != 0) { LOG_ERROR_CONSOLE("Error: game_log_close() can't close new_file_stream\n"); return 1; }
 				return 0;
+			}
+			else {
+				LOG_ERROR_WINAPI_CONSOLE("MoveFileA Error: %s\n");
+				return 1;
 			}
 		}
 		else {
