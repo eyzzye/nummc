@@ -63,16 +63,7 @@ int main(int argc, char** argv)
 	}
 
 	// execute path
-	char* tmp_path = SDL_GetBasePath();
-	if (tmp_path) {
-		if (game_utils_string_copy(g_base_path, tmp_path) != 0) return 1;
-		game_utils_replace_string(g_base_path, '\\', '/');
-		g_base_path_size = (int)strlen(g_base_path);
-		LOG_DEBUG_CONSOLE("BasePath: %s\n", g_base_path);
-		SDL_free(tmp_path);
-	}
-	else {
-		LOG_ERROR_CONSOLE("GetBasePath Error: %s\n", SDL_GetError());
+	if (game_utils_get_base_path()) {
 		quit_sdl2();
 		return 1;
 	}

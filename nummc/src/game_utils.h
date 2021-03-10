@@ -23,6 +23,7 @@ extern std::string game_utils_upper_folder(std::string path);
 extern int game_utils_create_folder(std::string path);
 extern int game_utils_backup_file(std::string path, int max_size = GAME_UTILS_BACKUP_FILE_SIZE);
 #else
+extern int game_utils_get_base_path();
 extern int game_utils_upper_folder(char* path, char* dst_str);
 extern int game_utils_create_folder(char* path);
 extern int game_utils_backup_file(char* path, int max_size = GAME_UTILS_BACKUP_FILE_SIZE);

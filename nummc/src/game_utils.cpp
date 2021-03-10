@@ -83,6 +83,67 @@ void game_utils_sleep(unsigned int milli_seconds)
 //
 // file helper utils
 //
+int game_utils_get_base_path()
+{
+#ifdef _WIN32
+	char* tmp_path = SDL_GetBasePath();
+	if (tmp_path) {
+		if (game_utils_string_copy(g_base_path, tmp_path) != 0) return 1;
+		game_utils_replace_string(g_base_path, '\\', '/');
+		g_base_path_size = (int)strlen(g_base_path);
+		LOG_DEBUG_CONSOLE("BasePath: %s\n", g_base_path);
+		SDL_free(tmp_path);
+	}
+	else {
+		LOG_ERROR_CONSOLE("GetBasePath Error: %s\n", SDL_GetError());
+		return 1;
+	}
+	return 0;
+#else
+	struct stat path_stat;
+	const char* usr_path       = "/usr/share/games/nummc/data/";
+	const char* usr_local_path = "/usr/local/share/games/nummc/data/";
+
+	// search /usr/share/games/nummc/ or /usr/local/share/games/nummc/
+	if (stat(usr_path, &path_stat) == 0) {
+		int path_size = (int)strlen(usr_path) - 5 /* "data/" */;
+		if (game_utils_string_copy_n(g_base_path, usr_path, path_size) != 0) return 1;
+		g_base_path_size = (int)strlen(g_base_path);
+		LOG_DEBUG_CONSOLE("BasePath: %s\n", g_base_path);
+		return 0;
+	}
+	else {
+		if (errno == ENOENT) {
+			// next search
+		}
+		else {
+			LOG_ERROR_CONSOLE("Error: game_utils_get_base_path() stat %s\n", usr_path);
+			return 1;
+		}
+	}
+
+	if (stat(usr_local_path, &path_stat) == 0) {
+		int path_size = (int)strlen(usr_local_path) - 5 /* "data/" */;
+		if (game_utils_string_copy_n(g_base_path, usr_local_path, path_size) != 0) return 1;
+		g_base_path_size = (int)strlen(g_base_path);
+		LOG_DEBUG_CONSOLE("BasePath: %s\n", g_base_path);
+		return 0;
+	}
+	else {
+		if (errno == ENOENT) {
+			// next search
+		}
+		else {
+			LOG_ERROR_CONSOLE("Error: game_utils_get_base_path() stat %s\n", usr_local_path);
+			return 1;
+		}
+	}
+	LOG_ERROR_CONSOLE("Error: not found %s\n", usr_path);
+	LOG_ERROR_CONSOLE("Error: not found %s\n", usr_local_path);
+	return 1;
+#endif
+}
+
 int game_utils_upper_folder(char* path, char* dst_str)
 {
 	int dst_str_size = 0;
