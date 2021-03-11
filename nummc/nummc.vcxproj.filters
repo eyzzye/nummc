@@ -138,6 +138,7 @@
     <ClInclude Include="src\memory_manager.h">
       <Filter>src\include</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\unit_manager.cpp">
@@ -269,5 +270,11 @@
     <ClCompile Include="src\memory_manager.cpp">
       <Filter>src\source</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="nummc.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
   </ItemGroup>
 </Project>

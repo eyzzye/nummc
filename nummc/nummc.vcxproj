@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="resource.h" />
     <ClInclude Include="src\ai_manager.h" />
     <ClInclude Include="src\animation_manager.h" />
     <ClInclude Include="src\collision_manager.h" />
@@ -106,6 +107,12 @@
     <ClCompile Include="src\unit_manager_enemy.cpp" />
     <ClCompile Include="src\unit_manager_player_bullet.cpp" />
     <ClCompile Include="src\unit_manager_trap.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="nummc.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
