@@ -3,7 +3,7 @@ CXX = gcc
 CXXFLAGS = -Ofast -I/usr/include -I/usr/include/SDL2
 LDFLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lBox2D -lstdc++ -lm -pthread
 
-TARGET_EXEC = linux/nummc.bin
+TARGET_EXEC = linux/nummc
 BUILD_DIR = ./linux_build
 SRC_DIRS = nummc/src
 
@@ -15,6 +15,9 @@ INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 CPPFLAGS := $(INC_FLAGS) -MMD -MP
 
+all: $(TARGET_EXEC)
+	@echo "Done."
+
 $(TARGET_EXEC): $(OBJS)
 	mkdir -p $(dir $@)
 	$(CC) $(OBJS) $(LDFLAGS) -o $@ 
@@ -23,9 +26,17 @@ $(BUILD_DIR)/%.cpp.o: %.cpp
 	mkdir -p $(dir $@)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
+install: $(TARGET_EXEC)
+	mkdir -p $(DESTDIR)/usr/games
+	mkdir -p $(DESTDIR)/usr/share/games/nummc
+	cp $(TARGET_EXEC) $(DESTDIR)/usr/games/nummc
+	cp -r data $(DESTDIR)/usr/share/games/nummc
+	find $(DESTDIR)/usr/share/games/nummc -type d | xargs chmod 755
+	find $(DESTDIR)/usr/share/games/nummc -type f | xargs chmod 644
+
 .PHONY: clean
 clean:
 	rm -r $(BUILD_DIR)
-	rm $(TARGET_EXEC)
+#	rm $(TARGET_EXEC)
 
 -include $(DEPS)
