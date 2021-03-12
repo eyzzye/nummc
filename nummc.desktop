@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=nummc
+Comment=2d action game top view
+Icon=nummc
+Exec=nummc
+Terminal=false
+StartupNotify=false
+Categories=Game;ArcadeGame;
