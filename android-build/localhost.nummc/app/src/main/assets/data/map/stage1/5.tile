@@ -1,0 +1,18 @@
+#
+# id=5 terrain
+#
+
+[tile]
+breakable=no
+[/tile]
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=2
+dir_path=images/map/common/
+path=5.png
+effect=tile_clip(0:0:32:32)
+[/img]

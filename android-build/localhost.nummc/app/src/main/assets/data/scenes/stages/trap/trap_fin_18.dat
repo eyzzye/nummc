@@ -1,0 +1,17 @@
+[trap]
+type=units/trap/ice_field/ice_field.unit
+x=32,64,96,128,32,64,96,128
+y=192,192,192,192,224,224,224,224
+[/trap]
+
+[trap]
+type=units/trap/magma/magma.unit
+x=320,352,384,416,320,352,384,416
+y=192,192,192,192,224,224,224,224
+[/trap]
+
+[trap]
+type=units/trap/spike/spike.unit
+x=32,64,96,128,32,64,96,128
+y=32,32,32,32,64,64,64,64
+[/trap]

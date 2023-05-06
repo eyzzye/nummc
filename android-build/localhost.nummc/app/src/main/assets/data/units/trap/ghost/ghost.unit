@@ -1,0 +1,26 @@
+#
+# ghost
+#
+
+[unit]
+group=DAMAGE
+
+# UNIT_TRAP_DAMAGE_ID_ENEMY_GHOST
+sub_id=1
+hp=5
+[/unit]
+
+[collision]
+type=BOX
+group=TRAP
+x=0
+y=0
+w=64
+h=64
+[/collision]
+
+[anim]
+base_w=64
+base_h=64
+units/trap/ghost/ghost.IDLE.anim
+[/anim]

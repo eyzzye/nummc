@@ -1,0 +1,17 @@
+#
+# big_point animation (type=DIE)
+#
+
+[frame]
+duration=10,200
+command=1
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/common/
+path=die_smoke.png,die_smoke.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

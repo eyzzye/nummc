@@ -1,0 +1,23 @@
+#
+# goal animation (type=SPAWN)
+#
+
+[frame]
+duration=400,400,800
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/trap/goal/
+path=goal_spawn1.png,goal_spawn2.png,goal_spawn3.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+channel=6
+dir_path=sounds/
+path=sfx_gate_open.ogg,*
+volume=*
+[/snd]

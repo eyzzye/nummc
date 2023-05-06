@@ -1,0 +1,16 @@
+#
+# ice_ball animation (type=IDLE)
+#
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/bullet/ice_ball/
+path=ice_ball.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

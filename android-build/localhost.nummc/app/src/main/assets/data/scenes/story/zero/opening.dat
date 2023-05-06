@@ -1,0 +1,21 @@
+[basic_info]
+id=zero_opening
+[/basic_info]
+[img]
+{scale_mode:linear}images/story/opening/1/opening.png
+[/img]
+[bgm]
+#music/title.ogg
+[/bgm]
+[auto_text]
+time=2000
+ 
+1+0=1
+1-0=1
+0x1=0
+0÷1=0
+ 
+These identities are meaningless.
+Zero is emptiness.
+Eliminate now!
+[/auto_text]

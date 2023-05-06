@@ -1,0 +1,10 @@
+#
+# enemy6 mini boss
+#
+
+[basic]
+bullet_unit=units/bullet/fire/enemy/fire.unit
+bullet_track_type=CROSS
+bullet_num=QUADRUPLE
+bullet_face=W
+[/basic]

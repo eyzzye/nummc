@@ -1,0 +1,45 @@
+#
+# tresure_random
+#
+
+[unit]
+group=TBOX
+item_id=2
+# item count
+val1=3
+# RECOVERY | HEART
+val2=262145
+# RECOVERY | HEART_UP
+val3=262146
+# STOCK | WEAPON | BOM
+val4=8396801
+# SPECIAL | RATE_UP
+val5=524292
+# STOCK | CHARGE | BOOSTER
+#val5=8404993
+# SPECIAL | STRENGTH_UP
+val6=524295
+# STOCK | SPECIAL | BOOSTER
+#val6=8421377
+[/unit]
+
+[collision]
+type=BOX
+group=ITEMS
+x=4
+y=12
+w=23
+h=15
+vec_x_max=4.0
+vec_y_max=4.0
+vec_x_delta=1.0
+vec_y_delta=1.0
+[/collision]
+
+[anim]
+base_w=32
+base_h=32
+units/items/tbox/tresure_random/tresure_random.IDLE.anim
+units/items/tbox/tresure_random/tresure_random.DIE.anim
+units/items/tbox/tresure_random/tresure_random.SPAWN.anim
+[/anim]

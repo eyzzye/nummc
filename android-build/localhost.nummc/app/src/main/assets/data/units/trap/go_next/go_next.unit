@@ -1,0 +1,26 @@
+#
+# go_next
+#
+
+[unit]
+group=GATE
+
+# sub_id is set from map_manager_create_door().
+sub_id=0
+[/unit]
+
+[collision]
+type=BOX_S
+group=TRAP
+x=8
+y=8
+w=16
+h=16
+[/collision]
+
+[anim]
+base_w=32
+base_h=32
+units/trap/go_next/go_next.IDLE.anim
+units/trap/go_next/go_next.SPAWN.anim
+[/anim]

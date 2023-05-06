@@ -1,0 +1,27 @@
+#
+# id=2 terrain
+#
+
+[tile]
+breakable=no
+[/tile]
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=2
+dir_path=images/map/common/
+path=2.png
+effect=tile_clip(0:0:32:32)
+[/img]
+
+[collision]
+type=BOX_S
+group=MAP
+x=0
+y=0
+w=32
+h=32
+[/collision]

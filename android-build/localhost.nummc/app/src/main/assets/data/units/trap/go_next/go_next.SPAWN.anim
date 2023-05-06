@@ -1,0 +1,17 @@
+#
+# go_next animation (type=SPAWN)
+#
+
+[frame]
+duration=200,200,50
+command=2
+[/frame]
+
+[img]
+layer=2
+dir_path=images/units/trap/go_next/
+path=go_next_spawn1.png,go_next_spawn2.png,go_next.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

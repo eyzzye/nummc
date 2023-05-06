@@ -1,0 +1,24 @@
+#
+# goal
+#
+
+[unit]
+group=GATE
+sub_id=1
+[/unit]
+
+[collision]
+type=BOX_S
+group=TRAP
+x=8
+y=8
+w=16
+h=16
+[/collision]
+
+[anim]
+base_w=32
+base_h=32
+units/trap/goal/goal.IDLE.anim
+units/trap/goal/goal.SPAWN.anim
+[/anim]

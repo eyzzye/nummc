@@ -1,0 +1,7 @@
+[drop_items]
+units/items/stock/simple_bom/simple_bom.unit
+units/items/stock/shield/shield.unit
+[/drop_items]
+[goal_items]
+units/items/bullet/fire_bullet/fire_bullet.unit
+[/goal_items]

@@ -1,0 +1,10 @@
+#
+# enemy4 boss
+#
+
+[basic]
+bullet_unit=units/bullet/ice_ball/enemy/ice_ball.unit
+bullet_track_type=XCROSS
+bullet_num=QUADRUPLE
+bullet_face=W
+[/basic]

@@ -1,0 +1,31 @@
+[basic_info]
+id=_infinity_end
+[/basic_info]
+[img]
+{scale_mode:linear}images/story/ending/1/_end.png
+[/img]
+[bgm]
+music/elegy.ogg
+[/bgm]
+[auto_text]
+time=2000
+ 
+1÷1=1
+1÷2=0.5
+1÷3=0.333..........
+continue endlessly.
+not exactly?
+existing certainly.
+ 
+It's impression.
+|1|2|3|
+It's same distance 1/3.
+Just 3/3 feel exactly?
+All numbers is the point on line.
+ 
+Infinity is the far point.
+existing certainly.
+It's necessary like zero.
+ 
+Might zero be the danger than me?
+[/auto_text]

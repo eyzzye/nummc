@@ -1,0 +1,16 @@
+#
+# spike animation (type=ATTACK)
+#
+
+[frame]
+duration=400,200
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/trap/spike/
+path=spike_attack1.png,spike_attack2.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

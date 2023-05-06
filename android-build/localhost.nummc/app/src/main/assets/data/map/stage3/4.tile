@@ -1,0 +1,27 @@
+#
+# id=4 terrain
+#
+
+[tile]
+breakable=yes
+[/tile]
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=2
+dir_path=images/map/common/
+path=4.png
+effect=tile_clip(0:0:32:32)
+[/img]
+
+[collision]
+type=BOX_S
+group=MAP
+x=0
+y=0
+w=32
+h=32
+[/collision]

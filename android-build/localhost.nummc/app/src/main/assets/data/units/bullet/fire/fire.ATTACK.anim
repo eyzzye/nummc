@@ -1,0 +1,16 @@
+#
+# fire animation (type=ATTACK)
+#
+
+[frame]
+duration=100,100,100,100
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/bullet/fire/
+path=fire1.png,fire2.png,fire3.png,fire4.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

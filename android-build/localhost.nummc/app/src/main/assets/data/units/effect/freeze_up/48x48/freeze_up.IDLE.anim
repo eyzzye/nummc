@@ -1,0 +1,16 @@
+#
+# freeze_up animation (type=IDLE)
+#
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=3
+dir_path=images/units/effect/freeze_up/48x48/
+path=freeze_up.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

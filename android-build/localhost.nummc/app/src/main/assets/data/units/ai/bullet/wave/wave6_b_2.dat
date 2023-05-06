@@ -1,0 +1,17 @@
+#
+# enemy6 boss
+#
+
+[basic]
+bullet_unit=units/bullet/fire/enemy/fire.unit
+bullet_track_type=WAVE
+bullet_num=SINGLE
+bullet_face=E
+
+#wave width
+val1=32
+#wave term1 time
+val2=64
+#wave term2 time
+val3=64
+[/basic]

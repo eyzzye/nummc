@@ -1,0 +1,10 @@
+#
+# enemy4 lv2
+#
+
+[basic]
+bullet_unit=units/bullet/ice/enemy/ice.unit
+bullet_track_type=LINE
+bullet_num=DOUBLE
+bullet_face=W
+[/basic]

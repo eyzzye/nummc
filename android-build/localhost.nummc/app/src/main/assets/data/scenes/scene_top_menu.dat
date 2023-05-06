@@ -1,0 +1,16 @@
+[img]
+{scale_mode:linear}images/gui/top_menu/title.png
+{scale_mode:linear}images/gui/top_menu/continue.png
+{scale_mode:linear}images/gui/top_menu/load.png
+{scale_mode:linear}images/gui/top_menu/new_game.png
+{scale_mode:linear}images/gui/top_menu/settings.png
+{scale_mode:linear}images/gui/top_menu/exit.png
+[/img]
+[font]
+Exit to DeskTop?
+[/font]
+[music]
+[/music]
+[snd]
+music/title.ogg
+[/snd]

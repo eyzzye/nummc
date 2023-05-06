@@ -1,0 +1,13 @@
+#
+# enemy x boss
+#
+
+[basic]
+bullet_unit=units/bullet/big_point/enemy/big_point.unit
+bullet_track_type=LINE
+bullet_num=SINGLE
+bullet_face=W
+
+# AI_BULLET_PARAM_TARGET
+val1=2
+[/basic]

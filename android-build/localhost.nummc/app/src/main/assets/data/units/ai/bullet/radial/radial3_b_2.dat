@@ -1,0 +1,10 @@
+#
+# enemy3 boss
+#
+
+[basic]
+bullet_unit=units/bullet/big_point/enemy/big_point.unit
+bullet_track_type=RADIAL
+bullet_num=SINGLE
+bullet_face=E
+[/basic]

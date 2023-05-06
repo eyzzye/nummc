@@ -1,0 +1,16 @@
+#
+# heart_full_up animation (type=IDLE)
+#
+
+[frame]
+duration=200,100
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/items/recovery/heart_full_up/
+path=heart_full_up_idle1.png,heart_full_up_idle2.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

@@ -1,0 +1,16 @@
+#
+# damage animation (type=IDLE)
+#
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=3
+dir_path=images/units/effect/damage/
+path=damage.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

@@ -1,0 +1,16 @@
+#
+# unknown animation (type=IDLE)
+#
+
+[frame]
+duration=200,200,200,200,200,200
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/items/special/unknown/
+path=unknown1.png,unknown2.png,unknown3.png,unknown4.png,unknown5.png,unknown6.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

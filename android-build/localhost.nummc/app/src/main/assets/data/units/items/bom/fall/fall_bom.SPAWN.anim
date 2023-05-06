@@ -1,0 +1,17 @@
+#
+# fall bom animation (type=SPAWN)
+#
+
+[frame]
+duration=1000,100
+command=1
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/common/
+path=invisible.png,invisible.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

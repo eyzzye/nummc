@@ -1,0 +1,18 @@
+#
+# id=1 terrain
+#
+
+[tile]
+breakable=no
+[/tile]
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=1
+dir_path=images/map/stage4/
+path=1.png
+effect=tile_clip(0:0:32:32)
+[/img]

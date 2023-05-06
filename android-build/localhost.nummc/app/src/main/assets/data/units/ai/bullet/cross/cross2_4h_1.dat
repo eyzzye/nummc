@@ -1,0 +1,10 @@
+#
+# enemy2 4h
+#
+
+[basic]
+bullet_unit=units/bullet/point/enemy/point.unit
+bullet_track_type=CROSS
+bullet_num=QUADRUPLE
+bullet_face=W
+[/basic]

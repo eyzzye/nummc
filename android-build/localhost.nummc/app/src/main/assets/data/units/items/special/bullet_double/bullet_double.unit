@@ -1,0 +1,27 @@
+#
+# bullet_double
+#
+
+[unit]
+group=SPECIAL
+item_id=10
+[/unit]
+
+[collision]
+type=ROUND
+group=ITEMS
+x=16
+y=16
+r=12
+vec_x_max=4.0
+vec_y_max=4.0
+vec_x_delta=1.0
+vec_y_delta=1.0
+[/collision]
+
+[anim]
+base_w=32
+base_h=32
+units/items/special/bullet_double/bullet_double.IDLE.anim
+units/items/special/bullet_double/bullet_double.DIE.anim
+[/anim]

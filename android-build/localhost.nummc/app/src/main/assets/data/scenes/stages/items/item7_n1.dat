@@ -1,0 +1,6 @@
+[drop_items]
+units/items/stock/simple_bom/simple_bom.unit
+[/drop_items]
+[goal_items]
+units/items/special/unknown/unknown.unit
+[/goal_items]

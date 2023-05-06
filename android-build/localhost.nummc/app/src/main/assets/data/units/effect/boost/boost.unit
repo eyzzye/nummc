@@ -1,0 +1,23 @@
+#
+# boost
+#
+
+[unit]
+group=DYNAMIC
+[/unit]
+
+[collision]
+type=BOX
+group=NONE
+x=0
+y=0
+w=32
+h=32
+[/collision]
+
+[anim]
+base_w=32
+base_h=32
+units/effect/boost/boost.IDLE.anim
+units/effect/boost/boost.HIDE.anim
+[/anim]

@@ -1,0 +1,22 @@
+#
+# booster animation (type=SPAWN)
+#
+
+[frame]
+duration=80
+[/frame]
+
+[img]
+layer=3
+dir_path=images/units/items/stock/booster/
+path=booster.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+dir_path=sounds/
+path=sfx_drop.ogg
+volume=*
+[/snd]

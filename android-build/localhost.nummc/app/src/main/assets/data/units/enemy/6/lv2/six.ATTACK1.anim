@@ -1,0 +1,23 @@
+#
+# six animation (type=ATTACK)
+#
+
+[frame]
+duration=400,100,200
+command=2
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/enemy/6/
+path=six_attack1.png,six_attack2.png,six_attack1.png
+offset_x=*
+offset_y=*
+effect=color:S:0:0:0:D:255:0:0
+[/img]
+
+[snd]
+dir_path=sounds/
+path=*,sfx_click1.ogg,*
+volume=*
+[/snd]

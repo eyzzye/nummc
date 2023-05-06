@@ -1,0 +1,11 @@
+[items]
+type=units/items/tbox/tresure_random/9/tresure_random_n1.unit
+[/items]
+
+[drop_items]
+units/items/special/strength_up/strength_up.unit
+units/items/recovery/heart/heart.unit
+[/drop_items]
+[goal_items]
+units/items/tbox/tresure_random/9/tresure_random_n1.unit
+[/goal_items]

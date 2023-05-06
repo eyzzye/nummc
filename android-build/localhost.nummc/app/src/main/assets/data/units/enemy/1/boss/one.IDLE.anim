@@ -1,0 +1,16 @@
+#
+# one animation (type=IDLE)
+#
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/enemy/1/boss/
+path=one_idle1.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

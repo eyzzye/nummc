@@ -1,0 +1,7 @@
+[drop_items]
+units/items/special/bullet_rate_up/rate.unit
+units/items/recovery/heart/heart.unit
+[/drop_items]
+[goal_items]
+units/items/stock/rampage/rampage.unit
+[/goal_items]

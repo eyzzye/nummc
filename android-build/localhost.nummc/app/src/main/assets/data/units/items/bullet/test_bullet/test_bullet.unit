@@ -1,0 +1,30 @@
+#
+# test_bullet
+#
+
+[unit]
+group=BULLET
+item_id=2
+# g_player_bullet_path[index]
+val1=2
+[/unit]
+
+[collision]
+type=BOX
+group=ITEMS
+x=0
+y=0
+w=32
+h=32
+vec_x_max=4.0
+vec_y_max=4.0
+vec_x_delta=1.0
+vec_y_delta=1.0
+[/collision]
+
+[anim]
+base_w=32
+base_h=32
+units/items/bullet/test_bullet/test_bullet.IDLE.anim
+units/items/bullet/test_bullet/test_bullet.DIE.anim
+[/anim]

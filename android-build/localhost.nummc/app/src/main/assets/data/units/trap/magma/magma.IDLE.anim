@@ -1,0 +1,16 @@
+#
+# magma animation (type=IDLE)
+#
+
+[frame]
+duration=200,200,200,200
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/trap/magma/
+path=magma_idle1.png,magma_idle2.png,magma_idle3.png,magma_idle4.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

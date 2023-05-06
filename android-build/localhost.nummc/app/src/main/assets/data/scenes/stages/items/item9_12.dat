@@ -1,0 +1,6 @@
+[drop_items]
+units/items/special/strength_up/strength_up.unit
+[/drop_items]
+[goal_items]
+units/items/special/goto_hell/goto_hell.unit
+[/goal_items]

@@ -1,0 +1,22 @@
+#
+# heart_full animation (type=DIE)
+#
+
+[frame]
+duration=300
+[/frame]
+
+[img]
+layer=3
+dir_path=images/units/items/recovery/heart_full/
+path=heart_full_die1.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+dir_path=sounds/
+path=sfx_select1.ogg
+volume=*
+[/snd]

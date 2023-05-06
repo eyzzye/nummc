@@ -1,0 +1,23 @@
+#
+# fin-n2
+#
+
+[enemy]
+type=units/enemy/2/boss/two.unit
+x=176
+y=80
+vec_x=0
+vec_y=0
+delay=0
+face=W
+[/enemy]
+
+[enemy]
+type=units/enemy/3/boss/three.unit
+x=272
+y=80
+vec_x=0
+vec_y=0
+delay=0
+face=W
+[/enemy]

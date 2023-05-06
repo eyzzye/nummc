@@ -1,0 +1,28 @@
+[img]
+{scale_mode:linear}images/gui/button/cursor.png
+{scale_mode:linear}images/gui/button/cancel.png
+{scale_mode:linear}images/gui/button/ok.png
+{scale_mode:linear}images/gui/button/no.png
+{scale_mode:linear}images/gui/button/yes.png
+[/img]
+[font]
+{48,204:204:204:204,-,-}STAGE 1
+{48,204:204:204:204,-,-}STAGE 2
+{48,204:204:204:204,-,-}STAGE 3
+{48,204:204:204:204,-,-}STAGE 4
+{48,204:204:204:204,-,-}STAGE 5
+{48,204:204:204:204,-,-}STAGE 6
+{48,204:204:204:204,-,-}STAGE 7
+{48,204:204:204:204,-,-}STAGE 8
+{48,204:204:204:204,-,-}STAGE 9
+{48,204:204:204:204,-,-}STAGE final
+[/font]
+[music]
+[/music]
+[snd]
+sounds/sfx_select1.ogg
+sounds/sfx_click1.ogg
+sounds/sfx_cancel1.ogg
+sounds/sfx_warning1.ogg
+sounds/sfx_error1.ogg
+[/snd]

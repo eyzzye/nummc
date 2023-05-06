@@ -1,0 +1,16 @@
+#
+# range animation (type=IDLE)
+#
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/items/special/bullet_range_up/
+path=range.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

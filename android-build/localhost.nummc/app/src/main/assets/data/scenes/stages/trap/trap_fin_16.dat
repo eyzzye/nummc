@@ -1,0 +1,11 @@
+[trap]
+type=units/trap/ice_field/ice_field.unit
+x=64,96,64
+y=96,128,160
+[/trap]
+
+[trap]
+type=units/trap/spike/spike.unit
+x=128,160,128
+y=64,96,128
+[/trap]

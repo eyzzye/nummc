@@ -1,0 +1,33 @@
+#
+# tresure_static
+#
+
+[unit]
+group=TBOX
+item_id=1
+# item count
+val1=1
+# RECOVERY | HEART_FULL
+val2=262147
+[/unit]
+
+[collision]
+type=BOX
+group=ITEMS
+x=4
+y=12
+w=23
+h=15
+vec_x_max=4.0
+vec_y_max=4.0
+vec_x_delta=1.0
+vec_y_delta=1.0
+[/collision]
+
+[anim]
+base_w=32
+base_h=32
+units/items/tbox/tresure_static/tresure_static.IDLE.anim
+units/items/tbox/tresure_static/tresure_static.DIE.anim
+units/items/tbox/tresure_static/tresure_static.SPAWN.anim
+[/anim]

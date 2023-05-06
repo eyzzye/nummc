@@ -1,0 +1,23 @@
+#
+# x animation (type=ATTACK2)
+#
+
+[frame]
+duration=50,150,80,80,200,400
+#command=4
+[/frame]
+
+[img]
+layer=2
+dir_path=images/units/enemy/x/boss/
+path=x_attack2_1.png,x_attack2_2.png,x_attack2_3.png,x_attack2_4.png,x_attack2_5.png,x_attack2_4.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+dir_path=sounds/
+path=*
+volume=*
+[/snd]

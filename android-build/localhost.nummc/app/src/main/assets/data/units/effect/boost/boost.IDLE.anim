@@ -1,0 +1,16 @@
+#
+# boost animation (type=IDLE)
+#
+
+[frame]
+duration=100,100,100,100
+[/frame]
+
+[img]
+layer=3
+dir_path=images/units/effect/boost/
+path=boost_idle1.png,boost_idle2.png,boost_idle3.png,boost_idle4.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

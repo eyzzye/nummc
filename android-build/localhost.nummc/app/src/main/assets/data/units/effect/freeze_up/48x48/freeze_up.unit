@@ -1,0 +1,23 @@
+#
+# freeze_up
+#
+
+[unit]
+group=DYNAMIC
+[/unit]
+
+[collision]
+type=BOX
+group=NONE
+x=0
+y=0
+w=48
+h=48
+[/collision]
+
+[anim]
+base_w=48
+base_h=48
+units/effect/freeze_up/48x48/freeze_up.IDLE.anim
+units/effect/freeze_up/48x48/freeze_up.HIDE.anim
+[/anim]

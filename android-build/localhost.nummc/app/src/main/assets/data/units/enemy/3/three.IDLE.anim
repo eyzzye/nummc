@@ -1,0 +1,16 @@
+#
+# three animation (type=IDLE)
+#
+
+[frame]
+duration=200,200
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/enemy/3/
+path=three_idle1.png,three_idle2.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

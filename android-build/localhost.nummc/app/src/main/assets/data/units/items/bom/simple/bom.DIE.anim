@@ -1,0 +1,24 @@
+#
+# bom animation (type=DIE)
+#
+
+[frame]
+duration=40,600
+command=1
+[/frame]
+
+[img]
+layer=3
+dir_path=images/units/items/bom/simple/
+path=bom_die1.png,bom_die1.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+channel=4
+dir_path=sounds/
+path=sfx_bom.ogg,*
+volume=*
+[/snd]

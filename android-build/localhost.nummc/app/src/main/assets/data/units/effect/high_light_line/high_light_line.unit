@@ -1,0 +1,24 @@
+#
+# high_light_line
+#
+
+[unit]
+group=DIE_AUTO
+life_timer=1000
+[/unit]
+
+[collision]
+type=BOX
+group=NONE
+x=0
+y=0
+w=32
+h=32
+[/collision]
+
+[anim]
+base_w=32
+base_h=32
+units/effect/high_light_line/high_light_line.IDLE.anim
+units/effect/high_light_line/high_light_line.DIE.anim
+[/anim]

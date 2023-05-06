@@ -1,0 +1,23 @@
+#
+# five animation (type=ATTACK)
+#
+
+[frame]
+duration=50,100
+command=1
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/enemy/5/
+path=five.png,five.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]
+
+[snd]
+dir_path=sounds/
+path=sfx_click1.ogg,*
+volume=*
+[/snd]

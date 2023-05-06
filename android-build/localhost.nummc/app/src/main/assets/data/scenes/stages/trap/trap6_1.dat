@@ -1,0 +1,5 @@
+[trap]
+type=units/trap/magma/magma.unit
+x=192,128,320,256
+y=64,128,128,192
+[/trap]

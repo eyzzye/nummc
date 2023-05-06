@@ -1,0 +1,23 @@
+#
+# 8-n2
+#
+
+[enemy]
+type=units/enemy/8/eight.unit
+x=160,288,416,64,160,288,32,160,288,416
+y=64,64,64,96,128,128,192,192,192,192
+vec_x=0,0,0,0,0,0,0,0,0,0
+vec_y=0,0,0,0,0,0,0,0,0,0
+delay=0,0,0,0,0,0,0,0,0,0
+face=W,W,W,W,W,W,W,W,W,W
+[/enemy]
+
+[enemy]
+type=units/enemy/8/lv2/eight.unit
+x=128,64
+y=96,224
+vec_x=0,0
+vec_y=0,0
+delay=0,0
+face=W,W
+[/enemy]

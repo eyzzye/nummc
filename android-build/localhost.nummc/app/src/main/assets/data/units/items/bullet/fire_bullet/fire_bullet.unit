@@ -1,0 +1,29 @@
+#
+# fire_bullet
+#
+
+[unit]
+group=BULLET
+item_id=4
+# g_player_bullet_path[index]
+val1=3
+[/unit]
+
+[collision]
+type=ROUND
+group=ITEMS
+x=16
+y=16
+r=12
+vec_x_max=4.0
+vec_y_max=4.0
+vec_x_delta=1.0
+vec_y_delta=1.0
+[/collision]
+
+[anim]
+base_w=32
+base_h=32
+units/items/bullet/fire_bullet/fire_bullet.IDLE.anim
+units/items/bullet/fire_bullet/fire_bullet.DIE.anim
+[/anim]

@@ -1,0 +1,23 @@
+#
+# magma
+#
+
+[unit]
+group=FIRE
+hp=5
+[/unit]
+
+[collision]
+type=BOX_S
+group=TRAP
+x=0
+y=0
+w=32
+h=32
+[/collision]
+
+[anim]
+base_w=32
+base_h=32
+units/trap/magma/magma.IDLE.anim
+[/anim]

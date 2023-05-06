@@ -1,0 +1,4 @@
+[drop_items]
+units/items/stock/simple_bom/simple_bom.unit
+units/items/stock/shield/shield.unit
+[/drop_items]

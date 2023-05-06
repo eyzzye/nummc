@@ -1,0 +1,16 @@
+#
+# bom_bottle animation (type=IDLE)
+#
+
+[frame]
+duration=*
+[/frame]
+
+[img]
+layer=1
+dir_path=images/units/items/stock/charge/bom_bottle/
+path=bom_idle1.png
+offset_x=*
+offset_y=*
+effect=*
+[/img]

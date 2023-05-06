@@ -1,0 +1,23 @@
+#
+# 7-8
+#
+
+[enemy]
+type=units/enemy/2/reg_fire/two.unit
+x=64
+y=224
+vec_x=0
+vec_y=0
+delay=0
+face=W
+[/enemy]
+
+[enemy]
+type=units/enemy/7/lv3/seven.unit
+x=288,32
+y=32,224
+vec_x=0,0
+vec_y=0,0
+delay=0,0
+face=W,W
+[/enemy]

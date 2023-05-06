@@ -1,0 +1,30 @@
+[basic_info]
+id=infinity_opening
+[/basic_info]
+[img]
+{scale_mode:linear}images/story/opening/1/opening.png
+[/img]
+[bgm]
+#music/title.ogg
+[/bgm]
+[auto_text]
+time=2000
+ 
+1+1=2
+1+1+1=3
+1+1+1+1=4
+1+1+1+1+1=5
+ 
+1+1+1+1+1+...=
+ 
+1+1+1+1+1+...=
+ 
+1+1+1+1+1+...=∞
+ 
+I can't see.
+I don't know.
+out of range.
+unexpectable.
+the factor of confusion.
+Eliminate now!
+[/auto_text]

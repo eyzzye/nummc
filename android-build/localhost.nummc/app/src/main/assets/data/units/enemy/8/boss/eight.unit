@@ -1,0 +1,52 @@
+#
+# eight
+#
+
+[unit]
+hp=180
+bullet_life_timer=500
+bullet_curving=5
+speed=7
+strength=5
+exp=50
+hp_max=180
+exp_max=0
+level=8
+next_level=null
+[/unit]
+
+[collision]
+type=BOX
+group=ENEMY
+x=7
+y=17
+w=50
+h=30
+face_type=ALL
+vec_x_max=2.0
+vec_y_max=2.0
+vec_x_delta=2.0
+vec_y_delta=2.0
+[/collision]
+
+[anim]
+base_w=64
+base_h=64
+units/enemy/8/boss/eight.IDLE.anim
+units/enemy/8/boss/eight.MOVE.anim
+units/enemy/8/boss/eight.ATTACK1.anim
+units/enemy/8/boss/eight.DIE.anim
+[/anim]
+
+[ai]
+type=BOSS_EIGHT
+
+# AI_PARAM_SLOPE_ATTACK
+val1=8
+# attack_region_width
+val2=0
+# decision_count
+val3=20
+# spawn_on
+val4=0
+[/ai]

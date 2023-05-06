@@ -1,0 +1,23 @@
+#
+# 8-7
+#
+
+[enemy]
+type=units/enemy/7/seven.unit
+x=32
+y=32
+vec_x=0
+vec_y=0
+delay=0
+face=W
+[/enemy]
+
+[enemy]
+type=units/enemy/8/eight.unit
+x=416,160,288,32,416
+y=32,128,128,224,224
+vec_x=0,0,0,0,0
+vec_y=0,0,0,0,0
+delay=0,0,0,0,0
+face=W,W,W,W,W
+[/enemy]
