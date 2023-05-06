@@ -10,6 +10,11 @@
 #include "dialog_message.h"
 #include "game_log.h"
 #include "game_utils.h"
+#include "gui_loading.h"
+
+#ifdef _ANDROID
+#include "gui_touch_control.h"
+#endif
 
 static bool quit = false;
 
@@ -42,11 +47,20 @@ void game_loop_main()
 	game_timer_init();
 	game_timer_start();
 
+	// show loading & init all scene
+    gui_loading_init();
+    scene_manager_start_loading();
+
 	// common dialog
 	dialog_message_init();
 
+#ifdef _ANDROID
+	// gui_touch_control
+	gui_touch_control_init();
+#endif
+
 	// load TopMenu
-	scene_manager_load(SCENE_ID_TOP_MENU, false);
+	scene_manager_load(SCENE_ID_TOP_MENU);
 
 	quit = false;
 	while (!quit) {
@@ -64,17 +78,37 @@ void game_loop_main()
 				game_exit();
 				quit = true;
 			}
+#ifdef _ANDROID
+			else if ((e.type == SDL_FINGERDOWN) || (e.type == SDL_FINGERUP) || (e.type == SDL_FINGERMOTION)) {
+				gui_touch_control_touch_event_set(&e);
+			}
+#endif
 			else {
 				scene_manager_key_event(&e);
 			}
 		}
 		if (quit) continue;
 
+#ifdef _ANDROID
+		gui_touch_control_key_send();
+#endif
+
+		int frame_loop_num = 0;
 		while(game_timer_get_delta_time() == ONE_FRAME_TIME) {
-			// main process
-			scene_manager_main_event();
+			if(frame_loop_num < 32) {
+				// main process
+				scene_manager_main_event();
+			}
+			//else {
+			//	// over 32 frame, skip
+			//}
+
 			if (quit) continue;  // called game_loop_exit() in main_event()
+			frame_loop_num += 1;
 		}
+		//if (frame_loop_num > 2) {
+		//	LOG_DEBUG("frame_loop_num:  %d\n", frame_loop_num);
+		//}
 
 		// draw
 		scene_manager_pre_draw();

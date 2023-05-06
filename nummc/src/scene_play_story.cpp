@@ -8,13 +8,18 @@
 #include "sound_manager.h"
 #include "story_manager.h"
 #include "game_key_event.h"
+#include "game_mouse_event.h"
+#include "gui_loading.h"
 #include "game_window.h"
 #include "game_timer.h"
 #include "game_utils.h"
 #include "game_log.h"
 #include "game_save.h"
-#include "scene_loading.h"
 #include "scene_play_stage.h"
+
+#ifdef _ANDROID
+#include "gui_touch_control.h"
+#endif
 
 #define SCENE_PLAY_STORY_AUTO_TEXT_END  32
 tex_info_t tex_info_auto_text[SCENE_PLAY_STORY_AUTO_TEXT_END];
@@ -40,15 +45,17 @@ static void set_stat_event(int stat);
 static SceneManagerFunc scene_func;
 static int scene_stat;
 static bool is_opening;
-static bool draw_dirt;
 
 static void pre_event() {
+	if (scene_stat != SCENE_STAT_ACTIVE) return;
 
+	game_mouse_event_reset();
 }
 static void key_event(SDL_Event* e) {
 	if (scene_stat != SCENE_STAT_ACTIVE) return;
 
 	game_key_event_set(e);
+	game_mouse_event_set(e);
 }
 static void main_event() {
 	if (!auto_text_finish) auto_text_timer += g_delta_time;
@@ -56,7 +63,6 @@ static void main_event() {
 
 	if ((!auto_text_finish) && (auto_text_timer > (auto_text_index + 1) * auto_text_wait_time)) {
 		auto_text_index += 1;
-		draw_dirt = true;
 
 		if (auto_text_index >= tex_info_auto_text_size) {
 			auto_text_finish = true;
@@ -67,7 +73,6 @@ static void main_event() {
 		if (enter_text_blink_timer > ENTER_TEXT_BLINK_TIME) {
 			enter_text_blink_timer = 0;
 			enter_text_disp = !enter_text_disp;
-			draw_dirt = true;
 		}
 	}
 
@@ -76,7 +81,7 @@ static void main_event() {
 			const char* start_stage = "1";
 
 			// set loading data (set bin data)
-			scene_loading_set_stage(start_stage);
+			gui_loading_set_stage(start_stage);
 			scene_play_stage_set_stage_id(start_stage);
 
 			// loading play stage
@@ -99,28 +104,29 @@ static void pre_draw() {
 static void draw() {
 	if (scene_stat != SCENE_STAT_ACTIVE) return;
 
-	if (draw_dirt) {
-		// set background
-		SDL_SetRenderDrawColor(g_ren, 0, 0, 0, 255);
-		SDL_RenderClear(g_ren);
-		SDL_SetRenderDrawColor(g_ren, 16, 16, 16, 255);
-		SDL_RenderFillRect(g_ren, &g_screen_size);
+	// set background
+	SDL_SetRenderDrawColor(g_ren, 0, 0, 0, 255);
+	SDL_RenderClear(g_ren);
+	SDL_SetRenderDrawColor(g_ren, 16, 16, 16, 255);
+	SDL_RenderFillRect(g_ren, &g_screen_size);
 
-		// background image
-		if (tex_info_background.res_img) GUI_tex_info_draw(&tex_info_background);
+	// background image
+	if (tex_info_background.res_img) GUI_tex_info_draw(&tex_info_background);
 
-		if (auto_text_finish) {
-			if (enter_text_disp) GUI_tex_info_draw(&tex_info_enter);
-		}
-		else {
-			// auto text
-			GUI_tex_info_draw(&tex_info_auto_text[auto_text_index]);
-		}
-
-		SDL_RenderPresent(g_ren);
-
-		draw_dirt = false;
+	if (auto_text_finish) {
+		if (enter_text_disp) GUI_tex_info_draw(&tex_info_enter);
 	}
+	else {
+		// auto text
+		GUI_tex_info_draw(&tex_info_auto_text[auto_text_index]);
+	}
+
+#ifdef _ANDROID
+	// draw gui_touch_control
+	gui_touch_control_draw();
+#endif
+
+	SDL_RenderPresent(g_ren);
 }
 static void after_draw() {
 
@@ -138,10 +144,11 @@ static void load_event() {
 	game_key_event_init();
 	game_key_event_set_key(SDL_SCANCODE_RETURN);
 
+	game_mouse_event_init(0, 400, 200, 150, 5);
+
 	auto_text_timer = 0;
 	auto_text_wait_time = g_story_data->auto_text_time;
 	auto_text_index = 0;
-	draw_dirt = true;
 
 	enter_text_blink_timer = 0;
 	enter_text_disp = false;

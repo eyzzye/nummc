@@ -6,16 +6,13 @@
 #include "scene_settings_menu.h"
 #include "scene_play_stage.h"
 #include "scene_play_story.h"
-#include "scene_loading.h"
 #include "scene_escape_menu.h"
+#include "gui_loading.h"
+#include "game_utils.h"
 #include "game_log.h"
-
-static bool loading_enable;
-static bool pre_load_stat;
-static SDL_Thread* pre_load_th;
+#include "game_timer.h"
 
 static int scene_id;
-static int next_scene_id;
 static SceneManagerFunc scene_func;
 
 static SceneManagerFunc* get_scene_func(int id)
@@ -40,10 +37,6 @@ static SceneManagerFunc* get_scene_func(int id)
 		return scene_settings_menu_get_func();
 
 	}
-	else if (id == SCENE_ID_LOADING) {
-		return scene_loading_get_func();
-
-	}
 	else if (id == SCENE_ID_ESCAPE_MENU) {
 		return scene_escape_menu_get_func();
 
@@ -56,22 +49,29 @@ int scene_manager_get_scene_id()
 	return scene_id;
 }
 
-void scene_manager_init()
+int scene_manager_start_loading()
 {
+	gui_loading_focus(true);
+
+	// load common resource files
+	resource_manager_load_dat((char*)"scenes/scene_common.dat");
+
+	// init all scene
 	scene_top_menu_init();
 	scene_play_stage_init();
 	scene_play_story_init();
 	scene_save_menu_init();
 	scene_settings_menu_init();
-	scene_loading_init();
 	scene_escape_menu_init();
 
-	loading_enable = false;
-	pre_load_stat = false;
-	pre_load_th = NULL;
+	gui_loading_focus(false);
 
+	return 0;
+}
+
+void scene_manager_init()
+{
 	scene_id = SCENE_ID_NONE;
-	next_scene_id = SCENE_ID_NONE;
 }
 
 int scene_manager_load(int id, bool loading_on)
@@ -80,14 +80,15 @@ int scene_manager_load(int id, bool loading_on)
 		return 1;
 	}
 
-	if (loading_on) {
-		loading_enable = true;
-		SceneManagerFunc* func = get_scene_func(id);
-		func->set_stat_event(SCENE_STAT_LOADING);
-		pre_load_th = SDL_CreateThread(func->pre_load_event, "pre_load_event", (void*)NULL);
+	game_timer_pause(true);
 
-		next_scene_id = id;
-		id = SCENE_ID_LOADING;
+	if (loading_on) {
+		gui_loading_focus(true);
+
+		SceneManagerFunc* func = get_scene_func(id);
+		func->pre_load_event(NULL);
+
+		gui_loading_focus(false);
 	}
 
 	{
@@ -111,57 +112,11 @@ int scene_manager_load(int id, bool loading_on)
 
 		scene_manager_set_stat_event(SCENE_STAT_ACTIVE);
 		scene_id = id;
-		if (!loading_on) next_scene_id = SCENE_ID_NONE;
 	}
+
+	game_timer_pause(false);
 
 	return 0;
-}
-
-// loading function
-bool scene_manager_get_pre_load_stat()
-{
-	return pre_load_stat;
-}
-void scene_manager_set_pre_load_stat(bool stat)
-{
-	pre_load_stat = stat;
-}
-
-int scene_manager_loading_finish()
-{
-	if (loading_enable) {
-		// terminate thread
-		SDL_WaitThread(pre_load_th, NULL);
-		pre_load_th = NULL;
-
-		// load next scene
-		SceneManagerFunc* func = get_scene_func(next_scene_id);
-		if (func == NULL) { return 1; }
-
-		loading_enable = false;
-		scene_manager_set_pre_load_stat(false);
-		scene_manager_set_stat_event(SCENE_STAT_IDLE); // set loading stat
-
-		scene_func.pre_event      = func->pre_event;
-		scene_func.key_event      = func->key_event;
-		scene_func.main_event     = func->main_event;
-		scene_func.pre_draw       = func->pre_draw;
-		scene_func.draw           = func->draw;
-		scene_func.after_draw     = func->after_draw;
-		scene_func.pre_load_event = func->pre_load_event;
-		scene_func.load_event     = func->load_event;
-		scene_func.unload_event   = func->unload_event;
-		scene_func.get_stat_event = func->get_stat_event;
-		scene_func.set_stat_event = func->set_stat_event;
-		(*scene_func.load_event)();
-
-		scene_manager_set_stat_event(SCENE_STAT_ACTIVE);
-		scene_id = next_scene_id;
-		next_scene_id = SCENE_ID_NONE;
-
-		return 0;
-	}
-	return 1;
 }
 
 void scene_manager_pre_event()

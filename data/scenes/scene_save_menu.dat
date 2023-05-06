@@ -1,7 +1,5 @@
 [img]
 {scale_mode:linear}images/gui/button/delete.png
-{scale_mode:linear}images/gui/button/cancel.png
-{scale_mode:linear}images/gui/button/ok.png
 [/img]
 [font]
 Save
@@ -25,9 +23,4 @@ Overwrite?
 music/save_menu.ogg
 [/music]
 [snd]
-sounds/sfx_select1.ogg
-sounds/sfx_click1.ogg
-sounds/sfx_cancel1.ogg
-sounds/sfx_warning1.ogg
-sounds/sfx_error1.ogg
 [/snd]

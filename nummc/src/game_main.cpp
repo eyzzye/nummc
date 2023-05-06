@@ -9,6 +9,25 @@
 #include "game_save.h"
 #include "game_log.h"
 
+#ifndef _WIN32 // Linux, Other
+#include <getopt.h>
+static struct option long_options[] =
+{
+	{"help",     no_argument,       0, 'h'},
+	{"version",  no_argument,       0, 'v'},
+	{0, 0, 0, 0}
+};
+
+void usage() {
+	printf("Usage: nummc [OPTIONS] \n\n");
+	printf("  -h, --help                 Displays this help\n");
+	printf("  -v, --version              Print version number and exit\n");
+}
+void version() {
+	printf(GAME_VERSION);
+}
+#endif
+
 int g_base_path_size;
 char g_base_path[MEMORY_MANAGER_STRING_BUF_SIZE];
 
@@ -51,6 +70,25 @@ int main(int argc, char** argv)
 {
 	int error = 0;
 
+#ifndef _WIN32 // Linux, Other
+	int opt_c;
+	while ((opt_c = getopt_long (argc, argv, "hv", long_options, NULL)) != -1) {
+		switch (opt_c) {
+			case 'h':
+				usage();
+				return 0;
+				break;
+			case 'v':
+				version();
+				return 0;
+				break;
+			default:
+				return 1;
+				break;
+		}
+	}
+#endif
+
 	// init memory
 	if (memory_manager_init() != 0) {
 		memory_manager_unload();
@@ -79,6 +117,22 @@ int main(int argc, char** argv)
 		quit_sdl2();
 		return 1;
 	}
+
+#ifdef GAME_LOG_DEBUG_ENABLE
+	// SDL lib build versions
+	SDL_version sdl_ver;
+	SDL_VERSION((&sdl_ver));
+	LOG_DEBUG("SDL Build version: %d.%d.%d\n", sdl_ver.major, sdl_ver.minor, sdl_ver.patch);
+	SDL_IMAGE_VERSION((&sdl_ver));
+	LOG_DEBUG("SDL2_Image Build version: %d.%d.%d\n", sdl_ver.major, sdl_ver.minor, sdl_ver.patch);
+	SDL_MIXER_VERSION((&sdl_ver));
+	LOG_DEBUG("SDL2_Mixer Build version: %d.%d.%d\n", sdl_ver.major, sdl_ver.minor, sdl_ver.patch);
+	SDL_TTF_VERSION((&sdl_ver));
+	LOG_DEBUG("SDL2_Ttf Build version: %d.%d.%d\n", sdl_ver.major, sdl_ver.minor, sdl_ver.patch);
+
+	// other lib build versions
+	LOG_DEBUG("Box2D Build version: %d.%d.%d\n", b2_version.major, b2_version.minor, b2_version.revision);
+#endif
 
 	error = game_window_create();
 	if (error) {

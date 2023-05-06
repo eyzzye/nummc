@@ -2,6 +2,8 @@
 #include "game_common.h"
 
 extern int g_key_event_enable[];
+extern Uint8 keyStat[SDL_NUM_SCANCODES];
+extern int keyWait[SDL_NUM_SCANCODES];
 
 extern void game_key_event_init();
 extern void game_key_event_set_key(int key_code);

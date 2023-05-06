@@ -14,6 +14,11 @@
 #include <dirent.h>
 #endif
 
+#ifdef _ANDROID
+#include <jni.h>
+#include <android/asset_manager_jni.h>
+#endif
+
 #include "game_window.h"
 #include "game_log.h"
 #include "memory_manager.h"
@@ -98,6 +103,11 @@ int game_utils_get_base_path()
 		LOG_ERROR_CONSOLE("GetBasePath Error: %s\n", SDL_GetError());
 		return 1;
 	}
+	return 0;
+#elif _ANDROID
+	// Android os refer Asset Data. access by the reletive path.
+	g_base_path[0] = '\0';
+	g_base_path_size = 0;
 	return 0;
 #else
 	struct stat path_stat;
@@ -343,6 +353,74 @@ int game_utils_files_get_file_list(char* path, char* filter, char* file_list, in
 		}
 	} while (FindNextFileA(h_find, &find_file_data) != 0);
 	FindClose(h_find);
+
+#elif _ANDROID
+	char* extention = NULL;
+	int extention_size = (int)strlen(filter);
+	if ((extention_size >= 3) && (filter[0] == '*') && (filter[1] == '.')) {
+		extention = &filter[1];
+	}
+	else if ((extention_size >= 2) && (filter[0] == '.')) {
+		extention = &filter[0];
+	}
+	else {
+		//extention = NULL;
+        LOG_ERROR("game_utils_files_get_file_list() need extention.\n");
+        return list_size;
+	}
+
+	// JNI variables
+	JNIEnv *env = (JNIEnv*)SDL_AndroidGetJNIEnv();
+	jobject context;
+	jobject javaAssetManager;
+	jobject javaAssetManagerRef = NULL;
+	jobject stringArray;
+	jmethodID mid;
+
+	// javaAssetManager = context.getAssets();
+	context = (jobject)SDL_AndroidGetActivity();
+	mid = env->GetMethodID(env->GetObjectClass(context),
+			"getAssets", "()Landroid/content/res/AssetManager;");
+	javaAssetManager = env->CallObjectMethod(context, mid);
+
+	// prevent garbage collection
+	javaAssetManagerRef = env->NewGlobalRef(javaAssetManager);
+	if (javaAssetManagerRef == NULL) {
+		LOG_ERROR("game_utils_files_get_file_list() can't get javaAssetManager\n");
+		return list_size;
+	}
+
+	// call "String[] AssetManager::list(String)"
+	mid = env->GetMethodID(env->GetObjectClass(javaAssetManager),
+			"list", "(Ljava/lang/String;)[Ljava/lang/String;");
+	jstring string_path = env->NewStringUTF(path);
+	stringArray = env->CallObjectMethod(javaAssetManager, mid, string_path);
+
+	jsize all_list_size = env->GetArrayLength((jarray)stringArray);
+	if (all_list_size <= 0) {
+		LOG_ERROR("game_utils_files_get_file_list() has no file at %s\n", path);
+	}
+	else {
+		// check all file extention
+		for (int i=0; i < all_list_size; i++) {
+			jstring current_name = (jstring)env->GetObjectArrayElement((jobjectArray)stringArray, i);
+			const char *tmp_name = env->GetStringUTFChars(current_name, 0);
+
+			int current_ext_size = 0;
+			char current_ext[32];
+			current_ext_size = game_utils_get_extention((char *)tmp_name, current_ext);
+
+			if ((current_ext_size > 0) && (strcmp(current_ext, extention) == 0)) {
+				// store file name to file_list[]
+				game_utils_string_copy(&file_list[list_size * file_list_line_size], tmp_name);
+				list_size++;
+			}
+		}
+	}
+
+	// release reference
+	env->DeleteGlobalRef(javaAssetManagerRef);
+
 #else
 	char* extention = NULL;
 	int extention_size = (int)strlen(filter);
@@ -383,6 +461,9 @@ int game_utils_files_get_file_list(char* path, char* filter, char* file_list, in
 				}
 			}
 		}
+	}
+	else {
+		LOG_ERROR("game_utils_files_get_file_list() top_dir is NULL\n");
 	}
 	closedir(top_dir);
 #endif
@@ -878,7 +959,7 @@ int game_utils_expand_value(std::string str, std::string& expand_str)
 
 		// copy expand section (",b[1-4].png," => ",b1.png,b2png,b3.png,b4.png")
 		for (int e_i = start_num; e_i <= end_num; e_i++) {
-			char buff_c[4] = { '\0', '\0', '\0', '\0' }; // 3Œ…+NULL•¶Žš
+			char buff_c[4] = { '\0', '\0', '\0', '\0' }; // 3 num char + NULL string
 			if (_itoa_s(e_i, buff_c, 10) == 0) {
 				std::string expand_num_str = buff_c;
 				if ((e_i == start_num) && start_comma_none) {

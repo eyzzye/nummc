@@ -3,6 +3,8 @@
 
 #ifdef _WIN32
 #include <io.h>
+#elif _ANDROID
+// not use access() function
 #else
 #include <sys/io.h>
 #include <unistd.h>
@@ -525,6 +527,16 @@ int game_save_init()
 			if (game_save_save_ini_file(g_save_path) != 0) return 1;
 		}
 	}
+#elif _ANDROID
+	if (game_utils_string_copy(g_save_path, (char*)"save_data.ini") == 0) {
+		//if (1) { // enable, if overwrite by default values
+		if (game_save_load_ini_file(g_save_path) != 0) {
+			// create new file, copy template ini file:
+			if (game_utils_string_copy(save_template_path, "data/temp/save_data_template.ini") != 0) return 1;
+			if (game_save_load_ini_file(save_template_path) != 0) return 1;
+			if (game_save_save_ini_file(g_save_path) != 0) return 1;
+		}
+	}
 #else
 	tmp_path = getenv("HOME");
 	if (tmp_path) {
@@ -864,9 +876,18 @@ int game_save_set_config_slot(int slot_index, char* player, char* stage, bool in
 	game_utils_get_localtime(tmp_char_buf, sizeof(tmp_char_buf));
 
 	// save values for save menu display
-	if (set_config_slot_str(slot_index, GAME_SAVE_SLOT_ID_PLAYER, player) != 0) return 1;
-	if (set_config_slot_str(slot_index, GAME_SAVE_SLOT_ID_STAGE, stage) != 0) return 1;
-	if (set_config_slot_str(slot_index, GAME_SAVE_SLOT_ID_TIMESTAMP, tmp_char_buf) != 0) return 1;
+	if (set_config_slot_str(slot_index, GAME_SAVE_SLOT_ID_PLAYER, player) != 0) {
+		LOG_ERROR("game_save_set_config_slot() player=%s\n", player);
+		return 1;
+	}
+	if (set_config_slot_str(slot_index, GAME_SAVE_SLOT_ID_STAGE, stage) != 0) {
+		LOG_ERROR("game_save_set_config_slot() stage=%s\n", stage);
+		return 1;
+	}
+	if (set_config_slot_str(slot_index, GAME_SAVE_SLOT_ID_TIMESTAMP, tmp_char_buf) != 0) {
+		LOG_ERROR("game_save_set_config_slot() timestamp=%s\n", tmp_char_buf);
+		return 1;
+	}
 
 	if (init_flag) {
 		// don't need to clear player & stacker

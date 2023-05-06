@@ -8,15 +8,19 @@
 #include "sound_manager.h"
 #include "game_key_event.h"
 #include "game_mouse_event.h"
+#include "gui_loading.h"
 #include "game_window.h"
 #include "game_utils.h"
 #include "game_log.h"
 #include "game_save.h"
 #include "dialog_message.h"
 #include "dialog_select_profile.h"
-#include "scene_loading.h"
 #include "scene_play_stage.h"
 #include "scene_play_story.h"
+
+#ifdef _ANDROID
+#include "gui_touch_control.h"
+#endif
 
 // draw static data
 #define SCENE_SAVE_MENU_ID_LABEL_SLOT1  0
@@ -128,6 +132,8 @@ static void main_event() {
 
 	bool select_snd_on = false;
 	bool click_snd_on = false;
+	void_func* action_func = NULL;
+
 	if (g_dialog_message_enable) {
 		dialog_message_event();
 		return; // recive only dialog key
@@ -207,11 +213,11 @@ static void main_event() {
 	}
 	if (game_key_event_get(SDL_SCANCODE_RETURN, GUI_SELECT_WAIT_TIMER)) {
 		if (gui_active_group_id == GUI_ITEM_GROUP_ID_SELECT) {
-			(*button_items[button_index].func)();
+			action_func = button_items[button_index].func;
 		}
 		else if (gui_active_group_id == GUI_ITEM_GROUP_ID_SLOT) {
 			click_snd_on = true;
-			(*slot_items[slot_index].func)();
+			action_func = slot_items[slot_index].func;
 		}
 	}
 
@@ -263,24 +269,27 @@ static void main_event() {
 		if (gui_active_group_id == GUI_ITEM_GROUP_ID_SELECT) {
 			if (button_items[gui_active_button_index].mouse_stat == (GUI_BUTTON_ACTIVE | GUI_BUTTON_CLICK)) {
 				button_items[gui_active_button_index].mouse_stat &= ~GUI_BUTTON_CLICK;
-				(*button_items[gui_active_button_index].func)();
+				action_func = button_items[gui_active_button_index].func;
 			}
 		}
 		else if (gui_active_group_id == GUI_ITEM_GROUP_ID_SLOT) {
 			if (slot_items[gui_active_button_index].mouse_stat == (GUI_BUTTON_ACTIVE | GUI_BUTTON_CLICK)) {
 				click_snd_on = true;
 				slot_items[gui_active_button_index].mouse_stat &= ~GUI_BUTTON_CLICK;
-				(*slot_items[gui_active_button_index].func)();
+				action_func = slot_items[gui_active_button_index].func;
 			}
 		}
 	}
 
-	// play snd
 	if (select_snd_on) {
 		sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_select1.ogg"), SOUND_MANAGER_CH_SFX1);
 	}
 	if (click_snd_on) {
 		sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_click1.ogg"), SOUND_MANAGER_CH_SFX2);
+	}
+	if (action_func) {
+		(*action_func)();
+		action_func = NULL;
 	}
 }
 
@@ -355,6 +364,11 @@ static void draw() {
 		// draw dialog
 		dialog_select_profile_draw();
 	}
+
+#ifdef _ANDROID
+	// draw gui_touch_control
+	gui_touch_control_draw();
+#endif
 
 	SDL_RenderPresent(g_ren);
 }
@@ -583,7 +597,7 @@ static void button_ok() {
 		if (player_path_size <= 0) { LOG_ERROR("Error: scene_save_menu button_ok() get player_file_path\n"); return; }
 
 		scene_play_stage_set_player(player_file_path, true);
-		scene_loading_set_stage(slot_stage);
+		gui_loading_set_stage(slot_stage);
 		scene_play_stage_set_stage_id(slot_stage);
 
 		// save default slot for continue

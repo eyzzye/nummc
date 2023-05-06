@@ -14,11 +14,10 @@
 #define SCENE_ID_LOAD_MENU       2
 #define SCENE_ID_SAVE_MENU       3
 #define SCENE_ID_SETTINGS_MENU   4
-#define SCENE_ID_LOADING         5
-#define SCENE_ID_ESCAPE_MENU     6
-#define SCENE_ID_PLAY_STAGE      7
-#define SCENE_ID_PLAY_STORY      8
-#define SCENE_ID_END             9
+#define SCENE_ID_ESCAPE_MENU     5
+#define SCENE_ID_PLAY_STAGE      6
+#define SCENE_ID_PLAY_STORY      7
+#define SCENE_ID_END             8
 
 typedef struct _SceneManagerFunc SceneManagerFunc;
 struct _SceneManagerFunc{
@@ -37,12 +36,9 @@ struct _SceneManagerFunc{
 
 
 extern int scene_manager_get_scene_id();
+extern int scene_manager_start_loading();
 extern void scene_manager_init();
 extern int scene_manager_load(int id, bool loading_on = false);
-
-extern bool scene_manager_get_pre_load_stat();
-extern void scene_manager_set_pre_load_stat(bool stat);
-extern int scene_manager_loading_finish();
 
 extern void scene_manager_pre_event();
 extern void scene_manager_key_event(SDL_Event* e);

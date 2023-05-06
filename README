@@ -21,10 +21,11 @@ E                  : Use bom
 Space              : Use item
 Esc                : Resume
 
+###############
+#  windows11  #
+###############
 [develop environment]
-VisalStudio2019 C++
-SDL2
-Box2d
+VisalStudio2022 C++
 
 [dependent libs]
 SDL2 2.0.12
@@ -42,6 +43,38 @@ Tiled Map Editor 0.9.1
 MilkyTracker 1.02.00
 Audacity 2.4.2
 fre:ac 1.1.2b
+
+##############
+#  debian10  #
+##############
+[develop environment]
+gcc 8.3.0
+libc6 2.28-10
+
+[dependent libs]
+SDL2 2.0.9
+SDL2_image 2.0.4
+SDL2_mixer 2.0.4
+SDL2_ttf 2.0.15
+Box2d 2.3.1
+DejaVu Sans
+
+##############
+#  android9  #
+##############
+[develop environment]
+android-studio 3.6.3
+ - ndk: 22.1.7171670
+ - Gradle Plugin: 3.4.3
+ - Gradle: 5.6.4
+
+[dependent libs]
+SDL2 2.0.22
+SDL2_image 2.0.5
+SDL2_mixer 2.0.4
+SDL2_ttf 2.0.18
+Box2d 2.3.0
+DejaVu Sans
 
 [LICENSE]
 MIT License

@@ -8,8 +8,8 @@
 int g_key_event_enable[KEY_EVENT_ENABLE_SIZE_MAX];
 static int g_key_event_enable_size;
 
-static Uint8 keyStat[SDL_NUM_SCANCODES];
-static int keyWait[SDL_NUM_SCANCODES];
+Uint8 keyStat[SDL_NUM_SCANCODES];
+int keyWait[SDL_NUM_SCANCODES];
 
 void game_key_event_init()
 {

@@ -114,6 +114,7 @@ static void tex_info_init()
 
 void quest_log_manager_message(const char* message_fmt, ...)
 {
+#ifdef _QUEST_LOG_ENABLE_
 	char buff[32];
 	va_list args;
 	va_start(args, message_fmt);
@@ -125,6 +126,7 @@ void quest_log_manager_message(const char* message_fmt, ...)
 	va_end(args);
 
 	quest_log_manager_set_new_message((char*)buff, (int)strlen(buff));
+#endif
 }
 
 void quest_log_manager_set_new_message(char* message, int message_length, int regist_timer)
@@ -167,6 +169,7 @@ void quest_log_manager_update()
 
 void quest_log_manager_display()
 {
+#ifdef _QUEST_LOG_ENABLE_
 	// draw frame
 	SDL_SetRenderDrawColor(g_ren, 255, 255, 255, 255);
 	SDL_RenderFillRect(g_ren, &quest_log_background);
@@ -182,4 +185,12 @@ void quest_log_manager_display()
 		log_data = (quest_log_data_t*)log_data->next;
 		log_count += 1;
 	}
+#else
+	// draw frame
+	SDL_SetRenderDrawColor(g_ren, 128, 128, 128, 255);
+	SDL_RenderFillRect(g_ren, &quest_log_background);
+	SDL_SetRenderDrawColor(g_ren, 0, 0, 0, 255);
+	SDL_RenderFillRects(g_ren, horizontal_lines, (int)LENGTH_OF(horizontal_lines));
+	SDL_RenderFillRects(g_ren, vertical_lines, (int)LENGTH_OF(vertical_lines));
+#endif
 }

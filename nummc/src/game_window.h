@@ -36,6 +36,8 @@
 
 extern std::mutex g_render_mtx;
 extern SDL_Window* g_win;
+extern int g_win_current_w;
+extern int g_win_current_h;
 extern SDL_Renderer* g_ren;
 extern int g_view_scale; // double size (1:640x480, 2:1280x720)
 extern int g_view_stage_scale;

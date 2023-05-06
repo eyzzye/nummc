@@ -15,6 +15,10 @@
 #include "dialog_message.h"
 #include "scene_play_stage.h"
 
+#ifdef _ANDROID
+#include "gui_touch_control.h"
+#endif
+
 // draw data
 #define SCENE_ESCAPE_MENU_ID_TITLE     0
 #define SCENE_ESCAPE_MENU_ID_RESUME    1
@@ -73,6 +77,8 @@ static void main_event() {
 
 	bool select_snd_on = false;
 	bool click_snd_on = false;
+	void_func* action_func = NULL;
+
 	if (game_key_event_get(SDL_SCANCODE_UP, GUI_SELECT_WAIT_TIMER)) {
 		select_snd_on = true;
 		menu_index -= 1;
@@ -85,7 +91,7 @@ static void main_event() {
 	}
 	if (game_key_event_get(SDL_SCANCODE_RETURN, GUI_SELECT_WAIT_TIMER)) {
 		click_snd_on = true;
-		(*menu_items[menu_index].func)();
+		action_func = menu_items[menu_index].func;
 	}
 	if (game_key_event_get(SDL_SCANCODE_ESCAPE, GUI_SELECT_WAIT_TIMER)) {
 		scene_stat = SCENE_STAT_IDLE;
@@ -123,7 +129,7 @@ static void main_event() {
 			if (menu_items[gui_active_menu_index].mouse_stat == (GUI_BUTTON_ACTIVE | GUI_BUTTON_CLICK)) {
 				click_snd_on = true;
 				menu_items[gui_active_menu_index].mouse_stat &= ~GUI_BUTTON_CLICK;
-				(*menu_items[gui_active_menu_index].func)();
+				action_func = menu_items[gui_active_menu_index].func;
 			}
 		}
 	}
@@ -133,6 +139,10 @@ static void main_event() {
 	}
 	if (click_snd_on) {
 		sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_click1.ogg"), SOUND_MANAGER_CH_SFX2);
+	}
+	if(action_func) {
+		(*action_func)();
+		action_func = NULL;
 	}
 }
 static void pre_draw() {
@@ -163,6 +173,11 @@ static void draw() {
 		// draw dialog
 		dialog_message_draw();
 	}
+
+#ifdef _ANDROID
+	// draw gui_touch_control
+	gui_touch_control_draw();
+#endif
 
 	SDL_RenderPresent(g_ren);
 }

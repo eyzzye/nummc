@@ -1,7 +1,19 @@
 CXX = gcc
-#CXXFLAGS = -g -I/usr/include -I/usr/include/SDL2
 CXXFLAGS = -Ofast -I/usr/include -I/usr/include/SDL2
-LDFLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer -lBox2D -lstdc++ -lm -pthread
+LDFLAGS =  -lstdc++ -lm -lBox2D -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer
+
+# force link Box2D 2.3.0 shared lib
+# (in advance of build nummc, build Box2D according to the Building.txt)
+#  (cd $BOX2DPATH/Build)
+#  (cmake -DBOX2D_INSTALL=ON -DBOX2D_BUILD_SHARED=ON ..)
+#  (make Box2D)
+#  (make Box2D_shared)
+#  (export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$BOX2DPATH/Build/Box2D)
+
+## If force link, enable below line ##
+#CXXFLAGS = -Ofast -I./external/linux/Box2D -I/usr/include/SDL2
+#LDFLAGS =  -lstdc++ -lm -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer \
+# -L./external/linux/Box2D/Build/Box2D/ -lBox2D
 
 TARGET_EXEC = linux/nummc
 BUILD_DIR = ./linux_build
@@ -21,7 +33,7 @@ all: $(TARGET_EXEC)
 
 $(TARGET_EXEC): $(OBJS)
 	mkdir -p $(dir $@)
-	$(CC) $(OBJS) $(LDFLAGS) -o $@ 
+	$(CC) $(OBJS) $(LDFLAGS) -o $@
 
 $(BUILD_DIR)/%.cpp.o: %.cpp
 	mkdir -p $(dir $@)

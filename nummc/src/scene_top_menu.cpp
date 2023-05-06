@@ -9,6 +9,7 @@
 #include "sound_manager.h"
 #include "game_key_event.h"
 #include "game_mouse_event.h"
+#include "gui_loading.h"
 #include "game_window.h"
 #include "game_log.h"
 #include "game_loop.h"
@@ -16,9 +17,22 @@
 #include "game_utils.h"
 #include "dialog_exit.h"
 #include "scene_play_stage.h"
-#include "scene_loading.h"
+#include "game_timer.h"
+
+#ifdef _ANDROID
+#include "gui_touch_control.h"
+#endif
 
 // draw data
+#ifdef _ANDROID
+#define TEX_INFO_ID_TITLE    0
+#define TEX_INFO_ID_CONTINUE 1
+#define TEX_INFO_ID_LOAD     2
+#define TEX_INFO_ID_NEW_GAME 3
+#define TEX_INFO_ID_SETTINGS 4
+//#define TEX_INFO_ID_EXIT   -
+#define TEX_INFO_ID_END      5
+#else
 #define TEX_INFO_ID_TITLE    0
 #define TEX_INFO_ID_CONTINUE 1
 #define TEX_INFO_ID_LOAD     2
@@ -26,17 +40,27 @@
 #define TEX_INFO_ID_SETTINGS 4
 #define TEX_INFO_ID_EXIT     5
 #define TEX_INFO_ID_END      6
+#endif
 
 static tex_info_t tex_info[TEX_INFO_ID_END];
 static tex_info_t tex_cursor;
 
 // menu data
+#ifdef _ANDROID
+#define MENU_ITEM_CONTINUE 0
+#define MENU_ITEM_LOAD     1
+#define MENU_ITEM_NEW_GAME 2
+#define MENU_ITEM_SETTINGS 3
+//#define MENU_ITEM_EXIT   -
+#define MENU_ITEM_END      4
+#else
 #define MENU_ITEM_CONTINUE 0
 #define MENU_ITEM_LOAD     1
 #define MENU_ITEM_NEW_GAME 2
 #define MENU_ITEM_SETTINGS 3
 #define MENU_ITEM_EXIT     4
 #define MENU_ITEM_END      5
+#endif
 
 static gui_item_t menu_items[MENU_ITEM_END];
 static int menu_index = 0;
@@ -74,6 +98,8 @@ static void main_event() {
 
 	bool select_snd_on = false;
 	bool click_snd_on = false;
+	void_func* action_func = NULL;
+
 	if (game_key_event_get(SDL_SCANCODE_UP, GUI_SELECT_WAIT_TIMER)) {
 		select_snd_on = true;
 		menu_index -= 1;
@@ -86,11 +112,16 @@ static void main_event() {
 	}
 	if (game_key_event_get(SDL_SCANCODE_RETURN, GUI_SELECT_WAIT_TIMER)) {
 		click_snd_on = true;
-		(*menu_items[menu_index].func)();
+		action_func = menu_items[menu_index].func;
 	}
+#ifdef _ANDROID
+	// not use exit dialog.
+	// Activity shutdown by the system.
+#else
 	if (game_key_event_get(SDL_SCANCODE_ESCAPE, GUI_SELECT_WAIT_TIMER)) {
 		dialog_exit_set_enable(true);
 	}
+#endif
 
 	// mouse event
 	int x = 0, y = 0;
@@ -123,7 +154,7 @@ static void main_event() {
 			if (menu_items[gui_active_menu_index].mouse_stat == (GUI_BUTTON_ACTIVE | GUI_BUTTON_CLICK)) {
 				click_snd_on = true;
 				menu_items[gui_active_menu_index].mouse_stat &= ~GUI_BUTTON_CLICK;
-				(*menu_items[gui_active_menu_index].func)();
+				action_func = menu_items[gui_active_menu_index].func;
 			}
 		}
 	}
@@ -133,6 +164,10 @@ static void main_event() {
 	}
 	if (click_snd_on) {
 		sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_click1.ogg"), SOUND_MANAGER_CH_SFX2);
+	}
+	if (action_func) {
+		(*action_func)();
+		action_func = NULL;
 	}
 }
 static void pre_draw() {
@@ -163,6 +198,11 @@ static void draw() {
 		// draw dialog
 		dialog_exit_draw();
 	}
+
+#ifdef _ANDROID
+	// draw gui_touch_control
+	gui_touch_control_draw();
+#endif
 
 	SDL_RenderPresent(g_ren);
 }
@@ -244,7 +284,7 @@ static void menu_continue() {
 		if (player_path_size <= 0) { LOG_ERROR("Error: scene_top_menu menu_continue() get player_file_path\n"); return; }
 
 		scene_play_stage_set_player(player_file_path, true);
-		scene_loading_set_stage(slot_stage);
+		gui_loading_set_stage(slot_stage);
 		scene_play_stage_set_stage_id(slot_stage);
 
 		set_stat_event(SCENE_STAT_IDLE);
@@ -272,6 +312,10 @@ static void menu_settings() {
 	scene_manager_load(SCENE_ID_SETTINGS_MENU);
 	//unload_event();
 }
+#ifdef _ANDROID
+	// not use exit dialog.
+	// Activity shutdown by the system.
+#else
 static void menu_exit() {
 	dialog_exit_set_enable(true);
 }
@@ -284,7 +328,7 @@ static void dialog_exit_cancel() {
 	sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_cancel1.ogg"), SOUND_MANAGER_CH_SFX2);
 	dialog_exit_set_enable(false);
 }
-
+#endif
 
 // init draw items
 static void tex_info_init()
@@ -363,6 +407,10 @@ static void tex_info_init()
 		cur_h_pos += h + h / 10;
 	}
 
+#ifdef _ANDROID
+	// not use exit dialog.
+	// Activity shutdown by the system.
+#else
 	tex_info[TEX_INFO_ID_EXIT].res_img = resource_manager_getTextureFromPath("{scale_mode:linear}images/gui/top_menu/exit.png");
 	ret = GUI_QueryTexture(tex_info[TEX_INFO_ID_EXIT].res_img, NULL, NULL, &w, &h);
 	if (ret == 0) {
@@ -374,6 +422,7 @@ static void tex_info_init()
 		h_pos += h + h / 10;
 		cur_h_pos += h + h / 10;
 	}
+#endif
 }
 
 void scene_top_menu_init()
@@ -402,8 +451,13 @@ void scene_top_menu_init()
 	// set menu default position
 	menu_index = 0;
 
+#ifdef _ANDROID
+	// not use exit dialog.
+	// Activity shutdown by the system.
+#else
 	// set dialog
 	dialog_exit_init(dialog_exit_ok, dialog_exit_cancel);
+#endif
 }
 
 SceneManagerFunc* scene_top_menu_get_func()

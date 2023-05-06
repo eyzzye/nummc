@@ -11,6 +11,7 @@
 #include "game_utils.h"
 #include "game_save.h"
 #include "game_log.h"
+#include "game_timer.h"
 
 // draw data
 static tex_info_t tex_info_message;
@@ -189,6 +190,8 @@ void dialog_select_profile_init() {
 
 void dialog_select_profile_reset(const char* message, void_func* yes_func)
 {
+	game_timer_pause(true);
+
 	game_save_get_config_unlock_stat(&current_profile_stat);
 	profile_item_index = 0;
 
@@ -213,6 +216,8 @@ void dialog_select_profile_reset(const char* message, void_func* yes_func)
 	profile_button_items[PROFILE_BUTTON_ITEM_RIGHT].func = profile_button_right;
 
 	g_dialog_select_profile_enable = false;
+
+	game_timer_pause(false);
 }
 
 void dialog_select_profile_set_enable(bool enable)
@@ -256,6 +261,7 @@ void dialog_select_profile_set_enable(bool enable)
 void dialog_select_profile_event() {
 	if (g_dialog_select_profile_enable) {
 		bool select_snd_on = false;
+		void_func* action_func = NULL;
 
 		// key event
 		if (game_key_event_get(SDL_SCANCODE_LEFT, GUI_SELECT_WAIT_TIMER)) {
@@ -265,7 +271,7 @@ void dialog_select_profile_event() {
 			profile_button_right();
 		}
 		if (game_key_event_get(SDL_SCANCODE_RETURN, GUI_SELECT_WAIT_TIMER)) {
-			(*button_items[button_index].func)();
+			action_func = button_items[button_index].func;
 		}
 
 		// mouse event
@@ -318,20 +324,23 @@ void dialog_select_profile_event() {
 			if (gui_active_group_id == GUI_ITEM_GROUP_ID_SELECT) {
 				if (button_items[gui_active_button_index].mouse_stat == (GUI_BUTTON_ACTIVE | GUI_BUTTON_CLICK)) {
 					button_items[gui_active_button_index].mouse_stat = 0;
-					(*button_items[gui_active_button_index].func)();
+					action_func = button_items[gui_active_button_index].func;
 				}
 			}
 			else if (gui_active_group_id == GUI_ITEM_GROUP_ID_PROFILE) {
 				if (profile_button_items[gui_active_button_index].mouse_stat == (GUI_BUTTON_ACTIVE | GUI_BUTTON_CLICK)) {
 					profile_button_items[gui_active_button_index].mouse_stat &= ~GUI_BUTTON_CLICK;
-					(*profile_button_items[gui_active_button_index].func)();
+					action_func = profile_button_items[gui_active_button_index].func;
 				}
 			}
 		}
 
-		// play snd
 		if (select_snd_on) {
 			sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_select1.ogg"), SOUND_MANAGER_CH_SFX1);
+		}
+		if (action_func) {
+			(*action_func)();
+			action_func = NULL;
 		}
 	}
 }

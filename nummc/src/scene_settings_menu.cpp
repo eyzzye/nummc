@@ -11,6 +11,10 @@
 #include "game_utils.h"
 #include "game_save.h"
 
+#ifdef _ANDROID
+#include "gui_touch_control.h"
+#endif
+
 // draw static data
 #define SCENE_SETTINGS_MENU_ID_TITLE       0
 #define SCENE_SETTINGS_MENU_ID_LABEL_VIDEO 1
@@ -121,6 +125,8 @@ static void main_event() {
 	if (scene_stat != SCENE_STAT_ACTIVE) return;
 
 	bool select_snd_on = false;
+	void_func* action_func = NULL;
+
 	if (game_key_event_get(SDL_SCANCODE_ESCAPE, GUI_SELECT_WAIT_TIMER)) {
 		button_cancel();
 	}
@@ -176,7 +182,7 @@ static void main_event() {
 	}
 	if (game_key_event_get(SDL_SCANCODE_RETURN, GUI_SELECT_WAIT_TIMER)) {
 		if (gui_active_group_id == GUI_ITEM_GROUP_ID_SELECT) {
-			(*button_items[button_index].func)();
+			action_func = button_items[button_index].func;
 		}
 	}
 
@@ -266,33 +272,37 @@ static void main_event() {
 		if (gui_active_group_id == GUI_ITEM_GROUP_ID_SELECT) {
 			if (button_items[gui_active_button_index].mouse_stat == (GUI_BUTTON_ACTIVE | GUI_BUTTON_CLICK)) {
 				button_items[gui_active_button_index].mouse_stat &= ~GUI_BUTTON_CLICK;
-				(*button_items[gui_active_button_index].func)();
+				action_func = button_items[gui_active_button_index].func;
 			}
 		}
 		else if (gui_active_group_id == GUI_ITEM_GROUP_ID_VIDEO) {
 			if (video_button_items[gui_active_button_index].mouse_stat == (GUI_BUTTON_ACTIVE | GUI_BUTTON_CLICK)) {
 				video_button_items[gui_active_button_index].mouse_stat &= ~GUI_BUTTON_CLICK;
-				(*video_button_items[gui_active_button_index].func)();
+				action_func = video_button_items[gui_active_button_index].func;
 			}
 		}
 		else if (gui_active_group_id == GUI_ITEM_GROUP_ID_MUSIC) {
 			if (music_slider_items.mouse_stat == (GUI_BUTTON_ACTIVE | GUI_BUTTON_CLICK)) {
 				music_slider_items.mouse_stat &= ~GUI_BUTTON_CLICK;
 				current_mouse_x = x;
-				(*music_slider_items.func)();
+				action_func = music_slider_items.func;
 			}
 		}
 		else if (gui_active_group_id == GUI_ITEM_GROUP_ID_SFX) {
 			if (sfx_slider_items.mouse_stat == (GUI_BUTTON_ACTIVE | GUI_BUTTON_CLICK)) {
 				sfx_slider_items.mouse_stat &= ~GUI_BUTTON_CLICK;
 				current_mouse_x = x;
-				(*sfx_slider_items.func)();
+				action_func = sfx_slider_items.func;
 			}
 		}
 	}
 
 	if (select_snd_on) {
 		sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_select1.ogg"), SOUND_MANAGER_CH_SFX1);
+	}
+	if (action_func) {
+		(*action_func)();
+		action_func = NULL;
 	}
 }
 static void pre_draw() {
@@ -354,6 +364,11 @@ static void draw() {
 	SDL_RenderDrawRect(g_ren, &group_region_video.dst_rect);
 	SDL_RenderDrawRect(g_ren, &group_region_music.dst_rect);
 	SDL_RenderDrawRect(g_ren, &group_region_sfx.dst_rect);
+#endif
+
+#ifdef _ANDROID
+	// draw gui_touch_control
+	gui_touch_control_draw();
 #endif
 
 	SDL_RenderPresent(g_ren);

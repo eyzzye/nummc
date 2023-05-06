@@ -8,6 +8,7 @@
 #include "resource_manager.h"
 #include "sound_manager.h"
 #include "game_utils.h"
+#include "game_timer.h"
 
 // draw data
 static tex_info_t tex_info_message;
@@ -113,6 +114,8 @@ void dialog_message_init() {
 
 void dialog_message_reset(const char* message, void_func* no_func, void_func* yes_func, int dialog_type_)
 {
+	game_timer_pause(true);
+
 	dialog_type = dialog_type_;
 	tex_info_init_message(message);
 	tex_info_init();
@@ -141,6 +144,8 @@ void dialog_message_reset(const char* message, void_func* no_func, void_func* ye
 
 	button_index = (dialog_type == DIALOG_MSG_TYPE_OK_ONLY) ? BUTTON_ITEM_OK : BUTTON_ITEM_CANCEL;
 	g_dialog_message_enable = false;
+
+	game_timer_pause(false);
 }
 
 void dialog_message_set_enable(bool enable)
@@ -171,6 +176,7 @@ void dialog_message_set_enable(bool enable)
 void dialog_message_event() {
 	if (g_dialog_message_enable) {
 		bool select_snd_on = false;
+		void_func* action_func = NULL;
 
 		// key event
 		if (game_key_event_get(SDL_SCANCODE_LEFT, GUI_SELECT_WAIT_TIMER)) {
@@ -188,7 +194,7 @@ void dialog_message_event() {
 			}
 		}
 		if (game_key_event_get(SDL_SCANCODE_RETURN, GUI_SELECT_WAIT_TIMER)) {
-			(*button_items[button_index].func)();
+			action_func = button_items[button_index].func;
 		}
 
 		// mouse event
@@ -220,13 +226,16 @@ void dialog_message_event() {
 		if ((mouse_left_stat & GAME_MOUSE_RELEASE) && (gui_active_button_index >= 0)) {
 			if (button_items[gui_active_button_index].mouse_stat == (GUI_BUTTON_ACTIVE | GUI_BUTTON_CLICK)) {
 				button_items[gui_active_button_index].mouse_stat = 0;
-				(*button_items[gui_active_button_index].func)();
+				action_func = button_items[gui_active_button_index].func;
 			}
 		}
 
-		// play snd
 		if (select_snd_on) {
 			sound_manager_play(resource_manager_getChunkFromPath("sounds/sfx_select1.ogg"), SOUND_MANAGER_CH_SFX1);
+		}
+		if (action_func) {
+			(*action_func)();
+			action_func = NULL;
 		}
 	}
 }

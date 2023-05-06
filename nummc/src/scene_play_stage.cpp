@@ -8,6 +8,7 @@
 #include "resource_manager.h"
 #include "game_key_event.h"
 #include "game_mouse_event.h"
+#include "gui_loading.h"
 #include "game_window.h"
 #include "game_log.h"
 #include "game_utils.h"
@@ -22,8 +23,11 @@
 #include "unit_manager.h"
 #include "stage_manager.h"
 #include "sound_manager.h"
-#include "scene_loading.h"
 #include "scene_play_story.h"
+
+#ifdef _ANDROID
+#include "gui_touch_control.h"
+#endif
 
 #define GAME_START_WAIT_TIMER         1500
 #define GAME_NEXT_STAGE_WAIT_TIMER    2000
@@ -526,18 +530,23 @@ static void draw() {
 	// disable region
 	if (g_screen_size.y > 0) {
 		SDL_SetRenderDrawColor(g_ren, 0, 0, 0, 255);
-		SDL_Rect disabel_region = { g_screen_size.x, 0, g_screen_size.w, g_screen_size.y };
+		SDL_Rect disabel_region = { 0, 0, g_win_current_w, g_screen_size.y };
 		SDL_RenderFillRect(g_ren, &disabel_region);
-		disabel_region = { g_screen_size.x, g_screen_size.y + g_screen_size.h, g_screen_size.w, g_screen_size.y };
+		disabel_region = { 0, g_screen_size.y + g_screen_size.h, g_win_current_w, g_screen_size.y };
 		SDL_RenderFillRect(g_ren, &disabel_region);
 	}
 	if (g_screen_size.x > 0) {
 		SDL_SetRenderDrawColor(g_ren, 0, 0, 0, 255);
-		SDL_Rect disabel_region = { 0, g_screen_size.y, g_screen_size.x, g_screen_size.h };
+		SDL_Rect disabel_region = { 0, 0, g_screen_size.x, g_win_current_h };
 		SDL_RenderFillRect(g_ren, &disabel_region);
-		disabel_region = { g_screen_size.x + g_screen_size.w, g_screen_size.y, g_screen_size.x, g_screen_size.h };
+		disabel_region = { g_screen_size.x + g_screen_size.w, 0, g_screen_size.x, g_win_current_h };
 		SDL_RenderFillRect(g_ren, &disabel_region);
 	}
+
+#ifdef _ANDROID
+	// draw gui_touch_control
+	gui_touch_control_draw();
+#endif
 
 	// render all
 	SDL_RenderPresent(g_ren);
@@ -558,7 +567,15 @@ static int pre_load_event(void* null) {
 	// set texture position
 	tex_info_init();
 
-	game_utils_sleep(3000);
+	// wait 3sec to display title
+	game_utils_sleep(1000);
+	gui_loading_update_progress();
+
+	game_utils_sleep(1000);
+	gui_loading_update_progress();
+
+	game_utils_sleep(1000);
+	gui_loading_update_progress();
 
 	// collision init
 	collision_manager_init();
@@ -571,6 +588,7 @@ static int pre_load_event(void* null) {
 
 	// map init
 	map_manager_init();
+	gui_loading_update_progress();
 
 	// load stage
 	{
@@ -589,6 +607,7 @@ static int pre_load_event(void* null) {
 		}
 		stage_manager_load((char*)stage_path);
 	}
+	gui_loading_update_progress();
 
 	// init unit manager
 	unit_manager_init();
@@ -626,6 +645,7 @@ static int pre_load_event(void* null) {
 	// load goal (trap)
 	unit_manager_load_trap((char*)goal_path);
 	unit_manager_load_trap((char*)go_next_path);
+	gui_loading_update_progress();
 
 	// load player unit
 	unit_manager_load_player_effects();
@@ -652,8 +672,6 @@ static int pre_load_event(void* null) {
 	g_stage_data->current_section_index = SECTION_INDEX_START;
 	g_stage_data->current_section_data = g_stage_data->section_list[g_stage_data->current_section_index];
 	section_init();
-
-	scene_manager_set_pre_load_stat(true);
 
 	return 0;
 }
@@ -744,7 +762,7 @@ static void main_event_next_load()
 			}
 
 			// load next stage
-			scene_loading_set_stage(g_stage_data->next_stage_id);
+			gui_loading_set_stage(g_stage_data->next_stage_id);
 			scene_play_stage_set_stage_id(g_stage_data->next_stage_id);
 
 			// keep current player/stocker

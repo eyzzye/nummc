@@ -5,6 +5,7 @@
 #include "game_utils.h"
 #include "game_log.h"
 #include "memory_manager.h"
+#include "gui_loading.h"
 
 #define RESOURCE_TAG_IMG        0
 #define RESOURCE_TAG_FONT       1
@@ -148,15 +149,19 @@ static void load_dat_callback(char* line, int line_size, int line_num, void* arg
 
 	if (data->read_flg[RESOURCE_TAG_IMG]) {
 		resource_manager_getTextureFromPath(line, RESOURCE_MANAGER_TYPE_STATIC);
+		gui_loading_update_progress();
 	}
 	if (data->read_flg[RESOURCE_TAG_FONT]) {
 		resource_manager_getFontTextureFromPath(line, RESOURCE_MANAGER_TYPE_STATIC);
+		gui_loading_update_progress();
 	}
 	if (data->read_flg[RESOURCE_TAG_MUSIC]) {
 		resource_manager_getMusicFromPath(line, RESOURCE_MANAGER_TYPE_STATIC);
+		gui_loading_update_progress();
 	}
 	if (data->read_flg[RESOURCE_TAG_SOUND]) {
 		resource_manager_getChunkFromPath(line, RESOURCE_MANAGER_TYPE_STATIC);
+		gui_loading_update_progress();
 	}
 }
 
